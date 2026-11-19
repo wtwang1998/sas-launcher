@@ -1,0 +1,46 @@
+{
+  "productName": "SAS Launcher",
+  "version": "0.1.0",
+  "identifier": "com.saslauncher.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "SAS",
+        "width": 1070,
+        "height": 730,
+        "minWidth": 790,
+        "minHeight": 565
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data:; style-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "languages": [
+          "English",
+          "SimpChinese"
+        ],
+        "installMode": "currentUser",
+        "installerHooks": "windows/preserve-install-location.nsh"
+      },
+      "allowDowngrades": false
+    }
+  }
+}
