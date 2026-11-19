@@ -43,7 +43,7 @@ npm run tauri dev
 
 ## 安装
 
-要求 Windows 10/11 x64，且本机已安装 SAS Foundation 9.4。从 [Releases](https://github.com/wtwang1998/sas-launcher/releases) 下载 `SAS Launcher 0.1.0 x64 Setup.exe`；首次安装默认仅为当前用户装到 `%LOCALAPPDATA%\SAS Launcher`，升级与卸载沿用该范围。应用数据在 `%LOCALAPPDATA%\com.saslauncher.desktop`。
+要求 Windows 10/11 x64，且本机已安装 SAS Foundation 9.4。从 [Releases](https://github.com/wtwang1998/sas-launcher/releases) 下载 `SAS-Launcher-0.1.0-x64-Setup.exe`；首次安装默认仅为当前用户装到 `%LOCALAPPDATA%\SAS Launcher`，升级与卸载沿用该范围。应用数据在 `%LOCALAPPDATA%\com.saslauncher.desktop`。
 
 ## 许可证
 

@@ -75,7 +75,7 @@ $machineConfig = Join-Path $staging 'all-users.json'
 Invoke-BuildCommand $tauri @('bundle', '--bundles', 'nsis', '--config', $machineConfig)
 New-ScopePayload $machinePayload
 
-$output = Join-Path $distribution ('SAS Launcher {0} x64 Setup.exe' -f $configuration.version)
+$output = Join-Path $distribution ('SAS-Launcher-{0}-x64-Setup.exe' -f $configuration.version)
 $source = (Resolve-Path -LiteralPath 'src-tauri/windows/scope-installer.nsi').Path
 $icon = (Resolve-Path -LiteralPath 'src-tauri/icons/icon.ico').Path
 Invoke-BuildCommand $makensis @(
