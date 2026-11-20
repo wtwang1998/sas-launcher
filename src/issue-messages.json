@@ -1,5 +1,10 @@
 {
   "configurationWrite": ["无法保存启动配置文件。", "Could not save the launch configuration file."],
+  "rootConfigRead": ["无法读取 SAS 根目录的 sasv9.cfg。", "Could not read sasv9.cfg in the SAS root folder."],
+  "defaultConfigPointerMissing": ["SAS 根配置没有指向有效的默认 NLS 配置。", "The SAS root configuration does not point to a valid default NLS configuration."],
+  "defaultConfigUnavailable": ["SAS 默认配置指向的文件不可用。", "The file referenced by the SAS default configuration is unavailable."],
+  "invalidLocaleEncoding": ["区域设置和编码组合不在已扫描的配置中。", "The locale and encoding pair is not present in the scanned configurations."],
+  "invalidProjectNote": ["备注最多 2000 个字符，且不能包含控制字符。", "Use up to 2,000 characters and omit control characters in the notes."],
   "configurationFileMissing": ["启动配置文件不可用，请编辑或重新创建此配置。", "The configuration file is unavailable. Edit or recreate this configuration."],
   "configurationBaseMissing": ["原厂基础配置不可用，请重新选择。", "The factory base configuration is unavailable. Choose another one."],
   "managedConfigurationMissing": ["自定义配置不存在。", "The custom configuration does not exist."],
@@ -193,10 +198,6 @@
   "sourceUnavailable": [
     "找不到选中的原有 SAS 设置。",
     "The selected existing SAS settings are no longer available."
-  ],
-  "templateAlreadyReady": [
-    "这个配置已经有可用的设置。",
-    "This configuration already has a settings source."
   ],
   "unexpected": [
     "操作未完成。",

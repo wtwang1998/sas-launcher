@@ -1,5 +1,5 @@
-import { sameKey, type Config, type ConfigKey, type Language } from './api'
-import type { Translator } from './i18n'
+import { sameKey, type Config, type Language } from './api'
+import { sasConfigurationEnglishName, sasConfigurationName, type Translator } from './i18n'
 
 export const encodingOf = (config: Config) => config.encoding?.toLowerCase() ?? ''
 
@@ -17,7 +17,6 @@ export function sasLabel(t: Translator, language: Language, config: Config) {
       : locale.of(config.uiLanguage) ?? config.uiLanguage
 }
 
-
 export const localeOf = (config: Config) => config.locale?.trim().replaceAll('-', '_').toLowerCase() || 'unknown'
 
 export function localeLabel(t: Translator, language: Language, config: Config) {
@@ -30,43 +29,33 @@ export function localeLabel(t: Translator, language: Language, config: Config) {
   return label ? label + ' · ' + code : code
 }
 
-function baseConfigurationLabel(t: Translator, config: Config) {
+export function builtInConfigurationName(language: Language, config: Config) {
+  return 'SAS 9.4 (' + sasConfigurationName(language, config.code, config.uiLanguage) + ')'
+}
+
+function baseConfigurationLabel(t: Translator, language: Language, config: Config) {
   return config.customId
     ? config.customName || t('numberedConfiguration', { number: config.code })
-    : t('factoryConfiguration', { code: config.code })
+    : builtInConfigurationName(language, config)
 }
 
-export function configurationLabel(t: Translator, config: Config, configs: Config[]) {
-  const label = baseConfigurationLabel(t, config)
+export function configurationLabel(t: Translator, config: Config, configs: Config[], language: Language) {
+  const label = baseConfigurationLabel(t, language, config)
   const duplicate = config.customId && configs.some(other => !sameKey(config.key, other.key)
-    && baseConfigurationLabel(t, other) === label
+    && baseConfigurationLabel(t, language, other) === label
     && localeOf(other) === localeOf(config) && encodingOf(other) === encodingOf(config))
-  return duplicate ? `${label} · #${config.code}` : label
+  return duplicate ? label + ' · #' + config.code : label
 }
 
-function naturalLanguage(tag: string) {
-  try {
-    const locale = new Intl.Locale(tag).maximize()
-    return locale.language === 'zh' ? `zh-${locale.script}` : locale.language
-  } catch {
-    return tag
+export function orderedConfigs(configs: Config[]) {
+  const canonicalCollator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' })
+  const localeCollator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' })
+  const canonicalName = (config: Config) => {
+    if (config.customId) return config.customName || 'Custom Configuration ' + config.code
+    return sasConfigurationEnglishName(config.code, config.uiLanguage)
   }
-}
-
-export function orderedConfigs(configs: Config[], system: string, defaultKey: ConfigKey | null) {
-  const preferred = naturalLanguage(system)
-  function priority(config: Config) {
-    return [
-      Number(!!config.error),
-      Number(config.uiLanguage !== preferred),
-      Number(!defaultKey || !sameKey(defaultKey, config.key)),
-      Number(encodingOf(config) !== 'utf-8'),
-    ]
-  }
-  return [...configs].sort((a, b) => {
-    const left = priority(a)
-    const right = priority(b)
-    return left.map((value, index) => value - right[index]).find(value => value !== 0)
-      ?? a.code.localeCompare(b.code)
-  })
+  return [...configs].sort((a, b) => Number(!a.customId) - Number(!b.customId)
+    || localeCollator.compare(localeOf(a), localeOf(b))
+    || canonicalCollator.compare(canonicalName(a), canonicalName(b))
+    || localeCollator.compare(a.code, b.code))
 }

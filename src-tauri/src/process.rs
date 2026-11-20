@@ -35,7 +35,7 @@ pub fn arguments(
     title: &str,
     encoding: &str,
 ) -> Vec<OsString> {
-    vec![
+    let mut arguments = vec![
         "-CONFIG".into(),
         config.cfg_path().as_os_str().into(),
         "-SASUSER".into(),
@@ -45,7 +45,12 @@ pub fn arguments(
         "-NORSASUSER".into(),
         "-ENCODING".into(),
         encoding.to_ascii_lowercase().into(),
-    ]
+    ];
+    if let Some(locale) = &config.locale {
+        arguments.push("-LOCALE".into());
+        arguments.push(locale.into());
+    }
+    arguments
 }
 
 pub fn start(config: &LaunchConfig, args: &[OsString], cwd: &Path) -> Result<Child, Issue> {
@@ -142,8 +147,12 @@ mod tests {
     }
 
     #[test]
-    fn pass_paths_and_title_as_distinct_os_arguments() {
+    fn pass_paths_title_encoding_and_locale_as_distinct_os_arguments() {
         let config = LaunchConfig {
+            reference: ConfigRef::BuiltIn {
+                exe: r"C:\Program Files\SAS\sas.exe".into(),
+                code: "u8".into(),
+            },
             key: crate::discovery::ConfigKey {
                 exe: r"C:\Program Files\SAS\sas.exe".into(),
                 cfg: r"C:\Program Files\SAS\中文\sasv9.cfg".into(),
@@ -154,9 +163,10 @@ mod tests {
             base: None,
             file: None,
             encoding: Some("UTF-8".into()),
-            locale: None,
+            locale: Some("en_US".into()),
             default_profile: None,
             ui_language: None,
+            is_default: false,
             error: None,
         };
         assert_eq!(
@@ -176,10 +186,13 @@ mod tests {
                 "-NORSASUSER",
                 "-ENCODING",
                 "utf-8",
+                "-LOCALE",
+                "en_US",
             ]
             .map(OsString::from)
         );
     }
 
+    use crate::discovery::ConfigRef;
     use std::os::windows::process::CommandExt;
 }

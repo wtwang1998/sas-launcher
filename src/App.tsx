@@ -2,22 +2,24 @@ import { Activity, Check, ChevronRight, CircleAlert, FolderOpen, FolderPlus, Fol
 import { open } from '@tauri-apps/plugin-dialog'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
-import { api, keyOf, sameKey, type BatchResult, type Config, type Language, type Preference, type Project, type Session, type View } from './api'
+import { api, sameRef, type BatchResult, type Config, type ConfigRef, type Language, type Preference, type Project, type Session, type View } from './api'
 import { configurationLabel, encodingLabel, encodingOf, localeOf, localeLabel, sasLabel, orderedConfigs } from './config-options'
 import { browserLanguage, issueText, translate, type MessageKey, type Translator } from './i18n'
 import { useConfirmation } from './confirmation'
-import { ConfigurationSelect, emptySelection, selectionFor, type ConfigurationSelection } from './ConfigurationSelect'
+import { ConfigurationSelect } from './ConfigurationSelect'
+import { configForValue, defaultSelectionValue, emptySelection, selectionFor, type ConfigurationSelection } from './configuration-selection'
 import { FieldLabel } from './form-fields'
-import { Onboarding, SettingsTemplates, type Act } from './SettingsTemplates'
+import { SettingsTemplates, type Act } from './SettingsTemplates'
 
 type SourcePage = 'projects' | 'quick'
-type Page = SourcePage | 'templates'
-type Draft = ConfigurationSelection & { id: string | null; name: string }
-const emptyDraft: Draft = { id: null, name: '', ...emptySelection }
+type Page = SourcePage | 'templates' | 'sessions'
+type Draft = ConfigurationSelection & { id: string | null; name: string; note: string }
+const emptyDraft: Draft = { id: null, name: '', note: '', ...emptySelection }
 const navigation = [
   { id: 'projects', help: 'projectsHelp', icon: Folders },
   { id: 'quick', help: 'quickHelp', icon: Zap },
   { id: 'templates', help: 'templatesHelp', icon: Layers3 },
+  { id: 'sessions', help: 'sessionsHelp', icon: Activity },
 ] as const
 
 function ProjectEditor({ draft, setDraft, onCancel, onSubmit, configs, view, busy, t }: {
@@ -30,8 +32,14 @@ function ProjectEditor({ draft, setDraft, onCancel, onSubmit, configs, view, bus
   busy: boolean
   t: Translator
 }) {
-  const selected = configs.some(config => !config.error && keyOf(config.key) === draft.config
+  const selectedConfig = configForValue(configs, draft.config, view.defaultConfig)
+  const selectedPairIsScanned = configs.some(config => !config.error
     && encodingOf(config) === draft.encoding && localeOf(config) === draft.locale)
+  const selectedPairIsRootDefault = draft.config === defaultSelectionValue
+    && !!view.defaultConfig
+    && encodingOf(view.defaultConfig) === draft.encoding
+    && localeOf(view.defaultConfig) === draft.locale
+  const selected = !!selectedConfig && !selectedConfig.error && (selectedPairIsScanned || selectedPairIsRootDefault)
   const quick = !onCancel
   const nameHint = useId()
 
@@ -39,8 +47,13 @@ function ProjectEditor({ draft, setDraft, onCancel, onSubmit, configs, view, bus
     <label><FieldLabel label={t('name')} marker={t(quick ? 'optionalField' : 'requiredField')} /><input name="name" autoFocus={!quick} value={draft.name} onChange={event => setDraft({ ...draft, name: event.target.value })} placeholder={t('example')} maxLength={100} required={!quick} aria-describedby={quick ? nameHint : undefined} />
       {quick && <small className="field-hint" id={nameHint}>{t('quickUnnamedHelp', { name: t('temporaryProject') })}</small>}
     </label>
+    {!quick && <label><FieldLabel label={t('note')} marker={t('optionalField')} />
+      <textarea rows={3} maxLength={2000} value={draft.note} disabled={busy} onChange={event => setDraft({ ...draft, note: event.target.value })} placeholder={t('noteHint')} />
+    </label>}
+    {!quick && <h3 className="launch-config-heading">{t('projectLaunchConfiguration')}</h3>}
     <ConfigurationSelect selection={draft} onChange={selection => setDraft({ ...draft, ...selection })}
-      configs={configs} language={view.language} defaultKey={view.defaultKey} busy={busy} t={t} />
+      configs={configs} language={view.language} defaultConfig={view.defaultConfig} busy={busy} t={t} />
+    {!quick && <small className="field-hint">{t('configurationWillBeCopied')}</small>}
     <div className="form-actions">
       {onCancel && <button type="button" className="button" onClick={onCancel}>{t('cancel')}</button>}
       <button className="button primary" disabled={busy || (!quick && !draft.name.trim()) || !selected}>
@@ -133,7 +146,7 @@ export function App() {
     setMessage(null)
   }
 
-  const configs = view ? orderedConfigs(view.configs, view.systemLanguage, view.defaultKey) : []
+  const configs = view ? orderedConfigs(view.configs) : []
   const projects = view?.projects ?? []
   const sessions = view?.sessions ?? []
   const selectedIds = projects.filter(project => checked.has(project.id)).map(project => project.id)
@@ -143,13 +156,16 @@ export function App() {
 
   function openProjectEditor(next: Draft) {
     if (draft && draft.id === next.id) return
+    const prepared = next.id === null && !next.config && view?.defaultConfig && !view.defaultConfig.error
+      ? { ...next, ...selectionFor(view.defaultConfig, true) }
+      : next
     function beginEditing() {
-      startingDraft.current = next
-      setDraft(next)
+      startingDraft.current = prepared
+      setDraft(prepared)
     }
 
     const initial = startingDraft.current
-    const dirty = draft && initial && (draft.name !== initial.name || draft.encoding !== initial.encoding || draft.locale !== initial.locale || draft.config !== initial.config)
+    const dirty = draft && initial && (draft.name !== initial.name || draft.note !== initial.note || draft.encoding !== initial.encoding || draft.locale !== initial.locale || draft.config !== initial.config)
     if (dirty) {
       confirm(t('discardProjectChanges'), t('discardProjectChangesDetail'), t('discard'), beginEditing)
     } else {
@@ -158,8 +174,10 @@ export function App() {
   }
 
   function editProject(project: Project) {
-    const config = configs.find(config => sameKey(config.key, project.key) && !config.error)
-    openProjectEditor({ id: project.id, name: project.name, ...selectionFor(config) })
+    const config = project.config
+      ? configs.find(config => sameRef(config.reference, project.config) && !config.error)
+      : view?.defaultConfig
+    openProjectEditor({ id: project.id, name: project.name, note: project.note ?? '', ...selectionFor(config ?? undefined, project.config === null) })
   }
 
   function pickExe() {
@@ -171,10 +189,11 @@ export function App() {
 
   function saveDraft(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const config = configs.find(config => keyOf(config.key) === draft?.config)
-    if (!draft || !config) return
+    const selected = view && draft ? configForValue(configs, draft.config, view.defaultConfig) : undefined
+    if (!draft || !selected || selected.error || !view) return
+    const config: ConfigRef | null = draft.config === defaultSelectionValue ? null : selected.reference
     void act(async () => {
-      const next = await api.save(draft.id, draft.name, config.key)
+      const next = await api.save(draft.id, draft.name, draft.note, config, draft.encoding, draft.locale)
       setDraft(null)
       return next
     }, 'projectSaved')
@@ -197,9 +216,9 @@ export function App() {
     setMessage(null)
   }
 
-  function launch(name: string, config: Config, id: string | null) {
+  function launch(name: string, config: ConfigRef | null, id: string | null) {
     void act(async () => {
-      const session = await api.launch(name, config.key, id)
+      const session = await api.launch(name, config, id)
       setMessage({ key: 'launched', title: session.title })
       return api.snapshot()
     })
@@ -246,8 +265,8 @@ export function App() {
         {error && <div className="banner error" role="alert"><CircleAlert size={18} /><span>{issueText(language, error.value)}</span><button className="icon-button" aria-label={t('closeError')} onClick={() => setError(null)}><X size={16} /></button></div>}
         {message && <div className="banner success" role="status"><Check size={18} /><span>{t(message.key, { title: message.title ?? '' })}</span><button className="icon-button" aria-label={t('closeMessage')} onClick={() => setMessage(null)}><X size={16} /></button></div>}
         {view?.scanError && <div className="banner warning"><CircleAlert size={18} /><span>{issueText(language, view.scanError)}</span><button className="button small" disabled={busy} onClick={pickExe}><FolderOpen size={15} />{t('chooseExe')}</button></div>}
+        {view?.defaultError && !view.scanError && <div className="banner warning"><CircleAlert size={18} /><span>{issueText(language, view.defaultError)}</span><button className="button small" disabled={busy} onClick={() => void act(api.refresh)}><Settings2 size={15} />{t('refresh')}</button></div>}
         {!view && !error && <p className="muted" role="status">{t('discovering')}</p>}
-        {view?.onboarding && !templateVisit && <Onboarding key={view.onboarding} view={view} configs={configs} busy={busy} t={t} act={act} confirm={confirm} />}
 
         {page === 'projects' && view && <>
           {draft?.id === null && <section className="panel edit-panel">
@@ -282,7 +301,9 @@ export function App() {
           </div>}
           <div className="cards">
             {projects.map(project => {
-              const config = configs.find(config => sameKey(config.key, project.key) && !config.error)
+              const config = project.config
+                ? configs.find(config => sameRef(config.reference, project.config) && !config.error)
+                : view.defaultConfig && !view.defaultConfig.error ? view.defaultConfig : undefined
               const editing = draft?.id === project.id
               const editorId = `project-editor-${project.id}`
               return <article className="panel project-card" key={project.id}>
@@ -292,8 +313,9 @@ export function App() {
                   <div className="card-info"><h2>{project.name}</h2>
                     <div className="card-meta">{config ? <>
                       <span className="chip">{encodingLabel(t, config.encoding)}<span className="chip-divider" />{localeLabel(t, language, config)}</span>
-                      <span className="muted">{configurationLabel(t, config, configs)} · {sasLabel(t, language, config)}</span>
+                      <span className="muted">{configurationLabel(t, config, configs, language)} · {sasLabel(t, language, config)}</span>
                     </> : <span className="missing">{t('missingConfig')}</span>}</div>
+                    {project.note && <p className="project-note">{project.note}</p>}
                   </div>
                   <div className="card-actions">
                     <button className="icon-button" aria-label={t('editNamed', { name: project.name })} aria-expanded={editing} aria-controls={editing ? editorId : undefined} disabled={busy} onClick={() => editProject(project)}><Pencil size={16} /></button>
@@ -306,7 +328,7 @@ export function App() {
                     {config && <>
                       <button className="icon-button" aria-label={t('manageNamedConfiguration', { name: project.name })}
                         disabled={busy} onClick={() => openTemplate(config)}><Settings2 size={16} /></button>
-                      <button className="button small launch" disabled={busy} onClick={() => launch(project.name, config, project.id)}>
+                      <button className="button small launch" disabled={busy} onClick={() => launch(project.name, project.config, project.id)}>
                         <Play size={14} />{t('launch')}
                       </button>
                     </>}
@@ -324,17 +346,19 @@ export function App() {
         {page === 'quick' && view && <section className="panel edit-panel quick-panel">
           <ProjectEditor draft={quick} setDraft={setQuick} onSubmit={event => {
             event.preventDefault()
-            const config = configs.find(config => keyOf(config.key) === quick.config)
-            if (config) launch(quick.name, config, null)
+            const config = view && configForValue(configs, quick.config, view.defaultConfig)
+            if (config) launch(quick.name, quick.config === defaultSelectionValue ? null : config.reference, null)
           }} configs={configs} view={view} busy={busy} t={t} />
         </section>}
 
         {page === 'templates' && view && <SettingsTemplates view={view} configs={configs} busy={busy} t={t} act={act} confirm={confirm} pickExe={pickExe} target={templateVisit?.config} onReturn={templateVisit ? returnFromTemplate : undefined} returnLabel={templateVisit && t(templateVisit.from === 'quick' ? 'backToQuick' : 'backToProjects')} />}
 
-        {(sessions.length > 0 || !!view?.notices.length) && <section className="session-section">
-          <div className="section-title"><h2>{t('sessions')}</h2></div>
-          {view?.notices.map((notice, index) => <p key={index} className="session-notice">{issueText(language, notice)}</p>)}
+        {page === 'sessions' && view && <section className="session-section">
+          {view.notices.map((notice, index) => <p key={index} className="session-notice">{issueText(language, notice)}</p>)}
           {sessions.map(session => <SessionRow key={session.id} session={session} t={t} />)}
+          {sessions.length === 0 && view.notices.length === 0 && <div className="empty panel">
+            <span className="empty-icon"><Activity size={30} /></span><h2>{t('noSessions')}</h2><p>{t('noSessionsHelp')}</p>
+          </div>}
         </section>}
       </div>
     </main>

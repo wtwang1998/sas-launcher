@@ -1,6 +1,48 @@
 import type { Language } from './api'
 import issues from './issue-messages.json'
 
+const sasConfigurationNames: Record<string, [string, string]> = {
+  '1d': ['English with DBCS', 'English with DBCS'],
+  u8: ['Unicode 支持', 'Unicode Support'],
+  ar: ['阿拉伯语', 'Arabic'],
+  cs: ['捷克语', 'Czech'],
+  da: ['丹麦语', 'Danish'],
+  de: ['德语', 'German'],
+  en: ['英语', 'English'],
+  es: ['西班牙语（卡斯蒂利亚）', 'Spanish (Castilian)'],
+  fr: ['法语', 'French'],
+  'zh-Hans': ['简体中文', 'Simplified Chinese'],
+  'zh-Hant': ['繁体中文', 'Traditional Chinese'],
+  he: ['希伯来语', 'Hebrew'],
+  hu: ['匈牙利语', 'Hungarian'],
+  it: ['意大利语', 'Italian'],
+  iw: ['希伯来语', 'Hebrew'],
+  ja: ['日语', 'Japanese'],
+  ko: ['韩语', 'Korean'],
+  nl: ['荷兰语', 'Dutch'],
+  no: ['挪威语', 'Norwegian'],
+  pb: ['葡萄牙语（巴西）', 'Portuguese (Brazil)'],
+  pl: ['波兰语', 'Polish'],
+  pt: ['葡萄牙语', 'Portuguese'],
+  ru: ['俄语', 'Russian'],
+  sv: ['瑞典语', 'Swedish'],
+  tr: ['土耳其语', 'Turkish'],
+  zh: ['中文（简体）', 'Chinese (Simplified)'],
+  zt: ['中文（繁体）', 'Chinese (Traditional)'],
+}
+
+export function sasConfigurationName(language: Language, code: string, uiLanguage: string | null) {
+  const names = sasConfigurationNames[code.toLowerCase()]
+    ?? (uiLanguage ? sasConfigurationNames[uiLanguage.toLowerCase()] : undefined)
+  return names?.[language === 'en' ? 1 : 0] ?? uiLanguage ?? code
+}
+
+export function sasConfigurationEnglishName(code: string, uiLanguage: string | null) {
+  const names = sasConfigurationNames[code.toLowerCase()]
+    ?? (uiLanguage ? sasConfigurationNames[uiLanguage.toLowerCase()] : undefined)
+  return names?.[1] ?? uiLanguage ?? code
+}
+
 const messages = {
   title: ['SAS 启动管理器', 'SAS Launcher'],
   projects: ['常用项目', 'Saved Projects'],
@@ -9,6 +51,9 @@ const messages = {
   quickHelp: ['为这次工作新开一个 SAS 窗口。填写的名称只用于本次会话。', 'Open an independent SAS window. The name is used for this session only.'],
   templates: ['启动配置', 'Launch Configurations'],
   templatesHelp: ['管理原厂及自定义启动配置，并为每份配置调整 SAS 个人设置。', 'Manage factory and custom launch configurations and adjust personal SAS settings for each one.'],
+  sessionsHelp: ['查看当前及最近的 SAS 会话、启动参数和诊断状态。', 'Review current and recent SAS sessions, launch arguments, and diagnostics.'],
+  noSessions: ['目前没有 SAS 会话', 'No SAS sessions'],
+  noSessionsHelp: ['启动项目后，会话状态和启动参数会显示在这里。', 'Session status and launch arguments will appear here after you start a project.'],
   language: ['应用语言', 'App Language'],
   system: ['跟随系统', 'Follow Windows'],
   navigation: ['主导航', 'Main navigation'],
@@ -27,7 +72,6 @@ const messages = {
   restoreFactoryPrompt: ["将「{configuration}」恢复为 SAS 初始设置？已有模板会被替换。下次启动时 SAS 会在独立的空用户目录中生成设置。", "Restore SAS defaults for “{configuration}”? This replaces any existing template. SAS will generate settings in a separate, empty user folder next time."],
   restoreUserPrompt: ["将「{directory}」中的 SAS 个人设置复制给「{configuration}」？这会替换已有模板。请确认设置适用于目标编码。", "Restore personal SAS settings for “{configuration}” from “{directory}”? This replaces any existing template. Confirm that the settings are compatible with the target encoding."],
   restoreUserUnavailable: ["未检测到可用于恢复的 SAS 个人设置。", "No personal SAS settings were detected for this configuration."],
-  sourceNeededForRestore: ["仅在恢复用户设置时必选。", "Required only when restoring user settings."],
   openSasSettings: ["前往 SAS 会话调整", "Adjust Settings in SAS"],
   openSasSettingsTip: ["打开独立 SAS 会话，请在 SAS 中自行调整设置。关闭窗口后，回到启动器保存为模板或放弃。", "Opens a separate SAS session. Make your changes there, close SAS, then return here to save or discard the template."],
   name: ['项目名称', 'Project name'],
@@ -35,6 +79,16 @@ const messages = {
   encoding: ['项目编码', 'Project encoding'],
   chooseEncoding: ['选择项目编码', 'Choose a project encoding'],
   sasConfig: ['启动配置', 'Launch Configuration'],
+  projectLaunchConfiguration: ['启动配置', 'Launch Configuration'],
+  note: ['备注', 'Notes'],
+  noteHint: ['可补充项目用途或其他说明', 'Add a purpose or other details'],
+  followDefault: ['跟随 SAS 默认配置', 'Follow the SAS default configuration'],
+  followDefaultHelp: ['勾选后，本项目不固定启动配置：每次启动都使用 SAS 安装当前的默认配置；如果安装默认配置变了，项目会跟着变。', 'When selected, this project does not pin a launch configuration: every launch uses the current SAS installation default, and the project follows it if the installation default changes.'],
+  currentDefault: ['当前：{configuration}', 'Current: {configuration}'],
+  helpHint: ['说明', 'Help'],
+  customConfigurations: ['用户自定义配置', 'Custom Configurations'],
+  builtInConfigurations: ['系统内置配置', 'Built-in Configurations'],
+  configurationWillBeCopied: ['区域设置或编码与默认值不同时，会基于内置配置另存为自定义配置并关联到本项目。', 'A locale or encoding change creates a custom configuration based on the built-in one and associates it with this project.'],
   chooseLocale: ['选择 SAS 区域设置', 'Select the SAS locale'],
   unknownLocale: ['未知区域设置', 'Unknown locale'],
   sasInterfaceLanguage: ['SAS 界面语言', 'SAS interface language'],
@@ -124,16 +178,6 @@ const messages = {
   saveTemplate: ['保存为模板', 'Save as Template'],
   templateSaved: ['已保存用户设置模板。', 'Settings template saved.'],
   templateDiscarded: ['已放弃本次设置。', 'Template changes discarded.'],
-  onboarding: ['设置 SAS 工作环境', 'Set Up Your SAS Workspace'],
-  onboardingHelp: ['可以为一个启动配置导入个人设置，也可以稍后处理。', 'Import personal settings for a configuration or decide later.'],
-  upgradeTitle: ['发现原有 SAS 设置', 'Existing SAS Settings Found'],
-  upgradeHelp: ["可以将找到的个人设置复制到默认启动配置，也可以稍后处理。", "Copy the detected personal settings to the default SAS configuration or decide later."],
-  chooseSource: ["检测到的个人设置目录", "Detected user settings folder"],
-  chooseSourcePlaceholder: ["选择要复制的设置目录", "Choose the settings folder to copy"],
-  onboardingNoSource: ['未检测到 SAS 个人设置，可以恢复初始设置。', 'No personal SAS settings were detected. You can restore defaults.'],
-  detectedFiles: ['检测到的文件', 'Files found'],
-  targetConfig: ['应用到', 'Apply to'],
-  later: ['稍后处理', 'Later'],
   checkAll: ['全选', 'Select All'],
   selectNamed: ['选择项目 {name}', 'Select project {name}'],
   launchSelected: ['启动所选（{count}）', 'Launch Selected ({count})'],
@@ -141,7 +185,7 @@ const messages = {
   discardProjectChanges: ['放弃未保存的更改？', 'Discard unsaved changes?'],
   discardProjectChangesDetail: ['当前项目表单还有未保存的更改。继续会放弃这些更改。', 'The project form has unsaved changes. Continuing discards those changes.'],
   unavailableProject: ['项目不可用', 'Unavailable project'],
-  sessions: ['会话与诊断', 'Sessions and Diagnostics'],
+  sessions: ['会话诊断', 'Session Diagnostics'],
   sasProgram: ['SAS 程序', 'SAS executable'],
   arguments: ['启动参数', 'Launch arguments'],
   running: ['SAS 进程运行中', 'SAS process running'],
