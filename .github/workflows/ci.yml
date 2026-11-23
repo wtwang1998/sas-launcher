@@ -1,0 +1,95 @@
+name: CI
+
+# The same gate `npm run check` runs locally, split into the two halves that
+# need different toolchains, plus commitlint because the local hook is not
+# available to contributors who commit from MSYS or the GitHub web UI.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HUSKY: "0"
+
+jobs:
+  web:
+    name: web
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check:web
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+
+  rust:
+    name: rust
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # The Rust job installs the node dependencies too: the local gate assumes
+      # they exist, and tauri-build reads the manifest at compile time.
+      - run: npm ci
+      # Installs the toolchain rust-toolchain.toml pins, components included.
+      - run: rustup show
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - run: npm run format:check:rust
+      - run: npm run lint:rust
+      - run: npm run test:rust
+      # Cargo.lock is tracked: a manifest edit that forgot to update it has to
+      # fail here instead of silently resolving at build time. The metadata
+      # json is noise, so only the exit code matters.
+      - name: lock file matches the manifest
+        shell: bash
+        run: cargo metadata --locked --manifest-path src-tauri/Cargo.toml --format-version 1 > /dev/null
+
+  commitlint:
+    name: commitlint
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Squash merging makes the pull request title the commit message that
+      # lands on main, so both the title and the branch commits are checked.
+      - name: pull request title
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$PR_TITLE" | npx commitlint
+      - name: pull request commits
+        if: github.event_name == 'pull_request'
+        run: npx commitlint --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.event.pull_request.head.sha }}" --verbose
+      - name: pushed commits
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: npx commitlint --from "${{ github.event.before }}" --to "${{ github.sha }}" --verbose
