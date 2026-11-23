@@ -34,6 +34,16 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      # The lock is a product of the pinned npm: a different npm rewrites
+      # the peer bookkeeping, and then `npm ci` fails for everyone on that
+      # npm, so the pinned one has to reproduce it byte for byte.
+      - name: lock file matches the pinned npm
+        shell: bash
+        run: |
+          node --version
+          npm --version
+          npm install --package-lock-only --ignore-scripts
+          git diff --exit-code -- package-lock.json
       - run: npm ci
       - run: npm run format:check:web
       - run: npm run lint
