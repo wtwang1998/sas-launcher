@@ -6,6 +6,7 @@
 ![最新版本](https://img.shields.io/github/v/release/wtwang1998/sas-launcher)
 ![下载量](https://img.shields.io/github/downloads/wtwang1998/sas-launcher/total)
 ![许可证](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)
+[![CI](https://github.com/wtwang1998/sas-launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/wtwang1998/sas-launcher/actions/workflows/ci.yml)
 
 [English](./README.md) | **简体中文**
 
@@ -51,8 +52,8 @@ SAS Launcher 给每个项目一份自己的配置，并为每次启动准备一�
 ## 安装
 
 1. 从 [Releases](https://github.com/wtwang1998/sas-launcher/releases) 下载 `SAS-Launcher-0.2.0-x64-Setup.exe`。
-2. 选择安装范围：**仅当前用户**（`%LOCALAPPDATA%\SAS Launcher`，不需要管理员权限）或**所有用户**（`C:\Program Files\SAS Launcher`）。
-3. 升级与卸载沿用首次安装的目录。
+2. 安装包只装给当前用户，落在 `%LOCALAPPDATA%\SAS Launcher`，不需要管理员权限。
+3. 升级与卸载沿用该目录。
 
 > [!NOTE]
 > 安装包未做代码签名，Windows SmartScreen 会提示“Windows 已保护你的电脑”。这是未签名构建的正常现象：选择**更多信息** → **仍要运行**。请只从本仓库的 Releases 页面下载。
@@ -76,7 +77,7 @@ SAS Launcher 给每个项目一份自己的配置，并为每次启动准备一�
 
 ## 从源码构建
 
-需要 Rust MSVC 工具链（edition 2024，Rust 1.85+）、Visual Studio C++ Build Tools、Node.js 22.12+ 与 WebView2 运行时。
+需要 Rust MSVC 工具链（edition 2024）、Visual Studio C++ Build Tools、Node.js 与 WebView2 运行时。仓库用 `rust-toolchain.toml` 固定 Rust 1.99.1、用 `.nvmrc` 固定 Node 24.12.0，`rustup` 与 `nvm` 会自动选用。
 
 ```powershell
 winget install --id Rustlang.Rustup
@@ -98,6 +99,14 @@ npm run tauri dev
 | `npm run tauri build` | 编译应用并打 NSIS 安装包到 `src-tauri/target/release/bundle/nsis/` |
 
 用 AI agent 参与开发？先读 [AGENTS.md](AGENTS.md)：里面写的是测试兜不住的那些不变量。
+
+## 持续集成
+
+每个 pull request 和每次推送到 `main`，都会在 `windows-latest` 上跑与你本地相同的门禁，分三个并行 job：`web`（格式化、lint、类型、前端测试、构建）、`rust`（cargo fmt、clippy、后端测试，以及 `Cargo.lock` 是否与清单一致）、`commitlint`。
+
+推送 `v<version>` tag 会触发出发布流程：tag 与 `package.json`、`src-tauri/Cargo.toml`、`src-tauri/tauri.conf.json` 三处版本不一致就拒绝构建；通过后构建未签名安装包，放在 draft release 里等人审阅。
+
+欢迎贡献——见 [CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md)。
 
 ## 许可证
 

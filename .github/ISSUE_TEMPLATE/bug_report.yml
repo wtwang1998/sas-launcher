@@ -1,0 +1,64 @@
+name: Bug report
+description: Something behaves differently from what the docs promise.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. A diagnostics record is worth more than a
+        description: it carries the resolution chain, the exact argv and the log.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The behaviour you saw, and the behaviour you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Create a project with ...
+        2. Launch it ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics record
+      description: From the Diagnostics page, paste the record for the failing launch.
+      render: text
+    validations:
+      required: false
+  - type: input
+    id: app-version
+    attributes:
+      label: SAS Launcher version
+      description: The release tag, or the version shown in the app.
+    validations:
+      required: true
+  - type: input
+    id: sas-version
+    attributes:
+      label: SAS version
+      description: For example 9.4 TS1M7.
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: For example Windows 11 24H2 x64.
+    validations:
+      required: true
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues.
+          required: true
+        - label: I removed anything private from the log and the paths.
+          required: true

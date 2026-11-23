@@ -6,6 +6,7 @@ Run several SAS 9.4 projects side by side, each with its own session environment
 ![latest release](https://img.shields.io/github/v/release/wtwang1998/sas-launcher)
 ![downloads](https://img.shields.io/github/downloads/wtwang1998/sas-launcher/total)
 ![license](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)
+[![CI](https://github.com/wtwang1998/sas-launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/wtwang1998/sas-launcher/actions/workflows/ci.yml)
 
 **English** | [简体中文](./README.zh-CN.md)
 
@@ -51,8 +52,8 @@ SAS Launcher gives every project its own configuration and hands each launch a p
 ## Install
 
 1. Download `SAS-Launcher-0.2.0-x64-Setup.exe` from [Releases](https://github.com/wtwang1998/sas-launcher/releases).
-2. Choose the install scope: **current user** (`%LOCALAPPDATA%\SAS Launcher`, no administrator rights needed) or **all users** (`C:\Program Files\SAS Launcher`).
-3. Upgrades and uninstalls reuse whichever folder was installed first.
+2. The installer installs for the current user into `%LOCALAPPDATA%\SAS Launcher`; no administrator rights are needed.
+3. Upgrades and uninstalls reuse that folder.
 
 > [!NOTE]
 > The installer is not code-signed, so SmartScreen warns that "Windows protected your PC". That is expected for unsigned builds: choose **More info** → **Run anyway**. Only download it from this repository's Releases page.
@@ -76,7 +77,7 @@ Projects, configurations and diagnostics live in `%LOCALAPPDATA%\com.saslauncher
 
 ## Build from source
 
-Requires the Rust MSVC toolchain (edition 2024, Rust 1.85+), Visual Studio C++ Build Tools, Node.js 22.12+ and the WebView2 Runtime.
+Requires the Rust MSVC toolchain (edition 2024), Visual Studio C++ Build Tools, Node.js and the WebView2 Runtime. The repository pins Rust 1.99.1 in `rust-toolchain.toml` and Node 24.12.0 in `.nvmrc`, so `rustup` and `nvm` pick the right versions up on their own.
 
 ```powershell
 winget install --id Rustlang.Rustup
@@ -98,6 +99,14 @@ The first Rust build takes 3–10 minutes. Changes under `src/**` hot-reload; ch
 | `npm run tauri build` | build the app and the NSIS installer into `src-tauri/target/release/bundle/nsis/` |
 
 Working on the code with an AI agent? Start with [AGENTS.md](AGENTS.md): it carries the invariants a test cannot catch.
+
+## Continuous integration
+
+Every pull request and every push to `main` runs the same gate you run locally, on `windows-latest`, in three parallel jobs: `web` (formatting, lint, types, frontend tests, build), `rust` (cargo fmt, clippy, backend tests and a tracked `Cargo.lock`), and `commitlint`.
+
+Pushing a `v<version>` tag starts the release workflow: it refuses to build unless the tag matches `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`, builds the unsigned installer, and leaves it in a draft release for review.
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

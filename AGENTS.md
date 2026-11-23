@@ -2,7 +2,7 @@
 
 面向在本仓库工作的 AI 编码 agent；人类文档见 `README.md`。
 
-**本文件是常驻上下文，每加一行都会挤掉别的约束的注意力。硬上限 100 行：超出时删旧，不增新。**
+**本文件是常驻上下文，每加一行都会挤掉别的约束的注意力。只写代码与测试表达不了的约束；能由测试锁住的不写在这里。**
 
 事实基线：Windows 10/11 x64、SAS Foundation 9.4、Tauri 2 + React 19 + TypeScript(strict) + Rust edition 2024。
 仓库以 **CRLF** 存盘且没有 `.gitattributes`，所有格式化工具必须保持 CRLF（见「硬约束」）。
@@ -16,11 +16,13 @@ npm run format            # biome format --write + cargo fmt
 npm run lint              # biome lint + knip
 npm run lint:rust         # clippy --all-targets -- -D warnings
 npm run typecheck         # tsc --noEmit
-npm run test              # vitest，38 个，约 4 秒
+npm run test              # vitest，55 个，约 4 秒
 npm run test:rust         # cargo test，39 个，约 1 秒（增量已编译）
 npm run build             # tsc --noEmit + vite build
+npm run version:check -- v0.2.0   # 发布前自查：tag 与三处版本是否一致
 ```
 
+- Rust 与 Node 版本钉死：`rust-toolchain.toml`（1.99.1 + clippy/rustfmt）、`.nvmrc`（24.12.0）、`package.json` 的 `engines`。升级它们是一次独立提交，别顺手改。
 - 只跑一个前端测试：`npm run test -- src/api.test.ts`
 - 只跑一个 Rust 测试：`npm run test:rust -- <测试名>`
 - 所有 `cargo` 命令都要带 `--manifest-path src-tauri/Cargo.toml`：根目录不是 workspace，裸 `cargo` 会失败。
@@ -36,8 +38,8 @@ src/lib/                纯函数：标签、排序、默认名、argv 引号 �
 src/test/               harness.tsx（mockIPC 假后端 + renderApp）、fixtures.ts
 src-tauri/src/          Rust：main.rs 命令层 / store.rs 持久化 / session.rs 会话 / view.rs DTO
 src-tauri/capabilities/ 窗口权限白名单
-src-tauri/windows/      NSIS 安装脚本
-scripts/                打包脚本（PowerShell）
+src-tauri/windows/      NSIS 安装钩子（preserve-install-location.nsh）
+scripts/                发布版本校验（Node，配 vitest 表驱动测试）
 docs/images/            README 截图（真机拍摄）
 ```
 
@@ -60,7 +62,7 @@ docs/images/            README 截图（真机拍摄）
 
 ## 测试
 
-- 四条缝：纯函数（表驱动）/ 页面（RTL + `mockIPC`，只断言看见什么、提交什么）/ IPC 契约（`api.test.ts`）/ Rust（`#[cfg(test)] mod tests`）。
+- 五条缝：纯函数（表驱动）/ 页面（RTL + `mockIPC`，只断言看见什么、提交什么）/ IPC 契约（`api.test.ts`）/ Rust（`#[cfg(test)] mod tests`）/ 发布 guard（`scripts/*.test.mjs`）。
 - 新行为先写失败测试再实现。**不要**为测试引入 trait 或 mock 文件系统：现有测试直接建 `tempfile::tempdir()`，用真实文件与真实 `powershell.exe` 子进程。
 - 样式、纯配置、文档改动不写测试。
 - 真实 SAS 启动、安装包、视觉：**命令全绿不等于完成**，必须在真机手工走一遍，并在答复里说明跑了什么、结果如何。
@@ -72,6 +74,14 @@ docs/images/            README 截图（真机拍摄）
 - 一次逻辑变更一次 commit；格式化与行为改动分开提交。
 - 不加 AI 署名或 `Co-authored-by` trailer。
 - `README.md` 与 `README.zh-CN.md` 必须同一次改动里一起改；两者冲突时以 `README.md` 为准。
+- commitlint 现在也在 CI 里跑：本地钩子被绕过（见 Known gaps 的 MSYS 条目）不等于通过。
+
+## CI
+
+- 三个 job，名字被分支保护引用，改名等于关掉保护：`web`（biome / knip / tsc / vitest / vite build）、`rust`（cargo fmt / clippy / cargo test / `Cargo.lock` 与清单一致）、`commitlint`（PR 标题 + 提交范围）。
+- 本地复现 web：`npm run format:check:web && npm run lint && npm run typecheck && npm run test && npm run build`；复现 rust：`npm run format:check:rust && npm run lint:rust && npm run test:rust`。
+- 不许用 `[skip ci]`、不许合并不等检查、不许为了变绿改 job 名或删 step。
+- 发布：推 `v<version>` tag；tag 必须与 `package.json` / `Cargo.toml` / `tauri.conf.json` 完全一致，否则 `Release` 直接失败；产物是 draft release 里的未签名安装包，人审后手动发布。
 
 ## Known gaps（是现状，不是范例）
 
