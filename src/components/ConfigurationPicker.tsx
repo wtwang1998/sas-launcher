@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react'
-import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
+import { type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { type Config, type ConfigRef, type Language, refKey, sameRef } from '../api'
 import type { Translator } from '../i18n'
 import { configLabel, groupConfigs } from '../lib/config'
@@ -39,7 +39,7 @@ export function ConfigurationPicker({
   const selectedIndex = options.findIndex((config) => sameRef(config.reference, value))
   const selected = selectedIndex >= 0 ? options[selectedIndex] : undefined
 
-  const optionId = (index: number) => `${listId}-option-${index}`
+  const optionId = useCallback((index: number) => `${listId}-option-${index}`, [listId])
 
   function openMenu() {
     if (disabled || !options.length) return

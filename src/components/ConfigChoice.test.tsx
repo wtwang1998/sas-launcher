@@ -7,27 +7,28 @@ import { translate } from '../i18n'
 import { builtIn, userConfig } from '../test/fixtures'
 import { ConfigChoice } from './ConfigChoice'
 
+const configs = [
+  builtIn('u8', 'UTF-8', 'zh_CN'),
+  userConfig('cfg-1', '我的配置', 'EUC-CN', 'zh_CN'),
+]
+const t = translate('zh-Hans')
+
+function Wrapper() {
+  const [value, setValue] = useState<ConfigRef | null>(null)
+  return (
+    <ConfigChoice
+      value={value}
+      configs={configs}
+      defaultConfig={builtIn('zh', 'EUC-CN', 'zh_CN')}
+      language="zh-Hans"
+      t={t}
+      onChange={setValue}
+    />
+  )
+}
+
 it('arrow_keys_move_selection_and_subcontrol_only_renders_when_checked', async () => {
   const user = userEvent.setup()
-  const configs = [
-    builtIn('u8', 'UTF-8', 'zh_CN'),
-    userConfig('cfg-1', '我的配置', 'EUC-CN', 'zh_CN'),
-  ]
-  const t = translate('zh-Hans')
-
-  function Wrapper() {
-    const [value, setValue] = useState<ConfigRef | null>(null)
-    return (
-      <ConfigChoice
-        value={value}
-        configs={configs}
-        defaultConfig={builtIn('zh', 'EUC-CN', 'zh_CN')}
-        language="zh-Hans"
-        t={t}
-        onChange={setValue}
-      />
-    )
-  }
 
   render(<Wrapper />)
   const radios = screen.getAllByRole('radio')

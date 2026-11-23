@@ -118,8 +118,8 @@ export function SessionRow({
             <>
               <h3>{t('hintsHeading')}</h3>
               <ul className="session-hints">
-                {session.hints.map((hint, index) => (
-                  <li key={index}>{issueText(language, hint)}</li>
+                {session.hints.map((hint) => (
+                  <li key={hint.code}>{issueText(language, hint)}</li>
                 ))}
               </ul>
             </>
