@@ -216,7 +216,12 @@ impl App {
         })
     }
 
-    fn launch(&mut self, resolved: Resolved, name: String, purpose: Purpose) -> Result<Record, Issue> {
+    fn launch(
+        &mut self,
+        resolved: Resolved,
+        name: String,
+        purpose: Purpose,
+    ) -> Result<Record, Issue> {
         let exe = self
             .installation
             .as_ref()
@@ -451,9 +456,13 @@ impl App {
                 return Err(error);
             }
         };
-        self.launch(resolved, project.name.clone(), Purpose::Project {
-            id: Some(project.id),
-        })
+        self.launch(
+            resolved,
+            project.name.clone(),
+            Purpose::Project {
+                id: Some(project.id),
+            },
+        )
     }
 
     /// Persist a pre-spawn failure and hand the issue back so the caller can
@@ -516,7 +525,9 @@ impl App {
                     installation
                         .configs
                         .iter()
-                        .find(|config| installation.default.as_deref() == Some(config.code.as_str()))
+                        .find(|config| {
+                            installation.default.as_deref() == Some(config.code.as_str())
+                        })
                         .map(|config| config.cfg.clone())
                 });
                 (None, factory, None, None)
@@ -537,9 +548,10 @@ impl App {
             }
             let running = records.iter().any(|record| {
                 record.status == Status::Running
-                    && record.purpose == Purpose::Project {
-                        id: Some(project.id),
-                    }
+                    && record.purpose
+                        == Purpose::Project {
+                            id: Some(project.id),
+                        }
             });
             if running {
                 results.push(BatchResult {
@@ -663,8 +675,12 @@ fn validate_note(note: Option<String>) -> Result<Option<String>, Issue> {
 fn failure_stage(code: &str) -> Stage {
     match code {
         "sasMissing" | "invalidExe" | "exeAccess" | "dataPath" => Stage::Exe,
-        "profileLocked" | "profileCopy" | "profileCreate" | "profileNotWritable"
-        | "profileEmpty" | "sessionProfileCreate" => Stage::Profile,
+        "profileLocked"
+        | "profileCopy"
+        | "profileCreate"
+        | "profileNotWritable"
+        | "profileEmpty"
+        | "sessionProfileCreate" => Stage::Profile,
         _ => Stage::Cfg,
     }
 }
@@ -672,7 +688,11 @@ fn failure_stage(code: &str) -> Stage {
 fn ensure_reference_exists(app: &App, reference: &ConfigRef) -> Result<(), Issue> {
     match reference {
         ConfigRef::BuiltIn { code } => {
-            if app.factory_configs().iter().any(|config| config.code == *code) {
+            if app
+                .factory_configs()
+                .iter()
+                .any(|config| config.code == *code)
+            {
                 Ok(())
             } else {
                 Err(Issue::with_detail("configUnavailable", code))
@@ -735,15 +755,7 @@ async fn save_project(
         let name = validate_name(&name)?;
         let note = validate_note(note)?;
         let id = match id {
-            Some(id)
-                if app
-                    .store
-                    .projects()
-                    .iter()
-                    .any(|project| project.id == id) =>
-            {
-                id
-            }
+            Some(id) if app.store.projects().iter().any(|project| project.id == id) => id,
             Some(_) => return Err(Issue::new("projectMissing")),
             None => Uuid::new_v4(),
         };
@@ -991,8 +1003,7 @@ mod tests {
         assert_eq!(derived.factory, base.factory);
         assert_ne!(derived.id, base.id);
         assert_eq!(
-            derived.name,
-            "用户配置（衍生自 Base）#1",
+            derived.name, "用户配置（衍生自 Base）#1",
             "default name numbers per source"
         );
         let profile_dir = app.store.profile_revision_dir(&derived).unwrap();
@@ -1063,7 +1074,11 @@ mod tests {
         let mut app = app_with_install(temp.path(), &exe);
 
         let default = app.resolve(None).unwrap();
-        assert!(default.cfg.ends_with("nls\\en\\sasv9.cfg"), "{:?}", default.cfg);
+        assert!(
+            default.cfg.ends_with("nls\\en\\sasv9.cfg"),
+            "{:?}",
+            default.cfg
+        );
         assert_eq!(default.encoding.as_deref(), Some("wlatin1"));
         assert_eq!(default.locale.as_deref(), Some("en_US"));
         assert!(default.thin.is_none());
@@ -1075,12 +1090,16 @@ mod tests {
         assert_eq!(built_in.encoding.as_deref(), Some("UTF-8"));
 
         let id = app
-            .create_configuration(&ConfigBase::BuiltIn { code: "u8".into() }, Some("Mine".into()))
+            .create_configuration(
+                &ConfigBase::BuiltIn { code: "u8".into() },
+                Some("Mine".into()),
+            )
             .unwrap();
         let user = app.resolve(Some(&ConfigRef::User { id })).unwrap();
         assert_eq!(
             user.cfg,
-            app.store.thin_cfg_path(app.store.configuration(id).unwrap())
+            app.store
+                .thin_cfg_path(app.store.configuration(id).unwrap())
         );
         assert!(user.thin.is_some());
         assert_eq!(user.factory, built_in.cfg);
@@ -1188,7 +1207,10 @@ mod tests {
                 }
             }
         }
-        assert!(scanned >= 6, "expected the backend modules, scanned {scanned}");
+        assert!(
+            scanned >= 6,
+            "expected the backend modules, scanned {scanned}"
+        );
         assert!(codes.len() >= 20, "code scan found too few: {codes:?}");
 
         let missing: Vec<&String> = codes

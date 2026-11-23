@@ -136,7 +136,10 @@ fn now_millis() -> i64 {
 }
 
 fn is_exited(status: Status) -> bool {
-    matches!(status, Status::Exited | Status::Setup | Status::CleanupPending)
+    matches!(
+        status,
+        Status::Exited | Status::Setup | Status::CleanupPending
+    )
 }
 
 impl Sessions {
@@ -365,9 +368,10 @@ impl Sessions {
                         self.failures.push((encoding, locale));
                     }
                     if let Some(code) = manifest.record.exit_code.filter(|code| *code != 0) {
-                        manifest.record.failure = Some(FailureNote::from(
-                            &Issue::with_detail("sasExit", format!("exit {code}")),
-                        ));
+                        manifest.record.failure = Some(FailureNote::from(&Issue::with_detail(
+                            "sasExit",
+                            format!("exit {code}"),
+                        )));
                     }
                 }
             }
@@ -481,9 +485,10 @@ impl Sessions {
         record
     }
 
-    pub fn setup_session(&self, config: Uuid) -> Option<&Record> {        self.cache.iter().find(|record| {
-            matches!(record.purpose, Purpose::Setup { config: id } if id == config)
-        })
+    pub fn setup_session(&self, config: Uuid) -> Option<&Record> {
+        self.cache
+            .iter()
+            .find(|record| matches!(record.purpose, Purpose::Setup { config: id } if id == config))
     }
 
     pub fn finish_setup(&mut self, config: Uuid, save: bool) -> Result<(), Issue> {
@@ -512,8 +517,7 @@ impl Sessions {
                 .map_err(|error| Issue::with_detail("profileCreate", error))?;
             let revision = Uuid::new_v4();
             let staging = profile_root.join(format!("tmp-{revision}"));
-            fs::create_dir(&staging)
-                .map_err(|error| Issue::with_detail("profileCreate", error))?;
+            fs::create_dir(&staging).map_err(|error| Issue::with_detail("profileCreate", error))?;
             if let Err(error) = copy_profile(&source, &staging) {
                 let _ = fs::remove_dir_all(&staging);
                 return Err(error);
@@ -647,13 +651,7 @@ mod tests {
         fs::create_dir_all(&root).unwrap();
         let config = Uuid::new_v4();
         let id = Uuid::new_v4();
-        let mut manifest = test_manifest(
-            &root,
-            id,
-            Purpose::Setup { config },
-            Status::Running,
-            1,
-        );
+        let mut manifest = test_manifest(&root, id, Purpose::Setup { config }, Status::Running, 1);
         manifest.record.exit_code = None;
         write_json(&root.join(id.to_string()).join("manifest.json"), &manifest).unwrap();
         let mut sessions = Sessions::new(root);
@@ -671,11 +669,7 @@ mod tests {
         // Once the process has exited the decision is allowed.
         manifest.record.status = Status::Setup;
         manifest.record.exit_code = Some(3);
-        write_json(
-            &sessions.directory(id).join("manifest.json"),
-            &manifest,
-        )
-        .unwrap();
+        write_json(&sessions.directory(id).join("manifest.json"), &manifest).unwrap();
         assert_eq!(
             sessions.finish_setup(config, true).unwrap_err().code,
             "setupFailed"
@@ -704,11 +698,7 @@ mod tests {
             profile_revision: Some(previous),
             factory: PathBuf::from(r"C:\SAS\nls\u8\sasv9.cfg"),
         };
-        write_json(
-            &data.join("configurations.json"),
-            &vec![configuration],
-        )
-        .unwrap();
+        write_json(&data.join("configurations.json"), &vec![configuration]).unwrap();
 
         let id = Uuid::new_v4();
         let manifest = test_manifest(&root, id, Purpose::Setup { config }, Status::Setup, 1);
@@ -758,7 +748,13 @@ mod tests {
         let root = temp.path().join("v4/sessions");
         fs::create_dir_all(&root).unwrap();
         let exited = Uuid::new_v4();
-        test_manifest(&root, exited, Purpose::Project { id: None }, Status::Exited, 10);
+        test_manifest(
+            &root,
+            exited,
+            Purpose::Project { id: None },
+            Status::Exited,
+            10,
+        );
         let setup = Uuid::new_v4();
         test_manifest(
             &root,
@@ -793,7 +789,13 @@ mod tests {
         let mut exited = Vec::new();
         for index in 0..25 {
             let id = Uuid::new_v4();
-            test_manifest(&root, id, Purpose::Project { id: None }, Status::Exited, index);
+            test_manifest(
+                &root,
+                id,
+                Purpose::Project { id: None },
+                Status::Exited,
+                index,
+            );
             exited.push((index, id));
         }
         let mut running = Vec::new();
@@ -813,7 +815,9 @@ mod tests {
         test_manifest(
             &root,
             setup_id,
-            Purpose::Setup { config: setup_config },
+            Purpose::Setup {
+                config: setup_config,
+            },
             Status::Setup,
             2_000,
         );

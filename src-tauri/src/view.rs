@@ -1,4 +1,5 @@
 use crate::{
+    App,
     configuration::{self, PresetStatus},
     diagnostics,
     discovery::BuiltIn,
@@ -6,7 +7,6 @@ use crate::{
     language::LanguagePreference,
     session::{Purpose, Record, Stage, Status},
     store::{ConfigBase, ConfigRef, Project, UserConfig},
-    App,
 };
 use serde::Serialize;
 use std::path::{Path, PathBuf};
@@ -221,9 +221,7 @@ fn ui_language_of(app: &App, base: &ConfigBase, depth: u8) -> Option<String> {
         return None;
     }
     match base {
-        ConfigBase::Default => default_row(app)
-            .0
-            .and_then(|row| row.ui_language),
+        ConfigBase::Default => default_row(app).0.and_then(|row| row.ui_language),
         ConfigBase::BuiltIn { code } => factory_configs(app)
             .iter()
             .find(|config| config.code == *code)

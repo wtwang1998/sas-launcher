@@ -111,7 +111,11 @@ mod tests {
 
         // A finished session recycles its SASUSER folder; that is healthy.
         let issues = self_check(&chain(factory, temp.path().join("recycled")));
-        assert!(issues.is_empty(), "{:?}", issues.iter().map(|i| i.code).collect::<Vec<_>>());
+        assert!(
+            issues.is_empty(),
+            "{:?}",
+            issues.iter().map(|i| i.code).collect::<Vec<_>>()
+        );
     }
 
     #[test]

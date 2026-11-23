@@ -332,7 +332,12 @@ impl Store {
             .map_err(|error| Issue::with_detail("settingsWrite", error))
     }
 
-    fn write_thin(&self, id: Uuid, revision: Uuid, request: &CreateConfiguration) -> Result<(), Issue> {
+    fn write_thin(
+        &self,
+        id: Uuid,
+        revision: Uuid,
+        request: &CreateConfiguration,
+    ) -> Result<(), Issue> {
         let directory = self.revision_dir(id, revision);
         fs::create_dir_all(&directory).map_err(|error| Issue::with_detail("dataCreate", error))?;
         if !regular_directory(&directory) {
@@ -490,12 +495,7 @@ mod tests {
         fs::read_dir(root)
             .unwrap()
             .flatten()
-            .filter(|entry| {
-                entry
-                    .file_name()
-                    .to_string_lossy()
-                    .starts_with("_old-")
-            })
+            .filter(|entry| entry.file_name().to_string_lossy().starts_with("_old-"))
             .count()
     }
 
@@ -522,7 +522,10 @@ mod tests {
         assert!(archived.join("v3/settings.json").is_file());
         assert!(archived.join("settings.json").is_file());
         // Never move the WebView2 profile, and never rename the root itself.
-        assert_eq!(fs::read(root.join("EBWebView/Default/marker")).unwrap(), b"keep");
+        assert_eq!(
+            fs::read(root.join("EBWebView/Default/marker")).unwrap(),
+            b"keep"
+        );
         assert!(!root.join("settings.json").exists());
 
         Store::open(root.clone()).unwrap();
@@ -560,11 +563,7 @@ mod tests {
             .share_mode(1)
             .open(root.join("v4/configurations.json"))
             .unwrap();
-        assert!(
-            store
-                .update_configuration(id, "utf-8", "zh_CN")
-                .is_err()
-        );
+        assert!(store.update_configuration(id, "utf-8", "zh_CN").is_err());
         drop(locked);
 
         let reloaded = Store::open(root).unwrap();
@@ -583,8 +582,8 @@ mod tests {
         let rotated = store.configuration(id).unwrap();
         assert_ne!(rotated.revision, first_revision);
         assert!(!first_file.exists());
-        let contents = String::from_utf8_lossy(&fs::read(store.thin_cfg_path(rotated)).unwrap())
-            .into_owned();
+        let contents =
+            String::from_utf8_lossy(&fs::read(store.thin_cfg_path(rotated)).unwrap()).into_owned();
         assert!(contents.contains("-ENCODING utf-8"));
     }
 }

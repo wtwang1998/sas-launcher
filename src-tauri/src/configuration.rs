@@ -59,8 +59,8 @@ pub fn write_thin_cfg(
     text.push_str("-LOCALE ");
     text.push_str(locale.trim());
     text.push_str("\r\n");
-    let mut file = fs::File::create(path)
-        .map_err(|error| Issue::with_detail("configurationWrite", error))?;
+    let mut file =
+        fs::File::create(path).map_err(|error| Issue::with_detail("configurationWrite", error))?;
     file.write_all(text.as_bytes())
         .and_then(|_| file.sync_all())
         .map_err(|error| Issue::with_detail("configurationWrite", error))
@@ -144,11 +144,9 @@ pub fn preset_status(
     }
     let encoding = normalize(encoding);
     let locale = normalize(locale);
-    match presets
-        .iter()
-        .rev()
-        .find(|preset| normalize(&preset.encoding) == encoding && normalize(&preset.locale) == locale)
-    {
+    match presets.iter().rev().find(|preset| {
+        normalize(&preset.encoding) == encoding && normalize(&preset.locale) == locale
+    }) {
         Some(preset) if preset.ok => PresetStatus::Verified,
         Some(_) => PresetStatus::Failed,
         None => PresetStatus::Unverified,
@@ -190,12 +188,9 @@ pub fn built_in_view(built_in: &BuiltIn, presets: &[Preset]) -> ConfigView {
         locale: built_in.locale.clone(),
         ui_language: built_in.ui_language.clone(),
         preset: match (&built_in.encoding, &built_in.locale) {
-            (Some(encoding), Some(locale)) => preset_status(
-                presets,
-                std::slice::from_ref(built_in),
-                encoding,
-                locale,
-            ),
+            (Some(encoding), Some(locale)) => {
+                preset_status(presets, std::slice::from_ref(built_in), encoding, locale)
+            }
             _ => PresetStatus::Unverified,
         },
         derived_from: None,
@@ -272,8 +267,14 @@ mod tests {
             preset_status(&presets, factory, "UTF-8", "en_US"),
             PresetStatus::Unverified
         );
-        assert_eq!(serde_json::to_value(PresetStatus::Verified).unwrap(), "verified");
-        assert_eq!(serde_json::to_value(PresetStatus::Failed).unwrap(), "failed");
+        assert_eq!(
+            serde_json::to_value(PresetStatus::Verified).unwrap(),
+            "verified"
+        );
+        assert_eq!(
+            serde_json::to_value(PresetStatus::Failed).unwrap(),
+            "failed"
+        );
         assert_eq!(
             serde_json::to_value(PresetStatus::Unverified).unwrap(),
             "unverified"
@@ -318,7 +319,10 @@ mod tests {
             ("wlatin1", "Spanish"),
             ("wcyrillic", "Russian"),
         ] {
-            assert!(validate_options(encoding, locale).is_ok(), "{encoding}/{locale}");
+            assert!(
+                validate_options(encoding, locale).is_ok(),
+                "{encoding}/{locale}"
+            );
         }
         for (encoding, locale) in [
             ("", "zh_CN"),
@@ -347,10 +351,7 @@ mod tests {
             profile_revision: None,
             factory: PathBuf::from("sasv9.cfg"),
         };
-        assert_eq!(
-            default_config_name("u8", &[]),
-            "用户配置（衍生自 u8）#1"
-        );
+        assert_eq!(default_config_name("u8", &[]), "用户配置（衍生自 u8）#1");
         let existing = vec![
             make("用户配置（衍生自 u8）#1"),
             make("用户配置（衍生自 u8）#2"),
@@ -364,10 +365,7 @@ mod tests {
             make("用户配置（衍生自 u8）#1"),
             make("用户配置（衍生自 u8）#3"),
         ];
-        assert_eq!(
-            default_config_name("u8", &gap),
-            "用户配置（衍生自 u8）#2"
-        );
+        assert_eq!(default_config_name("u8", &gap), "用户配置（衍生自 u8）#2");
         // A different source restarts at #1.
         assert_eq!(
             default_config_name("zh", &existing),

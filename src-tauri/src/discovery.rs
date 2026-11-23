@@ -169,16 +169,16 @@ pub fn inspect(exe: &Path) -> Result<Installation, Issue> {
 
 /// `<exe dir>/nls/<code>/sasv9.cfg`, canonicalized.
 pub fn factory_cfg_for(exe: &Path, code: &str) -> Result<PathBuf, Issue> {
-    if code.is_empty()
-        || code.contains('\\')
-        || code.contains('/')
-        || code == "."
-        || code == ".."
-    {
+    if code.is_empty() || code.contains('\\') || code.contains('/') || code == "." || code == ".." {
         return Err(Issue::with_detail("configUnavailable", code));
     }
     let exe = validate_exe(exe)?;
-    let cfg = exe.parent().unwrap().join("nls").join(code).join("sasv9.cfg");
+    let cfg = exe
+        .parent()
+        .unwrap()
+        .join("nls")
+        .join(code)
+        .join("sasv9.cfg");
     if !cfg.is_file() {
         return Err(Issue::with_detail("configUnavailable", code));
     }
@@ -502,14 +502,23 @@ mod tests {
     fn identifies_the_sas_interface_language_from_resource_locations() {
         let (_temp, exe) = fixture(
             &[
-                ("zh", "-ENCODING EUC-CN\n-LOCALE zh_CN\n-RESOURCESLOC \"!SASROOT\\nls\\zh\\resource\""),
-                ("1d", "-ENCODING EUC-CN\n-LOCALE zh_CN\n-RESOURCESLOC \"!SASROOT\\core\\resource\""),
+                (
+                    "zh",
+                    "-ENCODING EUC-CN\n-LOCALE zh_CN\n-RESOURCESLOC \"!SASROOT\\nls\\zh\\resource\"",
+                ),
+                (
+                    "1d",
+                    "-ENCODING EUC-CN\n-LOCALE zh_CN\n-RESOURCESLOC \"!SASROOT\\core\\resource\"",
+                ),
             ],
             Some(r#"-CONFIG "!SASROOT\nls\zh\sasv9.cfg""#),
         );
         let installation = inspect(&exe).unwrap();
         assert_eq!(installation.configs[0].ui_language.as_deref(), Some("en"));
-        assert_eq!(installation.configs[1].ui_language.as_deref(), Some("zh-Hans"));
+        assert_eq!(
+            installation.configs[1].ui_language.as_deref(),
+            Some("zh-Hans")
+        );
         assert_eq!(installation.default.as_deref(), Some("zh"));
     }
 
@@ -543,11 +552,8 @@ mod tests {
             &dunce::canonicalize(sas_root_cfg).unwrap()
         ));
         assert!(windows_path_eq(
-            &resolve_root_reference(
-                &root,
-                r"!SAS_HOME\SASFoundation\9.4\nls\en\sasv9.cfg"
-            )
-            .unwrap(),
+            &resolve_root_reference(&root, r"!SAS_HOME\SASFoundation\9.4\nls\en\sasv9.cfg")
+                .unwrap(),
             &dunce::canonicalize(sas_home_cfg).unwrap()
         ));
     }
@@ -577,15 +583,11 @@ mod tests {
         let (_temp, exe) = fixture(&[("u8", "-ENCODING UTF-8")], None);
         assert!(factory_cfg_for(&exe, "u8").is_ok());
         assert_eq!(
-            factory_cfg_for(&exe, "missing")
-                .unwrap_err()
-                .code,
+            factory_cfg_for(&exe, "missing").unwrap_err().code,
             "configUnavailable"
         );
         assert_eq!(
-            factory_cfg_for(&exe, "../escape")
-                .unwrap_err()
-                .code,
+            factory_cfg_for(&exe, "../escape").unwrap_err().code,
             "configUnavailable"
         );
     }
