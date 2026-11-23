@@ -71,14 +71,6 @@
     "Enter a project name of 1–100 characters."
   ],
   "projectMissing": ["这个项目已经不存在。", "This project no longer exists."],
-  "templateRequired": [
-    "请先为这个 SAS 启动配置准备用户设置。",
-    "Choose a settings source for this SAS configuration first."
-  ],
-  "setupAlreadyOpen": [
-    "这个配置已有设置会话。请先完成或丢弃它。",
-    "A settings session is already open for this configuration. Finish or discard it first."
-  ],
   "dataPath": ["无法定位应用数据目录。", "Could not find the application data folder."],
   "pathUnavailable": ["路径不可用。", "The path is unavailable."],
   "invalidExe": [
@@ -108,14 +100,6 @@
   "sessionCreate": ["无法创建独立会话。", "Could not create an isolated session."],
   "sessionProfileCreate": ["无法创建 SAS 用户目录。", "Could not create the SAS user folder."],
   "sessionRecord": ["无法记录独立会话。", "Could not save the session record."],
-  "sessionRecovery": [
-    "SAS 已启动，恢复记录保存失败，目录可能需要保留。",
-    "SAS started, but its recovery record could not be saved. Its folder may be retained."
-  ],
-  "sessionIdentity": [
-    "SAS 已启动，无法记录进程身份。",
-    "SAS started, but its process identity could not be recorded."
-  ],
   "sasExit": ["SAS 异常退出。", "SAS exited with an error."],
   "setupMissing": ["没有找到这次设置会话。", "This settings session was not found."],
   "setupRunning": ["请先关闭设置 SAS 的窗口。", "Close the SAS settings window before continuing."],
@@ -124,7 +108,6 @@
     "SAS exited with an error. Discard these settings and reopen SAS."
   ],
   "setupDirectory": ["设置会话目录不可用。", "The settings session folder is unavailable."],
-  "setupRecord": ["无法更新设置会话记录。", "Could not update the settings session record."],
   "dataCreate": ["无法创建应用数据目录。", "Could not create the application data folder."],
   "dataReparse": [
     "应用数据目录不能是重解析点。",
@@ -135,17 +118,10 @@
     "Could not read saved projects and configurations."
   ],
   "settingsWrite": ["无法保存应用设置。", "Could not save application settings."],
-  "templateDirectory": ["设置快照目录不可用。", "The settings snapshot folder is unavailable."],
-  "templateStage": ["无法准备设置快照。", "Could not prepare the settings snapshot."],
-  "templateWrite": ["无法写入设置快照。", "Could not save the settings snapshot."],
   "batchRunning": ["项目已在运行。", "The project is already running."],
   "projectRunning": [
     "该项目的 SAS 会话仍在运行，请先关闭它再重新启动。",
     "This project's SAS session is still running. Close it before launching again."
-  ],
-  "sourceUnavailable": [
-    "找不到选中的原有 SAS 设置。",
-    "The selected existing SAS settings are no longer available."
   ],
   "unexpected": ["操作未完成。", "The operation could not be completed."]
 }

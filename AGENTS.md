@@ -17,7 +17,7 @@ npm run lint              # biome lint + knip
 npm run lint:rust         # clippy --all-targets -- -D warnings
 npm run typecheck         # tsc --noEmit
 npm run test              # vitest，55 个，约 4 秒
-npm run test:rust         # cargo test，39 个，约 1 秒（增量已编译）
+npm run test:rust         # cargo test，41 个，约 1 秒（增量已编译）
 npm run build             # tsc --noEmit + vite build
 npm run version:check -- v0.2.0   # 发布前自查：tag 与三处版本是否一致
 ```
@@ -87,9 +87,8 @@ docs/images/            README 截图（真机拍摄）
 
 | 现象 | 处理 |
 |---|---|
-| `issue-messages.json` 有 7 个无生产者的码（`template*` 等 v0.1 遗留） | 别照抄；新增码必须有生产者 |
+| `unexpected` 有文案但无生产者 | 它是前端未知码的兜底标题（`src/i18n.ts`），有意保留，别删 |
 | 默认配置名生成在 `configuration.rs` 与 `src/lib/config.ts` 各一份，后者无 UI 调用 | 改一处必须同时改另一处，或先合并 |
-| `launch_project` 没有双开保护（`launch_batch` 有） | 别假定已防双开 |
 | `biome.json` 关掉了 `noDescendingSpecificity` 与 3 个文件上的 4 条 a11y 规则 | 修需人工验视觉/键盘，原因见 `overrides` |
 | MSYS 下 git 直接 exec husky 钩子报 Permission denied | 用 `git -c core.hooksPath=` 提交，再手动 `npx commitlint --from HEAD~1 --to HEAD` |
 
