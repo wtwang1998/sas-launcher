@@ -22,7 +22,7 @@ npm run build             # tsc --noEmit + vite build
 npm run version:check -- v0.2.0   # 发布前自查：tag 与三处版本是否一致
 ```
 
-- Rust 与 Node 版本钉死：`rust-toolchain.toml`（1.99.1 + clippy/rustfmt）、`.nvmrc`（24.12.0）、`package.json` 的 `engines`。升级它们是一次独立提交，别顺手改。
+- Rust 与 Node 版本钉死：`rust-toolchain.toml`（1.99.1 + clippy/rustfmt）、`.nvmrc`（24.22.3）、`package.json` 的 `engines`。升级它们是一次独立提交，别顺手改。
 - 只跑一个前端测试：`npm run test -- src/api.test.ts`
 - 只跑一个 Rust 测试：`npm run test:rust -- <测试名>`
 - 所有 `cargo` 命令都要带 `--manifest-path src-tauri/Cargo.toml`：根目录不是 workspace，裸 `cargo` 会失败。

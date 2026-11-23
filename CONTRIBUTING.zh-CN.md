@@ -9,7 +9,7 @@
 
 - Windows 10 或 11 x64。应用要启动 SAS Foundation 9.4，换平台基本没法开发。
 - Rust 1.99.1：由 `rust-toolchain.toml` 固定，`rustup` 会在第一次 `cargo` 时自动装好。
-- Node 24.12.0：由 `.nvmrc` 固定，`nvm use`（或 `fnm use`）会选中它。
+- Node 24.22.3：由 `.nvmrc` 固定，`nvm use`（或 `fnm use`）会选中它。
 - Visual Studio C++ Build Tools 的 MSVC 工作负载，以及 WebView2 Runtime。
 - 想真的启动一次 SAS，需要本机装有 SAS Foundation 9.4。测试套件不需要：所有测试都用 `tempfile`
   临时目录和一个不会真正运行的假 `sas.exe`。

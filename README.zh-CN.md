@@ -77,7 +77,7 @@ SAS Launcher 给每个项目一份自己的配置，并为每次启动准备一�
 
 ## 从源码构建
 
-需要 Rust MSVC 工具链（edition 2024）、Visual Studio C++ Build Tools、Node.js 与 WebView2 运行时。仓库用 `rust-toolchain.toml` 固定 Rust 1.99.1、用 `.nvmrc` 固定 Node 24.12.0，`rustup` 与 `nvm` 会自动选用。
+需要 Rust MSVC 工具链（edition 2024）、Visual Studio C++ Build Tools、Node.js 与 WebView2 运行时。仓库用 `rust-toolchain.toml` 固定 Rust 1.99.1、用 `.nvmrc` 固定 Node 24.22.3，`rustup` 与 `nvm` 会自动选用。
 
 ```powershell
 winget install --id Rustlang.Rustup

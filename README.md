@@ -77,7 +77,7 @@ Projects, configurations and diagnostics live in `%LOCALAPPDATA%\com.saslauncher
 
 ## Build from source
 
-Requires the Rust MSVC toolchain (edition 2024), Visual Studio C++ Build Tools, Node.js and the WebView2 Runtime. The repository pins Rust 1.99.1 in `rust-toolchain.toml` and Node 24.12.0 in `.nvmrc`, so `rustup` and `nvm` pick the right versions up on their own.
+Requires the Rust MSVC toolchain (edition 2024), Visual Studio C++ Build Tools, Node.js and the WebView2 Runtime. The repository pins Rust 1.99.1 in `rust-toolchain.toml` and Node 24.22.3 in `.nvmrc`, so `rustup` and `nvm` pick the right versions up on their own.
 
 ```powershell
 winget install --id Rustlang.Rustup

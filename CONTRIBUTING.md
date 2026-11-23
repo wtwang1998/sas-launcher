@@ -14,7 +14,7 @@ directory or the installer.
   developed usefully on another platform.
 - Rust 1.99.1: `rust-toolchain.toml` pins it, so `rustup` installs the right
   version on the first `cargo` command.
-- Node 24.12.0: `.nvmrc` pins it, so `nvm use` (or `fnm use`) selects it.
+- Node 24.22.3: `.nvmrc` pins it, so `nvm use` (or `fnm use`) selects it.
 - Visual Studio C++ Build Tools with the MSVC workload, and the WebView2
   Runtime.
 - SAS Foundation 9.4 if you want to exercise a real launch. The test suites do
