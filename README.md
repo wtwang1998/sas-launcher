@@ -95,7 +95,7 @@ The first Rust build takes 3–10 minutes. Changes under `src/**` hot-reload; ch
 | `npm run check` | every gate: formatting, lint, clippy, types, both test suites (~12 s) |
 | `npm run test` / `npm run test:rust` | frontend (vitest) / backend (cargo test) |
 | `npm run build` | type-check, then build the frontend |
-| `npm run package:windows` | build the installer into `src-tauri/target/release/bundle/windows/` |
+| `npm run tauri build` | build the app and the NSIS installer into `src-tauri/target/release/bundle/nsis/` |
 
 Working on the code with an AI agent? Start with [AGENTS.md](AGENTS.md): it carries the invariants a test cannot catch.
 

@@ -24,7 +24,7 @@ npm run build             # tsc --noEmit + vite build
 - 只跑一个前端测试：`npm run test -- src/api.test.ts`
 - 只跑一个 Rust 测试：`npm run test:rust -- <测试名>`
 - 所有 `cargo` 命令都要带 `--manifest-path src-tauri/Cargo.toml`：根目录不是 workspace，裸 `cargo` 会失败。
-- `npm run tauri dev` 与 `npm run package:windows` **只在用户明确要求时**执行：首次编译 Rust 依赖 3–10 分钟，打包会写 `src-tauri/target/release/`。
+- `npm run tauri dev` 与 `npm run tauri build` **只在用户明确要求时**执行：首次编译 Rust 依赖 3–10 分钟，打包会写 `src-tauri/target/release/`。
 
 ## 目录地图
 

@@ -95,7 +95,7 @@ npm run tauri dev
 | `npm run check` | 全部门禁：格式化、lint、clippy、类型、两套测试（约 12 秒） |
 | `npm run test` / `npm run test:rust` | 前端（vitest）/ 后端（cargo test） |
 | `npm run build` | 类型检查，然后构建前端 |
-| `npm run package:windows` | 打安装包到 `src-tauri/target/release/bundle/windows/` |
+| `npm run tauri build` | 编译应用并打 NSIS 安装包到 `src-tauri/target/release/bundle/nsis/` |
 
 用 AI agent 参与开发？先读 [AGENTS.md](AGENTS.md)：里面写的是测试兜不住的那些不变量。
 
