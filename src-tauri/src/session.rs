@@ -6,6 +6,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
+    cmp::Reverse,
     collections::HashMap,
     fs, io,
     path::{Path, PathBuf},
@@ -375,7 +376,7 @@ impl Sessions {
             }
             records.push(manifest.record);
         }
-        records.sort_by(|left, right| right.started_at.cmp(&left.started_at));
+        records.sort_by_key(|record| Reverse(record.started_at));
         self.cache = records;
     }
 
@@ -439,7 +440,7 @@ impl Sessions {
         if exited.len() <= KEEP_EXITED {
             return;
         }
-        exited.sort_by(|left, right| right.0.cmp(&left.0));
+        exited.sort_by_key(|entry| Reverse(entry.0));
         for (_, id) in exited.into_iter().skip(KEEP_EXITED) {
             let _ = fs::remove_dir_all(self.directory(id));
             self.cache.retain(|record| record.id != id);

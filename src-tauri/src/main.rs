@@ -992,7 +992,7 @@ mod tests {
         assert_ne!(derived.id, base.id);
         assert_eq!(
             derived.name,
-            format!("用户配置（衍生自 Base）#1"),
+            "用户配置（衍生自 Base）#1",
             "default name numbers per source"
         );
         let profile_dir = app.store.profile_revision_dir(&derived).unwrap();
