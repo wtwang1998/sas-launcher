@@ -101,7 +101,10 @@ Maintainers only. A release starts with a tag:
 2. Tag that commit `v<version>` and push the tag.
 3. The `Release` workflow refuses to build unless the tag matches all three
    files, then uploads the installer to a **draft** release.
-4. Install the draft on a clean Windows machine, check the upgrade from the
+4. Fill the draft body from `docs/release-notes-template.md`. `--generate-notes`
+   only lists pull requests, and `main` receives none, so the generated body is
+   empty.
+5. Install the draft on a clean Windows machine, check the upgrade from the
    previous version, then publish.
 
 The installer is not code-signed, so SmartScreen warns before it runs. The
