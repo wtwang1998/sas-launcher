@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
     "typecheck": "tsc --noEmit",
+    "version:check": "node scripts/check-release-version.mjs",
     "format": "biome format --write . && cargo fmt --manifest-path src-tauri/Cargo.toml",
     "format:check": "npm run format:check:web && npm run format:check:rust",
     "format:check:web": "biome format .",
