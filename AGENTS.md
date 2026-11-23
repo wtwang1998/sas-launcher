@@ -38,6 +38,7 @@ src-tauri/src/          Rust：main.rs 命令层 / store.rs 持久化 / session.
 src-tauri/capabilities/ 窗口权限白名单
 src-tauri/windows/      NSIS 安装脚本
 scripts/                打包脚本（PowerShell）
+docs/images/            README 截图（真机拍摄）
 ```
 
 ## 硬约束（违反后测试照样绿）
@@ -70,6 +71,7 @@ scripts/                打包脚本（PowerShell）
 - conventional commits，英文祈使句；`body-max-line-length` 为 100，commitlint 会拦。
 - 一次逻辑变更一次 commit；格式化与行为改动分开提交。
 - 不加 AI 署名或 `Co-authored-by` trailer。
+- `README.md` 与 `README.zh-CN.md` 必须同一次改动里一起改；两者冲突时以 `README.md` 为准。
 
 ## Known gaps（是现状，不是范例）
 
