@@ -1,5 +1,4 @@
 use crate::issue::Issue;
-use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     env, fs,
@@ -7,41 +6,25 @@ use std::{
 };
 use windows_sys::Win32::Globalization::{CP_ACP, MultiByteToWideChar};
 
-#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
-pub struct ConfigKey {
-    pub exe: PathBuf,
-    pub cfg: PathBuf,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
-pub enum ConfigRef {
-    BuiltIn { exe: PathBuf, code: String },
-    Custom { id: uuid::Uuid },
-}
-
-#[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LaunchConfig {
-    pub reference: ConfigRef,
-    pub key: ConfigKey,
+/// One factory (read-only) configuration: the `nls/<code>` directory.
+#[derive(Clone, Debug)]
+pub struct BuiltIn {
     pub code: String,
-    pub custom_id: Option<uuid::Uuid>,
-    pub custom_name: Option<String>,
-    pub base: Option<ConfigKey>,
-    pub file: Option<PathBuf>,
+    pub cfg: PathBuf,
     pub encoding: Option<String>,
     pub locale: Option<String>,
-    pub default_profile: Option<PathBuf>,
     pub ui_language: Option<String>,
-    pub is_default: bool,
     pub error: Option<Issue>,
 }
 
-impl LaunchConfig {
-    pub fn cfg_path(&self) -> &Path {
-        self.file.as_deref().unwrap_or(&self.key.cfg)
-    }
+#[derive(Clone, Debug)]
+pub struct Installation {
+    pub exe: PathBuf,
+    pub configs: Vec<BuiltIn>,
+    /// Directory code of the default configuration, when the root pointer
+    /// resolves into `nls/`.
+    pub default: Option<String>,
+    pub default_error: Option<Issue>,
 }
 
 pub fn find_installed() -> Option<PathBuf> {
@@ -64,7 +47,7 @@ pub fn validate_exe(exe: &Path) -> Result<PathBuf, Issue> {
     dunce::canonicalize(exe).map_err(|error| Issue::with_detail("exeAccess", error))
 }
 
-pub fn scan(exe: &Path, documents: Option<&Path>) -> Result<Vec<LaunchConfig>, Issue> {
+pub fn scan(exe: &Path) -> Result<Vec<BuiltIn>, Issue> {
     let exe = validate_exe(exe)?;
     let nls = exe.parent().unwrap().join("nls");
     let entries = fs::read_dir(&nls).map_err(|error| {
@@ -90,12 +73,8 @@ pub fn scan(exe: &Path, documents: Option<&Path>) -> Result<Vec<LaunchConfig>, I
             _ => {}
         }
         configs.push(describe(
-            ConfigKey {
-                exe: exe.clone(),
-                cfg,
-            },
+            &cfg,
             entry.file_name().to_string_lossy().into_owned(),
-            documents,
         ));
     }
     configs.sort_by(|left, right| {
@@ -112,29 +91,19 @@ pub fn scan(exe: &Path, documents: Option<&Path>) -> Result<Vec<LaunchConfig>, I
     Ok(configs)
 }
 
-pub fn describe(key: ConfigKey, code: String, documents: Option<&Path>) -> LaunchConfig {
-    let result = fs::read(&key.cfg)
-        .map_err(|error| Issue::with_detail("configRead", error))
-        .and_then(|bytes| decode(&bytes));
-    let mut config = LaunchConfig {
-        reference: ConfigRef::BuiltIn {
-            exe: key.exe.clone(),
-            code: code.clone(),
-        },
-        key,
+pub fn describe(cfg: &Path, code: String) -> BuiltIn {
+    let mut config = BuiltIn {
         code,
-        custom_id: None,
-        custom_name: None,
-        base: None,
-        file: None,
+        cfg: cfg.to_path_buf(),
         encoding: None,
         locale: None,
-        default_profile: None,
         ui_language: None,
-        is_default: false,
         error: None,
     };
-    match result {
+    match fs::read(cfg)
+        .map_err(|error| Issue::with_detail("configRead", error))
+        .and_then(|bytes| decode(&bytes))
+    {
         Ok(source) => {
             let options = parse_options(&source);
             config.encoding = options
@@ -143,9 +112,6 @@ pub fn describe(key: ConfigKey, code: String, documents: Option<&Path>) -> Launc
                 .cloned();
             config.locale = options.get("locale").cloned();
             config.ui_language = interface_language(&config.code, &source);
-            config.default_profile = options
-                .get("sasuser")
-                .and_then(|value| resolve_profile(value, documents));
             if config.encoding.is_none() {
                 config.error = Some(Issue::new("encodingUnknown"));
             }
@@ -163,57 +129,112 @@ fn split_natural_code(code: &str) -> (&str, u64) {
     (prefix, suffix.parse().unwrap_or(0))
 }
 
-pub fn describe_root_default(
-    key: &ConfigKey,
-    documents: Option<&Path>,
-) -> Result<LaunchConfig, Issue> {
-    let root_file = key.exe.parent().unwrap().join("sasv9.cfg");
-    let bytes =
-        fs::read(&root_file).map_err(|error| Issue::with_detail("rootConfigRead", error))?;
-    let source = decode(&bytes)?;
-    let options = parse_options(&source);
-    let code = key
-        .cfg
-        .parent()
-        .and_then(Path::file_name)
-        .map(|name| name.to_string_lossy().into_owned())
-        .unwrap_or_default();
-    let mut config = describe(key.clone(), code, documents);
-    if let Some(encoding) = options.get("encoding") {
-        config.encoding = Some(encoding.clone());
-    }
-    if let Some(locale) = options.get("locale") {
-        config.locale = Some(locale.clone());
-    }
-    if let Some(profile) = options
-        .get("sasuser")
-        .and_then(|value| resolve_profile(value, documents))
+pub fn inspect(exe: &Path) -> Result<Installation, Issue> {
+    let configs = scan(exe)?;
+    let exe = validate_exe(exe)?;
+    let root = exe.parent().unwrap();
+    let (default, default_error) = match fs::read(root.join("sasv9.cfg"))
+        .map_err(|error| Issue::with_detail("rootConfigRead", error))
+        .and_then(|bytes| decode(&bytes))
     {
-        config.default_profile = Some(profile);
-    }
-    config.file = Some(root_file);
-    config.is_default = true;
-    if config.encoding.is_none() {
-        config.error = Some(Issue::new("encodingUnknown"));
-    }
-    Ok(config)
+        Ok(source) => {
+            let options = parse_options(&source);
+            match options
+                .get("config")
+                .map(|value| value.trim())
+                .filter(|value| !value.is_empty())
+            {
+                Some(value) => match resolve_root_reference(root, value) {
+                    Ok(path) => match configs.iter().find(|config| {
+                        dunce::canonicalize(&config.cfg)
+                            .is_ok_and(|cfg| windows_path_eq(&cfg, &path))
+                    }) {
+                        Some(config) => (Some(config.code.clone()), None),
+                        None => (None, Some(Issue::new("defaultConfigUnavailable"))),
+                    },
+                    Err(error) => (None, Some(error)),
+                },
+                None => (None, Some(Issue::new("defaultConfigPointerMissing"))),
+            }
+        }
+        Err(error) => (None, Some(error)),
+    };
+    Ok(Installation {
+        exe,
+        configs,
+        default,
+        default_error,
+    })
 }
 
-fn resolve_profile(value: &str, documents: Option<&Path>) -> Option<PathBuf> {
-    if let Some(rest) = value.strip_prefix('?') {
-        let (folder, tail) = rest.split_once(['\\', '/']).unwrap_or((rest, ""));
-        return if folder.eq_ignore_ascii_case("FOLDERID_Documents") {
-            documents.map(|path| path.join(tail))
-        } else {
-            None
+/// `<exe dir>/nls/<code>/sasv9.cfg`, canonicalized.
+pub fn factory_cfg_for(exe: &Path, code: &str) -> Result<PathBuf, Issue> {
+    if code.is_empty()
+        || code.contains('\\')
+        || code.contains('/')
+        || code == "."
+        || code == ".."
+    {
+        return Err(Issue::with_detail("configUnavailable", code));
+    }
+    let exe = validate_exe(exe)?;
+    let cfg = exe.parent().unwrap().join("nls").join(code).join("sasv9.cfg");
+    if !cfg.is_file() {
+        return Err(Issue::with_detail("configUnavailable", code));
+    }
+    dunce::canonicalize(&cfg).map_err(|error| Issue::with_detail("configUnavailable", error))
+}
+
+/// The factory cfg the SAS root `sasv9.cfg` points at. It may live outside
+/// `nls/` (for example an installation-managed shared file).
+pub fn resolved_default_cfg(exe: &Path) -> Result<PathBuf, Issue> {
+    let exe = validate_exe(exe)?;
+    let root = exe.parent().unwrap();
+    let bytes = fs::read(root.join("sasv9.cfg"))
+        .map_err(|error| Issue::with_detail("rootConfigRead", error))?;
+    let source = decode(&bytes)?;
+    let options = parse_options(&source);
+    let value = options
+        .get("config")
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| Issue::new("defaultConfigPointerMissing"))?;
+    resolve_root_reference(root, value)
+}
+
+fn resolve_root_reference(root: &Path, value: &str) -> Result<PathBuf, Issue> {
+    let normalized = value.replace('/', "\\");
+    let path = if let Some((prefix, tail)) = normalized.split_once('\\')
+        && prefix.eq_ignore_ascii_case("!sasroot")
+    {
+        root.join(tail)
+    } else if let Some(value) = normalized.strip_prefix('!') {
+        let (variable, tail) = value.split_once('\\').unwrap_or((value, ""));
+        let base = match variable.to_ascii_uppercase().as_str() {
+            "SASROOT" => root.to_path_buf(),
+            "SAS_HOME" => root
+                .parent()
+                .and_then(Path::parent)
+                .unwrap_or(root)
+                .to_path_buf(),
+            _ => env::var_os(variable).map(PathBuf::from).ok_or_else(|| {
+                Issue::with_detail(
+                    "defaultConfigUnavailable",
+                    format!("Unknown variable !{variable}"),
+                )
+            })?,
         };
-    }
-    if let Some(rest) = value.strip_prefix('!') {
-        let (variable, tail) = rest.split_once(['\\', '/']).unwrap_or((rest, ""));
-        return Some(PathBuf::from(env::var_os(variable)?).join(tail));
-    }
-    let path = PathBuf::from(value);
-    path.is_absolute().then_some(path)
+        base.join(tail)
+    } else {
+        let path = PathBuf::from(&normalized);
+        if path.is_absolute() {
+            path
+        } else {
+            root.join(path)
+        }
+    };
+    dunce::canonicalize(&path)
+        .map_err(|error| Issue::with_detail("defaultConfigUnavailable", error))
 }
 
 fn decode(bytes: &[u8]) -> Result<String, Issue> {
@@ -313,7 +334,10 @@ fn parse_options(source: &str) -> HashMap<String, String> {
             continue;
         };
         let name = name.to_ascii_lowercase();
-        if !matches!(name.as_str(), "encoding" | "locale" | "sasuser" | "config") {
+        if !matches!(
+            name.as_str(),
+            "encoding" | "locale" | "sasuser" | "config" | "resourcesloc" | "msg"
+        ) {
             continue;
         }
         let value =
@@ -329,153 +353,6 @@ fn parse_options(source: &str) -> HashMap<String, String> {
         }
     }
     options
-}
-
-#[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProfileCandidate {
-    pub directory: PathBuf,
-    pub files: Vec<&'static str>,
-    pub keys: Vec<ConfigKey>,
-}
-
-pub struct Installation {
-    pub configs: Vec<LaunchConfig>,
-    pub default_key: Option<ConfigKey>,
-    pub default_error: Option<Issue>,
-    pub sources: Vec<ProfileCandidate>,
-}
-
-fn resolve_root_reference(root: &Path, value: &str) -> Result<PathBuf, Issue> {
-    let normalized = value.replace('/', "\\");
-    let path = if let Some((prefix, tail)) = normalized.split_once('\\')
-        && prefix.eq_ignore_ascii_case("!sasroot")
-    {
-        root.join(tail)
-    } else if let Some(value) = normalized.strip_prefix('!') {
-        let (variable, tail) = value.split_once('\\').unwrap_or((value, ""));
-        let base = match variable.to_ascii_uppercase().as_str() {
-            "SASROOT" => root.to_path_buf(),
-            "SAS_HOME" => root
-                .parent()
-                .and_then(Path::parent)
-                .unwrap_or(root)
-                .to_path_buf(),
-            _ => env::var_os(variable).map(PathBuf::from).ok_or_else(|| {
-                Issue::with_detail(
-                    "defaultConfigUnavailable",
-                    format!("Unknown variable !{variable}"),
-                )
-            })?,
-        };
-        base.join(tail)
-    } else {
-        let path = PathBuf::from(&normalized);
-        if path.is_absolute() {
-            path
-        } else {
-            root.join(path)
-        }
-    };
-    dunce::canonicalize(&path)
-        .map_err(|error| Issue::with_detail("defaultConfigUnavailable", error))
-}
-
-pub fn inspect(exe: &Path, documents: Option<&Path>) -> Result<Installation, Issue> {
-    let configs = scan(exe, documents)?;
-    let root = configs[0].key.exe.parent().unwrap();
-    let root_file = root.join("sasv9.cfg");
-    let (root_options, default_target, default_error) = match fs::read(&root_file)
-        .map_err(|error| Issue::with_detail("rootConfigRead", error))
-        .and_then(|bytes| decode(&bytes))
-    {
-        Ok(source) => {
-            let options = parse_options(&source);
-            match options
-                .get("config")
-                .filter(|value| !value.trim().is_empty())
-            {
-                Some(value) => match resolve_root_reference(root, value) {
-                    Ok(path) => (options, Some(path), None),
-                    Err(error) => (options, None, Some(error)),
-                },
-                None => (
-                    options,
-                    None,
-                    Some(Issue::new("defaultConfigPointerMissing")),
-                ),
-            }
-        }
-        Err(error) => (HashMap::new(), None, Some(error)),
-    };
-    let default_config = default_target.as_ref().and_then(|default| {
-        configs.iter().find(|config| {
-            dunce::canonicalize(&config.key.cfg).is_ok_and(|cfg| windows_path_eq(&cfg, default))
-        })
-    });
-    let default_key = default_config.map(|config| config.key.clone());
-    let default_error = if default_target.is_some() && default_key.is_none() {
-        Some(Issue::new("defaultConfigUnavailable"))
-    } else {
-        default_error
-    };
-
-    let mut sources: Vec<ProfileCandidate> = Vec::new();
-    if let Some(directory) = root_options
-        .get("sasuser")
-        .and_then(|value| resolve_profile(value, documents))
-    {
-        add_profile_candidate(&mut sources, &directory, default_key.as_ref());
-    }
-    for config in &configs {
-        if let Some(directory) = &config.default_profile {
-            add_profile_candidate(&mut sources, directory, Some(&config.key));
-        }
-    }
-    sources.sort_by_key(|source| {
-        !default_key
-            .as_ref()
-            .is_some_and(|key| source.keys.contains(key))
-    });
-    Ok(Installation {
-        configs,
-        default_key,
-        default_error,
-        sources,
-    })
-}
-
-pub fn add_profile_candidate(
-    sources: &mut Vec<ProfileCandidate>,
-    path: &Path,
-    key: Option<&ConfigKey>,
-) {
-    let Ok(directory) = dunce::canonicalize(path) else {
-        return;
-    };
-    if let Some(candidate) = sources
-        .iter_mut()
-        .find(|candidate| windows_path_eq(&candidate.directory, &directory))
-    {
-        if let Some(key) = key
-            && !candidate.keys.contains(key)
-        {
-            candidate.keys.push(key.clone());
-        }
-        return;
-    }
-    let files: Vec<_> = crate::profile::FILES
-        .iter()
-        .copied()
-        .filter(|name| directory.join(name).is_file())
-        .collect();
-    if !files.is_empty() {
-        sources.push(ProfileCandidate {
-            directory,
-            files,
-            keys: key.cloned().into_iter().collect(),
-        });
-    }
 }
 
 fn windows_path_eq(left: &Path, right: &Path) -> bool {
@@ -542,6 +419,21 @@ fn interface_language(code: &str, source: &str) -> Option<String> {
 mod tests {
     use super::*;
 
+    fn fixture(nls: &[(&str, &str)], root_cfg: Option<&str>) -> (tempfile::TempDir, PathBuf) {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = temp.path().join("sas.exe");
+        fs::write(&exe, []).unwrap();
+        for (code, source) in nls {
+            let directory = temp.path().join("nls").join(code);
+            fs::create_dir_all(&directory).unwrap();
+            fs::write(directory.join("sasv9.cfg"), source).unwrap();
+        }
+        if let Some(root_cfg) = root_cfg {
+            fs::write(temp.path().join("sasv9.cfg"), root_cfg).unwrap();
+        }
+        (temp, exe)
+    }
+
     #[test]
     fn commented_resource_locations_do_not_affect_the_sas_interface_language() {
         let config = r#"/*
@@ -565,111 +457,70 @@ mod tests {
 
     #[test]
     fn installation_scan_excludes_deployment_cfg_and_uses_numeric_locale_sort() {
-        let temp = tempfile::tempdir().unwrap();
-        let root = temp.path();
-        let exe = root.join("sas.exe");
-        fs::write(&exe, []).unwrap();
-        for code in ["aa10", "aa2"] {
-            let config = root.join("nls").join(code).join("sasv9.cfg");
-            fs::create_dir_all(config.parent().unwrap()).unwrap();
-            fs::write(config, "-ENCODING wlatin1\n-LOCALE en_US").unwrap();
-        }
-        let template = root.join("nls/aa1/sasmisc/deployment/sasv9.cfg");
-        fs::create_dir_all(template.parent().unwrap()).unwrap();
-        fs::write(template, "-ENCODING invalid\n-LOCALE zz_ZZ").unwrap();
-        fs::write(
-            root.join("sasv9.cfg"),
-            r#"-CONFIG "!SASROOT\nls\aa2\sasv9.cfg""#,
-        )
-        .unwrap();
+        let (_temp, exe) = fixture(
+            &[
+                ("aa10", "-ENCODING wlatin1\n-LOCALE en_US"),
+                ("aa2", "-ENCODING wlatin1\n-LOCALE en_US"),
+            ],
+            Some(r#"-CONFIG "!SASROOT\nls\aa2\sasv9.cfg""#),
+        );
+        let deployment = exe
+            .parent()
+            .unwrap()
+            .join("nls/aa1/sasmisc/deployment/sasv9.cfg");
+        fs::create_dir_all(deployment.parent().unwrap()).unwrap();
+        fs::write(deployment, "-ENCODING invalid\n-LOCALE zz_ZZ").unwrap();
 
-        let installation = inspect(&exe, None).unwrap();
+        let installation = inspect(&exe).unwrap();
 
         assert_eq!(installation.configs.len(), 2);
         assert_eq!(installation.configs[0].code, "aa2");
         assert_eq!(installation.configs[1].code, "aa10");
-        assert_eq!(
-            installation.default_key,
-            Some(installation.configs[0].key.clone())
-        );
+        assert_eq!(installation.default.as_deref(), Some("aa2"));
     }
 
     #[test]
     fn separates_configs_with_same_encoding_and_reports_incomplete_config() {
-        let root = tempfile::tempdir().unwrap();
-        let exe = root.path().join("sas.exe");
-        fs::write(&exe, []).unwrap();
-        for (code, source) in [
-            ("zh", "-encoding euc-cn"),
-            ("1d", "-encoding euc-cn"),
-            ("bad", "-locale zh_CN"),
-        ] {
-            let dir = root.path().join("nls").join(code);
-            fs::create_dir_all(&dir).unwrap();
-            fs::write(dir.join("sasv9.cfg"), source).unwrap();
-        }
-        let choices = scan(&exe, None).unwrap();
-        assert_eq!(choices.len(), 3);
-        assert_eq!(choices[0].code, "1d");
-        assert_eq!(choices[2].code, "zh");
-        assert_ne!(choices[0].key, choices[2].key);
-        assert_eq!(choices[0].encoding.as_deref(), Some("euc-cn"));
-        assert!(choices[1].error.is_some());
+        let (_temp, exe) = fixture(
+            &[
+                ("zh", "-encoding euc-cn"),
+                ("1d", "-encoding euc-cn"),
+                ("bad", "-locale zh_CN"),
+            ],
+            None,
+        );
+        let configs = scan(&exe).unwrap();
+        assert_eq!(configs.len(), 3);
+        assert_eq!(configs[0].code, "1d");
+        assert_eq!(configs[2].code, "zh");
+        assert_ne!(configs[0].cfg, configs[2].cfg);
+        assert_eq!(configs[0].encoding.as_deref(), Some("euc-cn"));
+        assert!(configs[1].error.is_some());
     }
 
     #[test]
-    fn discovers_one_candidate_for_shared_profile_and_distinguishes_sas_resources() {
-        let temp = tempfile::tempdir().unwrap();
-        let root = temp.path();
-        let exe = root.join("sas.exe");
-        fs::write(&exe, []).unwrap();
-        let user = root.join("User Files/9.4");
-        fs::create_dir_all(&user).unwrap();
-        fs::write(user.join("profile.sas7bcat"), b"test settings").unwrap();
-        fs::write(
-            root.join("sasv9.cfg"),
-            r#"-CONFIG "!SASROOT\nls\zh\sasv9.cfg""#,
-        )
-        .unwrap();
-        for (code, resources) in [
-            ("zh", r"!SASROOT\nls\zh\resource"),
-            ("1d", r"!SASROOT\core\resource"),
-        ] {
-            let path = root.join("nls").join(code);
-            fs::create_dir_all(&path).unwrap();
-            fs::write(path.join("sasv9.cfg"), format!(
-                "-ENCODING EUC-CN\n-LOCALE zh_CN\n-SASUSER \"?FOLDERID_Documents\\User Files\\9.4\"\n-RESOURCESLOC (\n\"{resources}\"\n)"
-            )).unwrap();
-        }
-        let result = inspect(&exe, Some(root)).unwrap();
-        assert_eq!(result.configs[0].ui_language.as_deref(), Some("en"));
-        assert_eq!(result.configs[1].ui_language.as_deref(), Some("zh-Hans"));
-        assert_eq!(result.default_key.as_ref(), Some(&result.configs[1].key));
-        assert_eq!(result.sources.len(), 1);
-        assert_eq!(result.sources[0].keys.len(), 2);
-        assert_eq!(result.sources[0].files, vec!["profile.sas7bcat"]);
-        fs::remove_file(user.join("profile.sas7bcat")).unwrap();
-        assert!(inspect(&exe, Some(root)).unwrap().sources.is_empty());
+    fn identifies_the_sas_interface_language_from_resource_locations() {
+        let (_temp, exe) = fixture(
+            &[
+                ("zh", "-ENCODING EUC-CN\n-LOCALE zh_CN\n-RESOURCESLOC \"!SASROOT\\nls\\zh\\resource\""),
+                ("1d", "-ENCODING EUC-CN\n-LOCALE zh_CN\n-RESOURCESLOC \"!SASROOT\\core\\resource\""),
+            ],
+            Some(r#"-CONFIG "!SASROOT\nls\zh\sasv9.cfg""#),
+        );
+        let installation = inspect(&exe).unwrap();
+        assert_eq!(installation.configs[0].ui_language.as_deref(), Some("en"));
+        assert_eq!(installation.configs[1].ui_language.as_deref(), Some("zh-Hans"));
+        assert_eq!(installation.default.as_deref(), Some("zh"));
     }
 
     #[test]
     fn reports_an_unresolvable_root_default_pointer_instead_of_silently_falling_back() {
-        let temp = tempfile::tempdir().unwrap();
-        let root = temp.path();
-        let exe = root.join("sas.exe");
-        fs::write(&exe, []).unwrap();
-        fs::write(
-            root.join("sasv9.cfg"),
-            r#"-CONFIG "!SASROOT\\nls\\missing\\sasv9.cfg""#,
-        )
-        .unwrap();
-        let nls = root.join("nls/en");
-        fs::create_dir_all(&nls).unwrap();
-        fs::write(nls.join("sasv9.cfg"), "-ENCODING wlatin1\n-LOCALE en_US").unwrap();
-
-        let installation = inspect(&exe, None).unwrap();
-
-        assert_eq!(installation.default_key, None);
+        let (_temp, exe) = fixture(
+            &[("en", "-ENCODING wlatin1\n-LOCALE en_US")],
+            Some(r#"-CONFIG "!SASROOT\\nls\\missing\\sasv9.cfg""#),
+        );
+        let installation = inspect(&exe).unwrap();
+        assert_eq!(installation.default, None);
         assert_eq!(
             installation.default_error.as_ref().map(|error| error.code),
             Some("defaultConfigUnavailable")
@@ -687,54 +538,55 @@ mod tests {
         fs::create_dir_all(sas_home_cfg.parent().unwrap()).unwrap();
         fs::write(&sas_root_cfg, b"fixture").unwrap();
         fs::write(&sas_home_cfg, b"fixture").unwrap();
-        let resolved_sas_home = sas_home.join("SASFoundation/9.4/nls/en/sasv9.cfg");
-        fs::create_dir_all(resolved_sas_home.parent().unwrap()).unwrap();
-        fs::write(&resolved_sas_home, b"fixture").unwrap();
         assert!(windows_path_eq(
             &resolve_root_reference(&root, r"!SASROOT\nls\zh\sasv9.cfg").unwrap(),
             &dunce::canonicalize(sas_root_cfg).unwrap()
         ));
         assert!(windows_path_eq(
-            &resolve_root_reference(&root, r"!SAS_HOME\SASFoundation\9.4\nls\en\sasv9.cfg")
-                .unwrap(),
-            &dunce::canonicalize(resolved_sas_home).unwrap()
+            &resolve_root_reference(
+                &root,
+                r"!SAS_HOME\SASFoundation\9.4\nls\en\sasv9.cfg"
+            )
+            .unwrap(),
+            &dunce::canonicalize(sas_home_cfg).unwrap()
         ));
     }
 
     #[test]
-    fn root_default_uses_root_encoding_and_locale_overrides() {
+    fn resolved_default_cfg_reads_the_root_pointer_target_outside_nls() {
         let temp = tempfile::tempdir().unwrap();
-        let root = temp.path();
-        let exe = root.join("sas.exe");
+        let exe = temp.path().join("sas.exe");
         fs::write(&exe, []).unwrap();
-        let nls = root.join("nls/en");
-        fs::create_dir_all(&nls).unwrap();
-        let nls_cfg = nls.join("sasv9.cfg");
-        fs::write(&nls_cfg, "-ENCODING wlatin1\n-LOCALE en_US").unwrap();
-        let root_cfg = root.join("sasv9.cfg");
+        let shared = temp.path().join("shared/sasv9.cfg");
+        fs::create_dir_all(shared.parent().unwrap()).unwrap();
+        fs::write(&shared, "-ENCODING wlatin1").unwrap();
         fs::write(
-            &root_cfg,
-            "-CONFIG \"!SASROOT\\nls\\en\\sasv9.cfg\"\n-ENCODING euc-cn\n-LOCALE zh_CN",
+            temp.path().join("sasv9.cfg"),
+            "-CONFIG \"!SASROOT\\shared\\sasv9.cfg\"",
         )
         .unwrap();
-        let key = ConfigKey { exe, cfg: nls_cfg };
 
-        let config = describe_root_default(&key, None).unwrap();
-
-        assert_eq!(config.cfg_path(), root_cfg);
-        assert_eq!(config.encoding.as_deref(), Some("euc-cn"));
-        assert_eq!(config.locale.as_deref(), Some("zh_CN"));
-        assert!(config.is_default);
+        assert!(windows_path_eq(
+            &resolved_default_cfg(&exe).unwrap(),
+            &dunce::canonicalize(&shared).unwrap()
+        ));
     }
 
     #[test]
-    fn resolves_documents_using_windows_known_folder() {
+    fn factory_cfg_for_requires_an_existing_nls_directory() {
+        let (_temp, exe) = fixture(&[("u8", "-ENCODING UTF-8")], None);
+        assert!(factory_cfg_for(&exe, "u8").is_ok());
         assert_eq!(
-            resolve_profile(
-                r"?FOLDERID_Documents\My SAS Files\9.4",
-                Some(Path::new(r"D:\Redirected Documents"))
-            ),
-            Some(PathBuf::from(r"D:\Redirected Documents\My SAS Files\9.4"))
+            factory_cfg_for(&exe, "missing")
+                .unwrap_err()
+                .code,
+            "configUnavailable"
+        );
+        assert_eq!(
+            factory_cfg_for(&exe, "../escape")
+                .unwrap_err()
+                .code,
+            "configUnavailable"
         );
     }
 }

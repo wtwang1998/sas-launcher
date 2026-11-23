@@ -1,7 +1,6 @@
-use crate::issue::Issue;
 use crate::{
-    discovery::{ConfigKey, LaunchConfig},
-    process::{self, ProcessIdentity, Status},
+    issue::{FailureNote, Issue},
+    process::{self, ProcessIdentity, Status as Probe},
     profile::{copy_profile, regular_directory, verify_writable},
     store::{read_json, write_json},
 };
@@ -14,64 +13,129 @@ use std::{
 };
 use uuid::Uuid;
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(tag = "state", rename_all = "camelCase")]
-enum Lifecycle {
-    Preparing,
-    Running { identity: ProcessIdentity },
-    Exited { code: Option<u32> },
+const MANIFEST: &str = "manifest.json";
+const LOG: &str = "SAS.LOG";
+const SASUSER: &str = "sasuser";
+const KEEP_EXITED: usize = 20;
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum Purpose {
+    Project { id: Option<Uuid> },
+    Setup { config: Uuid },
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum Stage {
+    Exe,
+    Cfg,
+    Profile,
+    Spawn,
+    Started,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum Status {
+    Running,
+    Exited,
+    /// A settings session that has exited and awaits save/discard.
+    Setup,
+    #[serde(rename = "cleanupPending")]
+    CleanupPending,
+    Unknown,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct Manifest {
-    id: Uuid,
-    key: ConfigKey,
-    name: String,
-    title: String,
-    template_setup: bool,
-    #[serde(default)]
-    project_id: Option<Uuid>,
-    #[serde(default)]
-    tracked_project_identity: bool,
-    args: Vec<String>,
-    lifecycle: Lifecycle,
-}
-
-#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SessionSummary {
+pub struct Record {
     pub id: Uuid,
-    pub key: ConfigKey,
     pub name: String,
     pub title: String,
-    pub profile: PathBuf,
-    pub args: Vec<String>,
-    pub template_setup: bool,
-    pub project_id: Option<Uuid>,
-    pub legacy_identity: bool,
-    pub status: &'static str,
+    pub purpose: Purpose,
+    pub stage: Stage,
+    pub status: Status,
     pub exit_code: Option<u32>,
+    /// Unix milliseconds.
+    pub started_at: i64,
+    pub argv: Vec<String>,
+    pub sasuser: PathBuf,
+    pub sasuser_writable: bool,
+    pub thin_cfg: Option<PathBuf>,
+    pub factory_cfg: PathBuf,
+    pub encoding: Option<String>,
+    pub locale: Option<String>,
+    /// Set when the launch failed before a process existed (exe/cfg/profile).
+    #[serde(default)]
+    pub failure: Option<FailureNote>,
 }
 
-pub enum Purpose {
-    Project(Option<Uuid>),
-    Template,
+pub struct LaunchRequest {
+    pub purpose: Purpose,
+    pub name: String,
+    pub cfg: PathBuf,
+    pub thin_cfg: Option<PathBuf>,
+    pub factory_cfg: PathBuf,
+    pub encoding: String,
+    pub locale: Option<String>,
+    /// Snapshot directory whose catalog files seed the new sasuser folder.
+    pub profile: Option<PathBuf>,
+    pub exe: PathBuf,
+}
+
+/// A launch that never reached `sas.exe` (missing installation or configuration).
+/// Recording it keeps the diagnostics page honest: the failing stage is visible
+/// instead of the launch silently vanishing.
+pub struct FailureRequest {
+    pub purpose: Purpose,
+    pub name: String,
+    pub stage: Stage,
+    pub failure: Issue,
+    pub factory_cfg: Option<PathBuf>,
+    pub thin_cfg: Option<PathBuf>,
+    pub encoding: Option<String>,
+    pub locale: Option<String>,
+}
+
+/// Manifest = the public record plus what is needed to detect liveness across
+/// restarts (pid + creation time).
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct Manifest {
+    #[serde(flatten)]
+    record: Record,
+    #[serde(default)]
+    identity: Option<ProcessIdentity>,
+    #[serde(default)]
+    exit_recorded: bool,
 }
 
 pub struct Sessions {
     root: PathBuf,
     children: HashMap<Uuid, Child>,
-    pub notices: Vec<Issue>,
+    cache: Vec<Record>,
+    failures: Vec<(String, String)>,
 }
 
-fn window_title(name: &str, encoding: &str) -> String {
+fn window_title(name: &str, encoding: Option<&str>) -> String {
     // SAS parses AWSTITLE from the native command line. A literal double quote
     // can end the value even when Windows argument quoting escaped it.
-    format!(
-        "{} · {}",
-        name.replace('"', "＂"),
-        encoding.to_ascii_uppercase()
-    )
+    let name = name.replace('"', "＂");
+    match encoding.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(encoding) => format!("{name} · {}", encoding.to_ascii_uppercase()),
+        None => name,
+    }
+}
+
+fn now_millis() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_millis() as i64)
+        .unwrap_or_default()
+}
+
+fn is_exited(status: Status) -> bool {
+    matches!(status, Status::Exited | Status::Setup | Status::CleanupPending)
 }
 
 impl Sessions {
@@ -79,131 +143,181 @@ impl Sessions {
         Self {
             root,
             children: HashMap::new(),
-            notices: Vec::new(),
+            cache: Vec::new(),
+            failures: Vec::new(),
         }
     }
 
-    fn directory(&self, id: Uuid) -> PathBuf {
+    pub fn directory(&self, id: Uuid) -> PathBuf {
         self.root.join(id.to_string())
     }
 
+    pub fn log_path(&self, id: Uuid) -> PathBuf {
+        self.directory(id).join(LOG)
+    }
+
+    fn data_dir(&self) -> PathBuf {
+        self.root
+            .parent()
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| self.root.clone())
+    }
+
+    fn manifest_path(&self, id: Uuid) -> PathBuf {
+        self.directory(id).join(MANIFEST)
+    }
+
     fn read_manifest(&self, id: Uuid) -> Option<Manifest> {
-        let dir = self.directory(id);
-        if !regular_directory(&self.root) || !regular_directory(&dir) {
+        let directory = self.directory(id);
+        if !regular_directory(&self.root) || !regular_directory(&directory) {
             return None;
         }
-        let manifest: Manifest = read_json(&dir.join("session.json")).ok()?;
-        (manifest.id == id).then_some(manifest)
+        let manifest: Manifest = read_json(&self.manifest_path(id)).ok()?;
+        (manifest.record.id == id).then_some(manifest)
     }
 
-    fn notice(&mut self, message: Issue) {
-        if self.notices.len() >= 8 {
-            self.notices.remove(0);
-        }
-        self.notices.push(message);
+    fn write_manifest(&self, manifest: &Manifest) -> io::Result<()> {
+        write_json(&self.manifest_path(manifest.record.id), manifest)
     }
 
-    pub fn launch(
-        &mut self,
-        config: &LaunchConfig,
-        name: String,
-        template: Option<&Path>,
-        purpose: Purpose,
-        cwd: &Path,
-    ) -> Result<SessionSummary, Issue> {
+    pub fn launch(&mut self, request: LaunchRequest) -> Result<Record, Issue> {
         if !regular_directory(&self.root) {
             return Err(Issue::new("sessionDirectory"));
         }
-        let encoding = config
-            .encoding
-            .as_deref()
-            .ok_or(Issue::new("encodingUnknown"))?;
         let id = Uuid::new_v4();
-        let dir = self.directory(id);
-        fs::create_dir(&dir).map_err(|error| Issue::with_detail("sessionCreate", error))?;
-        let profile = dir.join("sasuser");
-        let title = window_title(&name, encoding);
-        let args = process::arguments(config, &profile, &title, encoding);
-        let mut manifest = Manifest {
+        let directory = self.directory(id);
+        fs::create_dir(&directory).map_err(|error| Issue::with_detail("sessionCreate", error))?;
+        let sasuser = directory.join(SASUSER);
+        let title = window_title(&request.name, Some(&request.encoding));
+        let arguments = process::arguments(&request.cfg, &sasuser, &title, &directory);
+        let mut writable = false;
+        let mut record = Record {
             id,
-            key: config.key.clone(),
-            name,
+            name: request.name,
             title,
-            template_setup: matches!(purpose, Purpose::Template),
-            project_id: match purpose {
-                Purpose::Project(id) => id,
-                Purpose::Template => None,
-            },
-            tracked_project_identity: true,
-            args: args
+            purpose: request.purpose,
+            stage: Stage::Profile,
+            status: Status::Running,
+            exit_code: None,
+            started_at: now_millis(),
+            argv: arguments
                 .iter()
-                .map(|arg| arg.to_string_lossy().into_owned())
+                .map(|argument| argument.to_string_lossy().into_owned())
                 .collect(),
-            lifecycle: Lifecycle::Preparing,
+            sasuser: sasuser.clone(),
+            sasuser_writable: false,
+            thin_cfg: request.thin_cfg.clone(),
+            factory_cfg: request.factory_cfg.clone(),
+            encoding: Some(request.encoding.clone()),
+            locale: request.locale.clone(),
+            failure: None,
         };
-        let file = dir.join("session.json");
-        let result = (|| {
-            fs::create_dir(&profile)
+        let prepared = (|| -> Result<(), Issue> {
+            fs::create_dir(&sasuser)
                 .map_err(|error| Issue::with_detail("sessionProfileCreate", error))?;
-            verify_writable(&profile)?;
-            if let Some(template) = template {
-                copy_profile(template, &profile)?;
+            writable = verify_writable(&sasuser).is_ok();
+            if let Some(source) = request.profile.as_deref()
+                && crate::profile::has_catalog_files(source)
+            {
+                copy_profile(source, &sasuser)?;
             }
-            write_json(&file, &manifest)
-                .map_err(|error| Issue::with_detail("sessionRecord", error))?;
-            process::start(config, &args, cwd)
+            Ok(())
         })();
-        let child = match result {
+        if let Err(error) = prepared {
+            record.sasuser_writable = writable;
+            record.status = Status::Exited;
+            record.stage = Stage::Profile;
+            record.failure = Some(FailureNote::from(&error));
+            let manifest = Manifest {
+                record: record.clone(),
+                identity: None,
+                exit_recorded: true,
+            };
+            let _ = self.write_manifest(&manifest);
+            return Err(error);
+        }
+        record.sasuser_writable = writable;
+        record.stage = Stage::Spawn;
+        let manifest = Manifest {
+            record: record.clone(),
+            identity: None,
+            exit_recorded: false,
+        };
+        if let Err(error) = self.write_manifest(&manifest) {
+            let _ = fs::remove_dir_all(&directory);
+            return Err(Issue::with_detail("sessionRecord", error));
+        }
+        let child = match process::start(&request.exe, &arguments, &self.root) {
             Ok(child) => child,
             Err(error) => {
-                let _ = self.remove_run(id);
+                record.status = Status::Exited;
+                record.failure = Some(FailureNote::from(&error));
+                let manifest = Manifest {
+                    record: record.clone(),
+                    identity: None,
+                    exit_recorded: true,
+                };
+                let _ = self.write_manifest(&manifest);
                 return Err(error);
             }
         };
-        // If durable bookkeeping fails, keep the live handle. The on-disk
-        // preparation record prevents recovery from deleting a possibly live run.
+        record.stage = Stage::Started;
+        record.status = Status::Running;
+        let mut manifest = Manifest {
+            record: record.clone(),
+            identity: None,
+            exit_recorded: false,
+        };
         match ProcessIdentity::from_child(&child) {
             Ok(identity) => {
-                manifest.lifecycle = Lifecycle::Running { identity };
-                if let Err(error) = write_json(&file, &manifest) {
-                    self.notice(Issue::with_detail("sessionRecovery", error));
-                }
+                manifest.identity = Some(identity);
+                let _ = self.write_manifest(&manifest);
             }
-            Err(error) => self.notice(Issue::with_detail("sessionIdentity", error)),
+            Err(_) => {
+                let _ = self.write_manifest(&manifest);
+            }
         }
         self.children.insert(id, child);
-        Ok(self.describe(manifest, "running", None))
+        self.cache.insert(0, record.clone());
+        Ok(record)
     }
 
-    fn describe(
-        &self,
-        manifest: Manifest,
-        status: &'static str,
-        exit_code: Option<u32>,
-    ) -> SessionSummary {
-        SessionSummary {
-            id: manifest.id,
-            key: manifest.key,
-            name: manifest.name,
-            title: manifest.title,
-            profile: self.directory(manifest.id).join("sasuser"),
-            args: manifest.args,
-            template_setup: manifest.template_setup,
-            project_id: manifest.project_id,
-            legacy_identity: !manifest.tracked_project_identity,
-            status,
-            exit_code,
+    fn probe(&mut self, manifest: &Manifest) -> Option<Probe> {
+        let id = manifest.record.id;
+        let mut from_child = None;
+        if matches!(manifest.record.status, Status::Running | Status::Unknown)
+            && let Some(child) = self.children.get_mut(&id)
+        {
+            match child.try_wait() {
+                Ok(Some(exit)) => {
+                    from_child = Some(Probe::Exited(exit.code().map(|code| code as u32)))
+                }
+                Ok(None) => from_child = Some(Probe::Running),
+                Err(_) => from_child = Some(Probe::Unknown),
+            }
         }
+        if matches!(from_child, Some(Probe::Exited(_))) {
+            self.children.remove(&id);
+        }
+        if from_child.is_some() {
+            return from_child;
+        }
+        if !matches!(manifest.record.status, Status::Running | Status::Unknown) {
+            return None;
+        }
+        manifest.identity.map(ProcessIdentity::status)
     }
 
-    pub fn sweep(&mut self) -> Vec<SessionSummary> {
+    fn refresh(&mut self) {
+        let mut records = Vec::new();
         if !regular_directory(&self.root) {
-            return Vec::new();
+            self.cache.clear();
+            return;
         }
         let Ok(entries) = fs::read_dir(&self.root) else {
-            return Vec::new();
+            self.cache.clear();
+            return;
         };
-        let mut sessions = Vec::new();
         for entry in entries.flatten() {
             let Ok(id) = Uuid::parse_str(&entry.file_name().to_string_lossy()) else {
                 continue;
@@ -211,160 +325,517 @@ impl Sessions {
             let Some(mut manifest) = self.read_manifest(id) else {
                 continue;
             };
-            let status = if let Some(child) = self.children.get_mut(&id) {
-                match child.try_wait() {
-                    Ok(Some(exit)) => {
-                        self.children.remove(&id);
-                        Status::Exited(exit.code().map(|code| code as u32))
-                    }
-                    Ok(None) => Status::Running,
-                    Err(_) => Status::Unknown,
-                }
-            } else {
-                match manifest.lifecycle {
-                    Lifecycle::Preparing => Status::Unknown,
-                    Lifecycle::Running { identity } => identity.status(),
-                    Lifecycle::Exited { code } => Status::Exited(code),
-                }
-            };
-            match status {
-                Status::Running => sessions.push(self.describe(manifest, "running", None)),
-                Status::Unknown => sessions.push(self.describe(manifest, "unknown", None)),
-                Status::Exited(code) => {
-                    if !matches!(manifest.lifecycle, Lifecycle::Exited { .. }) {
-                        manifest.lifecycle = Lifecycle::Exited { code };
-                        if write_json(&self.directory(id).join("session.json"), &manifest).is_err()
-                        {
-                            sessions.push(self.describe(manifest, "unknown", None));
-                            continue;
-                        }
-                        if let Some(code) = code.filter(|code| *code != 0) {
-                            self.notice(Issue::with_detail(
-                                "sasExit",
-                                format!("{} · exit {code}", manifest.title),
-                            ));
+            let is_setup = matches!(manifest.record.purpose, Purpose::Setup { .. });
+            let mut changed = false;
+            if let Some(probe) = self.probe(&manifest) {
+                match probe {
+                    Probe::Running => {
+                        if manifest.record.status != Status::Running {
+                            manifest.record.status = Status::Running;
+                            changed = true;
                         }
                     }
-                    if manifest.template_setup {
-                        sessions.push(self.describe(manifest, "ready", code));
-                    } else if self.remove_run(id).is_err() {
-                        sessions.push(self.describe(manifest, "cleanupPending", code));
+                    Probe::Unknown => {
+                        if manifest.record.status != Status::Unknown {
+                            manifest.record.status = Status::Unknown;
+                            changed = true;
+                        }
+                    }
+                    Probe::Exited(code) => {
+                        manifest.record.status = if is_setup {
+                            Status::Setup
+                        } else {
+                            Status::Exited
+                        };
+                        if code.is_some() {
+                            manifest.record.exit_code = code;
+                        }
+                        changed = true;
+                    }
+                }
+            }
+            if is_exited(manifest.record.status) && !manifest.exit_recorded {
+                manifest.exit_recorded = true;
+                changed = true;
+                if manifest.record.exit_code != Some(0) {
+                    let encoding = manifest.record.encoding.clone().unwrap_or_default();
+                    let locale = manifest.record.locale.clone().unwrap_or_default();
+                    if !encoding.is_empty() && !locale.is_empty() {
+                        self.failures.push((encoding, locale));
+                    }
+                    if let Some(code) = manifest.record.exit_code.filter(|code| *code != 0) {
+                        manifest.record.failure = Some(FailureNote::from(
+                            &Issue::with_detail("sasExit", format!("exit {code}")),
+                        ));
+                    }
+                }
+            }
+            if changed {
+                let _ = self.write_manifest(&manifest);
+            }
+            records.push(manifest.record);
+        }
+        records.sort_by(|left, right| right.started_at.cmp(&left.started_at));
+        self.cache = records;
+    }
+
+    pub fn records(&mut self) -> Vec<Record> {
+        self.refresh();
+        self.cache.clone()
+    }
+
+    /// Records refreshed by the last `records`/`sweep` call.
+    pub fn cached(&self) -> &[Record] {
+        &self.cache
+    }
+
+    pub fn record(&self, id: Uuid) -> Option<&Record> {
+        self.cache.iter().find(|record| record.id == id)
+    }
+
+    pub fn sweep(&mut self) {
+        if !regular_directory(&self.root) {
+            return;
+        }
+        self.refresh();
+        let cached = self.cache.clone();
+        for record in cached {
+            if !is_exited(record.status) {
+                continue;
+            }
+            if matches!(record.purpose, Purpose::Setup { .. }) {
+                continue;
+            }
+            if !regular_directory(&record.sasuser) {
+                if record.status == Status::CleanupPending
+                    && let Some(mut manifest) = self.read_manifest(record.id)
+                {
+                    manifest.record.status = Status::Exited;
+                    let _ = self.write_manifest(&manifest);
+                }
+                continue;
+            }
+            if fs::remove_dir_all(&record.sasuser).is_err()
+                && let Some(mut manifest) = self.read_manifest(record.id)
+            {
+                manifest.record.status = Status::CleanupPending;
+                let _ = self.write_manifest(&manifest);
+            }
+        }
+        self.prune();
+        self.refresh();
+    }
+
+    /// Keep the newest `KEEP_EXITED` exited records; running and settings
+    /// sessions are never pruned.
+    fn prune(&mut self) {
+        let mut exited: Vec<(i64, Uuid)> = self
+            .cache
+            .iter()
+            .filter(|record| record.status == Status::Exited)
+            .filter(|record| !matches!(record.purpose, Purpose::Setup { .. }))
+            .map(|record| (record.started_at, record.id))
+            .collect();
+        if exited.len() <= KEEP_EXITED {
+            return;
+        }
+        exited.sort_by(|left, right| right.0.cmp(&left.0));
+        for (_, id) in exited.into_iter().skip(KEEP_EXITED) {
+            let _ = fs::remove_dir_all(self.directory(id));
+            self.cache.retain(|record| record.id != id);
+        }
+    }
+
+    /// Persist a launch that failed before any process existed.
+    pub fn record_failure(&mut self, request: FailureRequest) -> Record {
+        let id = Uuid::new_v4();
+        let directory = self.directory(id);
+        let _ = fs::create_dir_all(&directory);
+        let record = Record {
+            id,
+            name: request.name.clone(),
+            title: window_title(&request.name, request.encoding.as_deref()),
+            purpose: request.purpose,
+            stage: request.stage,
+            status: Status::Exited,
+            exit_code: None,
+            started_at: now_millis(),
+            argv: Vec::new(),
+            sasuser: directory.join(SASUSER),
+            sasuser_writable: false,
+            thin_cfg: request.thin_cfg,
+            factory_cfg: request.factory_cfg.unwrap_or_default(),
+            encoding: request.encoding,
+            locale: request.locale,
+            failure: Some(FailureNote::from(&request.failure)),
+        };
+        let manifest = Manifest {
+            record: record.clone(),
+            identity: None,
+            exit_recorded: true,
+        };
+        if self.write_manifest(&manifest).is_ok() {
+            self.cache.push(record.clone());
+        }
+        record
+    }
+
+    pub fn setup_session(&self, config: Uuid) -> Option<&Record> {        self.cache.iter().find(|record| {
+            matches!(record.purpose, Purpose::Setup { config: id } if id == config)
+        })
+    }
+
+    pub fn finish_setup(&mut self, config: Uuid, save: bool) -> Result<(), Issue> {
+        self.refresh();
+        let record = self
+            .setup_session(config)
+            .cloned()
+            .ok_or_else(|| Issue::new("setupMissing"))?;
+        if matches!(record.status, Status::Running | Status::Unknown) {
+            return Err(Issue::new("setupRunning"));
+        }
+        if save && record.exit_code != Some(0) {
+            return Err(Issue::new("setupFailed"));
+        }
+        let source = record.sasuser.clone();
+        if save && !regular_directory(&source) {
+            return Err(Issue::new("setupDirectory"));
+        }
+        if save {
+            let profile_root = self
+                .data_dir()
+                .join("configurations")
+                .join(config.to_string())
+                .join("profile");
+            fs::create_dir_all(&profile_root)
+                .map_err(|error| Issue::with_detail("profileCreate", error))?;
+            let revision = Uuid::new_v4();
+            let staging = profile_root.join(format!("tmp-{revision}"));
+            fs::create_dir(&staging)
+                .map_err(|error| Issue::with_detail("profileCreate", error))?;
+            if let Err(error) = copy_profile(&source, &staging) {
+                let _ = fs::remove_dir_all(&staging);
+                return Err(error);
+            }
+            let target = profile_root.join(revision.to_string());
+            if let Err(error) = fs::rename(&staging, &target) {
+                let _ = fs::remove_dir_all(&staging);
+                return Err(Issue::with_detail("profileCopy", error));
+            }
+            if let Err(error) =
+                crate::store::set_profile_revision_on_disk(&self.data_dir(), config, revision)
+            {
+                let _ = fs::remove_dir_all(&target);
+                return Err(error);
+            }
+            // Drop the replaced snapshot so repeated saves do not pile up.
+            if let Ok(entries) = fs::read_dir(&profile_root) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let stale = path.is_dir()
+                        && path != target
+                        && entry.file_name().to_string_lossy() != format!("tmp-{revision}");
+                    if stale {
+                        let _ = fs::remove_dir_all(&path);
                     }
                 }
             }
         }
-        sessions.sort_by(|left, right| left.title.cmp(&right.title).then(left.id.cmp(&right.id)));
-        sessions
-    }
-
-    pub fn finish_setup(&mut self, id: Uuid, save: bool) -> Result<(ConfigKey, PathBuf), Issue> {
-        self.sweep();
-        let manifest = self.read_manifest(id).ok_or(Issue::new("setupMissing"))?;
-        if !manifest.template_setup || !matches!(manifest.lifecycle, Lifecycle::Exited { .. }) {
-            return Err(Issue::new("setupRunning"));
-        }
-        if save && matches!(manifest.lifecycle, Lifecycle::Exited { code: Some(code) } if code != 0)
-        {
-            return Err(Issue::new("setupFailed"));
-        }
-        let profile = self.directory(id).join("sasuser");
-        if save && !regular_directory(&profile) {
-            return Err(Issue::new("setupDirectory"));
-        }
-        Ok((manifest.key, profile))
-    }
-
-    pub fn retire_setup(&mut self, id: Uuid) -> Result<(), Issue> {
-        let mut manifest = self.read_manifest(id).ok_or(Issue::new("setupMissing"))?;
-        manifest.template_setup = false;
-        write_json(&self.directory(id).join("session.json"), &manifest)
-            .map_err(|error| Issue::with_detail("setupRecord", error))?;
-        let _ = self.remove_run(id);
+        let _ = fs::remove_dir_all(&source);
+        // A finished settings session is not a launch record: drop it so the
+        // next setup request opens a fresh session.
+        let finished = record.id;
+        let _ = fs::remove_dir_all(self.directory(finished));
+        self.children.remove(&finished);
+        self.cache.retain(|record| record.id != finished);
+        self.refresh();
         Ok(())
     }
 
-    fn remove_run(&self, id: Uuid) -> io::Result<()> {
-        let directory = self.directory(id);
-        if !regular_directory(&self.root) || !regular_directory(&directory) {
-            return Err(io::Error::other("Not a managed session directory"));
+    pub fn clear(&mut self) -> Result<(), Issue> {
+        if !regular_directory(&self.root) {
+            self.cache.clear();
+            return Ok(());
         }
-        // Remove the payload first. Keep the recovery record if any SAS file
-        // is still locked, so a later sweep can retry the same directory.
-        let profile = directory.join("sasuser");
-        if profile.exists() && !regular_directory(&profile) {
-            return Err(io::Error::other("Not a regular SAS user directory"));
+        self.refresh();
+        // Running sessions own live processes and pending settings sessions own
+        // the only copy of unsaved catalogs: clearing records must not touch them.
+        let keep: Vec<Uuid> = self
+            .cache
+            .iter()
+            .filter(|record| !matches!(record.status, Status::Exited))
+            .map(|record| record.id)
+            .collect();
+        let mut failure = None;
+        if let Ok(entries) = fs::read_dir(&self.root) {
+            for entry in entries.flatten() {
+                let Ok(id) = Uuid::parse_str(&entry.file_name().to_string_lossy()) else {
+                    continue;
+                };
+                if keep.contains(&id) {
+                    continue;
+                }
+                let directory = entry.path();
+                if !regular_directory(&directory) {
+                    continue;
+                }
+                if let Err(error) = fs::remove_dir_all(&directory) {
+                    failure.get_or_insert_with(|| Issue::with_detail("sessionDirectory", error));
+                }
+            }
         }
-        match fs::remove_dir_all(profile) {
-            Err(error) if error.kind() != io::ErrorKind::NotFound => return Err(error),
-            _ => {}
+        self.children.retain(|id, _| keep.contains(id));
+        self.cache.retain(|record| keep.contains(&record.id));
+        match failure {
+            Some(issue) => Err(issue),
+            None => Ok(()),
         }
-        fs::remove_dir_all(directory)
+    }
+
+    /// Take the launch failures that were observed since the last call.
+    pub fn take_failures(&mut self) -> Vec<(String, String)> {
+        std::mem::take(&mut self.failures)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{fs::File, os::windows::fs::OpenOptionsExt};
+    use std::os::windows::fs::OpenOptionsExt;
 
-    #[test]
-    fn window_title_uppercases_only_the_encoding_suffix() {
-        for (source, display) in [
-            ("utf-8", "UTF-8"),
-            ("euc-cn", "EUC-CN"),
-            ("wLaTiN1", "WLATIN1"),
-        ] {
-            assert_eq!(
-                window_title("MixedCase 项目", source),
-                format!("MixedCase 项目 · {display}")
-            );
-        }
-    }
-
-    #[test]
-    fn title_uses_safe_quotes_without_changing_the_saved_project_name() {
-        assert_eq!(window_title("项目 \"A\"", "UTF-8"), "项目 ＂A＂ · UTF-8",);
-    }
-    #[test]
-    fn cleanup_keeps_unknown_run_and_retries_locked_exited_run() {
-        let temp = tempfile::tempdir().unwrap();
-        let mut sessions = Sessions::new(temp.path().to_path_buf());
-        let id = Uuid::new_v4();
-        let dir = sessions.directory(id);
-        let profile = dir.join("sasuser");
-        fs::create_dir_all(&profile).unwrap();
-        let file = dir.join("session.json");
-        let mut manifest = Manifest {
+    fn test_manifest(
+        root: &Path,
+        id: Uuid,
+        purpose: Purpose,
+        status: Status,
+        started_at: i64,
+    ) -> Manifest {
+        let directory = root.join(id.to_string());
+        fs::create_dir_all(&directory).unwrap();
+        let record = Record {
             id,
-            key: ConfigKey {
-                exe: "sas.exe".into(),
-                cfg: "cfg".into(),
-            },
-            name: "项目".into(),
-            title: "项目 · UTF-8".into(),
-            template_setup: false,
-            project_id: None,
-            tracked_project_identity: false,
-            args: vec![],
-            lifecycle: Lifecycle::Preparing,
+            name: format!("session-{started_at}"),
+            title: format!("session-{started_at}"),
+            purpose,
+            stage: Stage::Started,
+            status,
+            exit_code: Some(0),
+            started_at,
+            argv: Vec::new(),
+            sasuser: directory.join("sasuser"),
+            sasuser_writable: true,
+            thin_cfg: None,
+            factory_cfg: PathBuf::from(r"C:\SAS\sasv9.cfg"),
+            encoding: Some("utf-8".into()),
+            locale: Some("zh_CN".into()),
+            failure: None,
         };
-        write_json(&file, &manifest).unwrap();
-        assert_eq!(sessions.sweep()[0].status, "unknown");
-        assert!(profile.exists());
+        let manifest = Manifest {
+            record,
+            identity: None,
+            exit_recorded: true,
+        };
+        write_json(&directory.join("manifest.json"), &manifest).unwrap();
+        manifest
+    }
 
-        manifest.lifecycle = Lifecycle::Exited { code: Some(0) };
-        write_json(&file, &manifest).unwrap();
-        let catalog = profile.join("regstry.sas7bitm");
-        fs::write(&catalog, b"settings").unwrap();
-        let lock = File::options()
+    #[test]
+    fn saving_requires_the_setup_session_to_exit() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("v4/sessions");
+        fs::create_dir_all(&root).unwrap();
+        let config = Uuid::new_v4();
+        let id = Uuid::new_v4();
+        let mut manifest = test_manifest(
+            &root,
+            id,
+            Purpose::Setup { config },
+            Status::Running,
+            1,
+        );
+        manifest.record.exit_code = None;
+        write_json(&root.join(id.to_string()).join("manifest.json"), &manifest).unwrap();
+        let mut sessions = Sessions::new(root);
+
+        assert_eq!(
+            sessions.finish_setup(config, true).unwrap_err().code,
+            "setupRunning"
+        );
+        assert_eq!(
+            sessions.finish_setup(config, false).unwrap_err().code,
+            "setupRunning"
+        );
+        assert!(sessions.setup_session(config).is_some());
+
+        // Once the process has exited the decision is allowed.
+        manifest.record.status = Status::Setup;
+        manifest.record.exit_code = Some(3);
+        write_json(
+            &sessions.directory(id).join("manifest.json"),
+            &manifest,
+        )
+        .unwrap();
+        assert_eq!(
+            sessions.finish_setup(config, true).unwrap_err().code,
+            "setupFailed"
+        );
+    }
+
+    #[test]
+    fn failed_snapshot_keeps_the_previous_profile_revision() {
+        let temp = tempfile::tempdir().unwrap();
+        let data = temp.path().join("v4");
+        let root = data.join("sessions");
+        fs::create_dir_all(&root).unwrap();
+        let config = Uuid::new_v4();
+        let previous = Uuid::new_v4();
+        let configuration_dir = data.join("configurations").join(config.to_string());
+        let previous_dir = configuration_dir.join("profile").join(previous.to_string());
+        fs::create_dir_all(&previous_dir).unwrap();
+        fs::write(previous_dir.join("profile.sas7bcat"), b"original").unwrap();
+        let configuration = crate::store::UserConfig {
+            id: config,
+            name: "Mine".into(),
+            base: crate::store::ConfigBase::Default,
+            encoding: "utf-8".into(),
+            locale: "zh_CN".into(),
+            revision: Uuid::new_v4(),
+            profile_revision: Some(previous),
+            factory: PathBuf::from(r"C:\SAS\nls\u8\sasv9.cfg"),
+        };
+        write_json(
+            &data.join("configurations.json"),
+            &vec![configuration],
+        )
+        .unwrap();
+
+        let id = Uuid::new_v4();
+        let manifest = test_manifest(&root, id, Purpose::Setup { config }, Status::Setup, 1);
+        let sasuser = manifest.record.sasuser.clone();
+        fs::create_dir_all(&sasuser).unwrap();
+        for name in crate::profile::FILES {
+            fs::write(sasuser.join(name), b"settings").unwrap();
+        }
+        let locked_path = sasuser.join("regstry.sas7bitm");
+        let locked = std::fs::File::options()
             .read(true)
-            .share_mode(1)
-            .open(&catalog)
+            .share_mode(0)
+            .open(&locked_path)
             .unwrap();
-        assert_eq!(sessions.sweep()[0].status, "cleanupPending");
-        assert!(file.exists());
-        drop(lock);
-        assert!(sessions.sweep().is_empty());
-        assert!(!dir.exists());
+        let mut sessions = Sessions::new(root);
+
+        let error = sessions.finish_setup(config, true).unwrap_err();
+        assert_eq!(error.code, "profileLocked");
+
+        // The old revision and its files are untouched.
+        let stored: Vec<crate::store::UserConfig> =
+            read_json(&data.join("configurations.json")).unwrap();
+        assert_eq!(stored[0].profile_revision, Some(previous));
+        assert_eq!(
+            fs::read(previous_dir.join("profile.sas7bcat")).unwrap(),
+            b"original"
+        );
+        assert!(sasuser.exists());
+        assert_eq!(
+            fs::read_dir(configuration_dir.join("profile"))
+                .unwrap()
+                .flatten()
+                .count(),
+            1
+        );
+        drop(locked);
+        sessions.finish_setup(config, true).unwrap();
+        let stored: Vec<crate::store::UserConfig> =
+            read_json(&data.join("configurations.json")).unwrap();
+        assert_ne!(stored[0].profile_revision, Some(previous));
+        assert!(stored[0].profile_revision.is_some());
+    }
+
+    #[test]
+    fn clear_keeps_pending_setup_records_that_hold_unsaved_catalogs() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("v4/sessions");
+        fs::create_dir_all(&root).unwrap();
+        let exited = Uuid::new_v4();
+        test_manifest(&root, exited, Purpose::Project { id: None }, Status::Exited, 10);
+        let setup = Uuid::new_v4();
+        test_manifest(
+            &root,
+            setup,
+            Purpose::Setup {
+                config: Uuid::new_v4(),
+            },
+            Status::Setup,
+            20,
+        );
+
+        let mut sessions = Sessions::new(root.clone());
+        sessions.clear().unwrap();
+
+        let remaining: Vec<Uuid> = fs::read_dir(&root)
+            .unwrap()
+            .flatten()
+            .map(|entry| Uuid::parse_str(&entry.file_name().to_string_lossy()).unwrap())
+            .collect();
+        assert!(!remaining.contains(&exited), "exited records are cleared");
+        assert!(
+            remaining.contains(&setup),
+            "a settings session awaiting save keeps the only copy of its catalogs"
+        );
+    }
+
+    #[test]
+    fn prune_keeps_twenty_newest_exited_and_all_running() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("v4/sessions");
+        fs::create_dir_all(&root).unwrap();
+        let mut exited = Vec::new();
+        for index in 0..25 {
+            let id = Uuid::new_v4();
+            test_manifest(&root, id, Purpose::Project { id: None }, Status::Exited, index);
+            exited.push((index, id));
+        }
+        let mut running = Vec::new();
+        for index in 0..3 {
+            let id = Uuid::new_v4();
+            test_manifest(
+                &root,
+                id,
+                Purpose::Project { id: None },
+                Status::Running,
+                1_000 + index,
+            );
+            running.push(id);
+        }
+        let setup_id = Uuid::new_v4();
+        let setup_config = Uuid::new_v4();
+        test_manifest(
+            &root,
+            setup_id,
+            Purpose::Setup { config: setup_config },
+            Status::Setup,
+            2_000,
+        );
+
+        let mut sessions = Sessions::new(root.clone());
+        sessions.sweep();
+
+        let remaining: Vec<Uuid> = fs::read_dir(&root)
+            .unwrap()
+            .flatten()
+            .map(|entry| Uuid::parse_str(&entry.file_name().to_string_lossy()).unwrap())
+            .collect();
+        assert_eq!(remaining.len(), KEEP_EXITED + 3 + 1);
+        for (index, id) in &exited {
+            if *index >= 5 {
+                assert!(remaining.contains(id), "kept newest exited {index}");
+            } else {
+                assert!(!remaining.contains(id), "pruned old exited {index}");
+            }
+        }
+        for id in &running {
+            assert!(remaining.contains(id), "running sessions are never pruned");
+        }
+        assert!(remaining.contains(&setup_id));
     }
 }

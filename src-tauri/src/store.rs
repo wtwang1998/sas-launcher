@@ -1,21 +1,44 @@
-use crate::issue::Issue;
 use crate::{
-    discovery::{ConfigKey, ConfigRef},
+    configuration,
+    issue::Issue,
     language::LanguagePreference,
     profile::{copy_profile, regular_directory},
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{
     fs::{self, File},
-    io::{self, Write},
-    os::windows::fs::MetadataExt,
+    io,
     path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
 };
-use tempfile::{Builder, NamedTempFile};
+use tempfile::NamedTempFile;
 use uuid::Uuid;
 
+/// Legacy entries that are archived once into `<root>/_old-<YYYYMMDD>/`.
+const LEGACY: &[&str] = &[
+    "v3",
+    "settings.json",
+    "sessions",
+    "configurations",
+    "templates",
+];
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum ConfigRef {
+    BuiltIn { code: String },
+    User { id: Uuid },
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum ConfigBase {
+    Default,
+    BuiltIn { code: String },
+    User { id: Uuid },
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Project {
     pub id: Uuid,
     pub name: String,
@@ -25,52 +48,55 @@ pub struct Project {
     pub config: Option<ConfigRef>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
-pub enum TemplateSource {
-    #[default]
-    Existing,
-    Factory,
-    Imported {
-        directory: PathBuf,
-    },
-    Customized,
-}
-
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct Template {
-    key: ConfigKey,
-    revision: Option<Uuid>,
-    #[serde(default)]
-    source: TemplateSource,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ManagedConfig {
+pub struct UserConfig {
     pub id: Uuid,
     pub name: String,
-    pub base: ConfigKey,
-    #[serde(default)]
-    pub encoding: Option<String>,
-    #[serde(default)]
-    pub locale: Option<String>,
+    pub base: ConfigBase,
+    pub encoding: String,
+    pub locale: String,
     pub revision: Uuid,
-    pub number: u32,
+    #[serde(default)]
+    pub profile_revision: Option<Uuid>,
+    /// The factory cfg this thin cfg points at.
+    #[serde(default)]
+    pub factory: PathBuf,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Preset {
+    pub encoding: String,
+    pub locale: String,
+    pub ok: bool,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Settings {
     pub exe: Option<PathBuf>,
-    pub projects: Vec<Project>,
-    templates: Vec<Template>,
     pub language: LanguagePreference,
+    pub presets: Vec<Preset>,
 }
 
 pub struct Store {
+    /// Application data root (`%LOCALAPPDATA%\com.saslauncher.desktop`).
     pub root: PathBuf,
+    archived: Option<PathBuf>,
+    archive_skipped: Vec<String>,
     pub settings: Settings,
-    configurations: Vec<ManagedConfig>,
+    projects: Vec<Project>,
+    configurations: Vec<UserConfig>,
+}
+
+pub struct CreateConfiguration {
+    pub name: String,
+    pub base: ConfigBase,
+    pub factory: PathBuf,
+    pub encoding: String,
+    pub locale: String,
+    /// Optional snapshot directory (the four catalog files) to copy into the
+    /// new configuration.
+    pub profile: Option<PathBuf>,
 }
 
 pub fn read_json<T: DeserializeOwned>(path: &Path) -> io::Result<T> {
@@ -78,12 +104,81 @@ pub fn read_json<T: DeserializeOwned>(path: &Path) -> io::Result<T> {
     Ok(serde_json::from_reader(io::BufReader::new(file))?)
 }
 
-pub fn write_json(path: &Path, value: &impl Serialize) -> io::Result<()> {
+/// Write JSON through a temp file in the same directory so a crash or a locked
+/// target never leaves a truncated file behind.
+pub fn write_json(path: &Path, value: &(impl Serialize + ?Sized)) -> io::Result<()> {
     let mut tmp = NamedTempFile::new_in(path.parent().unwrap())?;
     serde_json::to_writer_pretty(&mut tmp, value)?;
     tmp.as_file().sync_all()?;
     tmp.persist(path)?;
     Ok(())
+}
+
+fn read_or_default<T: DeserializeOwned + Default>(path: &Path) -> Result<T, Issue> {
+    match read_json(path) {
+        Ok(value) => Ok(value),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(T::default()),
+        Err(error) => Err(Issue::with_detail("settingsRead", error)),
+    }
+}
+
+fn today_stamp() -> String {
+    let seconds = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_secs())
+        .unwrap_or_default();
+    let (year, month, day) = civil_from_days((seconds / 86_400) as i64);
+    format!("{year:04}{month:02}{day:02}")
+}
+
+/// Howard Hinnant's days-from-civil inverse, so the archive folder does not
+/// need a date-time dependency.
+fn civil_from_days(days: i64) -> (i64, u32, u32) {
+    let z = days + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let day_of_era = (z - era * 146_097) as u64;
+    let year_of_era =
+        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
+    let year = year_of_era as i64 + era * 400;
+    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
+    let month_part = (5 * day_of_year + 2) / 153;
+    let day = (day_of_year - (153 * month_part + 2) / 5 + 1) as u32;
+    let month = if month_part < 10 {
+        month_part + 3
+    } else {
+        month_part - 9
+    } as u32;
+    (if month <= 2 { year + 1 } else { year }, month, day)
+}
+
+fn archive_legacy(root: &Path) -> Option<(PathBuf, Vec<String>)> {
+    let present: Vec<&str> = LEGACY
+        .iter()
+        .copied()
+        .filter(|name| root.join(name).exists())
+        .collect();
+    if present.is_empty() {
+        return None;
+    }
+    // Never rename `root` itself: it also holds EBWebView/ (the WebView2 user
+    // data directory) and renaming it while running breaks this process.
+    let destination = root.join(format!("_old-{}", today_stamp()));
+    if fs::create_dir_all(&destination).is_err() {
+        return None;
+    }
+    let mut skipped = Vec::new();
+    for name in present {
+        let from = root.join(name);
+        let to = destination.join(name);
+        if to.exists() {
+            // Already archived earlier today.
+            continue;
+        }
+        if fs::rename(&from, &to).is_err() {
+            skipped.push(name.to_owned());
+        }
+    }
+    Some((destination, skipped))
 }
 
 impl Store {
@@ -92,655 +187,404 @@ impl Store {
         if !regular_directory(&root) {
             return Err(Issue::new("dataReparse"));
         }
-        for folder in ["templates", "sessions", "configurations"] {
-            let path = root.join(folder);
+        let data = root.join("v4");
+        let mut archived = None;
+        let mut archive_skipped = Vec::new();
+        if !data.exists()
+            && let Some((directory, skipped)) = archive_legacy(&root)
+        {
+            archived = Some(directory);
+            archive_skipped = skipped;
+        }
+        for folder in ["configurations", "sessions"] {
+            let path = data.join(folder);
             fs::create_dir_all(&path).map_err(|error| Issue::with_detail("dataCreate", error))?;
             if !regular_directory(&path) {
                 return Err(Issue::new("dataReparse"));
             }
         }
-        let settings = match read_json(&root.join("settings.json")) {
-            Ok(settings) => settings,
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Settings::default(),
-            Err(error) => return Err(Issue::with_detail("settingsRead", error)),
-        };
-        let configurations = match read_json(&root.join("configurations.json")) {
-            Ok(configurations) => configurations,
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Vec::new(),
-            Err(error) => return Err(Issue::with_detail("settingsRead", error)),
-        };
+        if !regular_directory(&data) {
+            return Err(Issue::new("dataReparse"));
+        }
+        let settings = read_or_default(&data.join("settings.json"))?;
+        let projects = read_or_default(&data.join("projects.json"))?;
+        let configurations = read_or_default(&data.join("configurations.json"))?;
         Ok(Self {
             root,
+            archived,
+            archive_skipped,
             settings,
+            projects,
             configurations,
         })
+    }
+
+    /// `<root>/v4`: all business data lives here.
+    pub fn data_dir(&self) -> PathBuf {
+        self.root.join("v4")
+    }
+
+    pub fn archived(&self) -> Option<&Path> {
+        self.archived.as_deref()
+    }
+
+    #[allow(dead_code)]
+    pub fn archive_skipped(&self) -> &[String] {
+        &self.archive_skipped
+    }
+
+    pub fn sessions_dir(&self) -> PathBuf {
+        self.data_dir().join("sessions")
+    }
+
+    pub fn configurations_dir(&self) -> PathBuf {
+        self.data_dir().join("configurations")
+    }
+
+    pub fn configuration_dir(&self, id: Uuid) -> PathBuf {
+        self.configurations_dir().join(id.to_string())
+    }
+
+    pub fn revision_dir(&self, id: Uuid, revision: Uuid) -> PathBuf {
+        self.configuration_dir(id).join(revision.to_string())
+    }
+
+    pub fn thin_cfg_path(&self, config: &UserConfig) -> PathBuf {
+        self.revision_dir(config.id, config.revision)
+            .join("sasv9.cfg")
+    }
+
+    pub fn profile_dir(&self, id: Uuid, revision: Uuid) -> PathBuf {
+        self.configuration_dir(id)
+            .join("profile")
+            .join(revision.to_string())
+    }
+
+    pub fn profile_revision_dir(&self, config: &UserConfig) -> Option<PathBuf> {
+        config
+            .profile_revision
+            .map(|revision| self.profile_dir(config.id, revision))
+    }
+
+    pub fn configurations(&self) -> &[UserConfig] {
+        &self.configurations
+    }
+
+    pub fn configuration(&self, id: Uuid) -> Option<&UserConfig> {
+        self.configurations.iter().find(|config| config.id == id)
+    }
+
+    pub fn projects(&self) -> &[Project] {
+        &self.projects
+    }
+
+    fn settings_path(&self) -> PathBuf {
+        self.data_dir().join("settings.json")
+    }
+
+    fn projects_path(&self) -> PathBuf {
+        self.data_dir().join("projects.json")
+    }
+
+    fn configurations_path(&self) -> PathBuf {
+        self.data_dir().join("configurations.json")
+    }
+
+    pub fn reload(&mut self) -> Result<(), Issue> {
+        self.settings = read_or_default(&self.settings_path())?;
+        self.projects = read_or_default(&self.projects_path())?;
+        self.configurations = read_or_default(&self.configurations_path())?;
+        Ok(())
     }
 
     pub fn update(&mut self, edit: impl FnOnce(&mut Settings)) -> Result<(), Issue> {
         let mut next = self.settings.clone();
         edit(&mut next);
-        write_json(&self.root.join("settings.json"), &next)
+        write_json(&self.settings_path(), &next)
             .map_err(|error| Issue::with_detail("settingsWrite", error))?;
         self.settings = next;
         Ok(())
     }
 
-    pub fn configuration_key(&self, config: &ManagedConfig) -> ConfigKey {
-        ConfigKey {
-            exe: config.base.exe.clone(),
-            cfg: self.configuration_directory(config.id).join("sasv9.cfg"),
+    pub fn save_project(&mut self, project: Project) -> Result<(), Issue> {
+        let mut next = self.projects.clone();
+        match next.iter_mut().find(|item| item.id == project.id) {
+            Some(existing) => *existing = project,
+            None => next.push(project),
+        }
+        write_json(&self.projects_path(), &next)
+            .map_err(|error| Issue::with_detail("settingsWrite", error))?;
+        self.projects = next;
+        Ok(())
+    }
+
+    pub fn delete_project(&mut self, id: Uuid) -> Result<(), Issue> {
+        let mut next = self.projects.clone();
+        next.retain(|project| project.id != id);
+        write_json(&self.projects_path(), &next)
+            .map_err(|error| Issue::with_detail("settingsWrite", error))?;
+        self.projects = next;
+        Ok(())
+    }
+
+    fn write_configurations(&self, next: &[UserConfig]) -> Result<(), Issue> {
+        write_json(&self.configurations_path(), next)
+            .map_err(|error| Issue::with_detail("settingsWrite", error))
+    }
+
+    fn write_thin(&self, id: Uuid, revision: Uuid, request: &CreateConfiguration) -> Result<(), Issue> {
+        let directory = self.revision_dir(id, revision);
+        fs::create_dir_all(&directory).map_err(|error| Issue::with_detail("dataCreate", error))?;
+        if !regular_directory(&directory) {
+            return Err(Issue::new("dataReparse"));
+        }
+        configuration::write_thin_cfg(
+            &directory.join("sasv9.cfg"),
+            &request.factory,
+            &request.encoding,
+            &request.locale,
+        )
+    }
+
+    /// Create the thin cfg directory tree and commit the metadata. Any failure
+    /// removes the partially created folder so no half-written configuration
+    /// is left behind.
+    pub fn create_configuration(&mut self, request: CreateConfiguration) -> Result<Uuid, Issue> {
+        let id = Uuid::new_v4();
+        let revision = Uuid::new_v4();
+        let directory = self.configuration_dir(id);
+        let result = (|| -> Result<(), Issue> {
+            self.write_thin(id, revision, &request)?;
+            let mut profile_revision = None;
+            if let Some(source) = request.profile.as_deref()
+                && crate::profile::has_catalog_files(source)
+            {
+                let profile_parent = directory.join("profile");
+                fs::create_dir_all(&profile_parent)
+                    .map_err(|error| Issue::with_detail("profileCreate", error))?;
+                let staged = Uuid::new_v4();
+                let staging = profile_parent.join(format!("tmp-{staged}"));
+                fs::create_dir(&staging)
+                    .map_err(|error| Issue::with_detail("profileCreate", error))?;
+                if let Err(error) = copy_profile(source, &staging) {
+                    let _ = fs::remove_dir_all(&staging);
+                    return Err(error);
+                }
+                let target = profile_parent.join(staged.to_string());
+                fs::rename(&staging, &target)
+                    .map_err(|error| Issue::with_detail("profileCopy", error))?;
+                profile_revision = Some(staged);
+            }
+            let config = UserConfig {
+                id,
+                name: request.name.clone(),
+                base: request.base.clone(),
+                encoding: request.encoding.trim().to_owned(),
+                locale: request.locale.trim().to_owned(),
+                revision,
+                profile_revision,
+                factory: request.factory.clone(),
+            };
+            let mut next = self.configurations.clone();
+            next.push(config);
+            self.write_configurations(&next)?;
+            self.configurations = next;
+            Ok(())
+        })();
+        match result {
+            Ok(()) => Ok(id),
+            Err(error) => {
+                let _ = fs::remove_dir_all(&directory);
+                Err(error)
+            }
         }
     }
 
-    pub fn configurations(&self) -> &[ManagedConfig] {
-        &self.configurations
-    }
-
-    fn configuration_directory(&self, id: Uuid) -> PathBuf {
-        self.root.join("configurations").join(id.to_string())
-    }
-
-    pub fn configuration_file(&self, config: &ManagedConfig) -> PathBuf {
-        self.configuration_directory(config.id)
-            .join(config.revision.to_string())
-            .join("sasv9.cfg")
-    }
-
-    pub fn config_directory_available(&self, config: &ManagedConfig) -> bool {
-        regular_directory(&self.configuration_directory(config.id))
-            && self
-                .configuration_file(config)
-                .parent()
-                .is_some_and(regular_directory)
-    }
-
-    pub fn configuration_file_available(&self, config: &ManagedConfig) -> bool {
-        self.config_directory_available(config)
-            && fs::symlink_metadata(self.configuration_file(config))
-                .is_ok_and(|metadata| metadata.is_file() && metadata.file_attributes() & 0x400 == 0)
-    }
-
-    pub fn create_config_revision(&self, config: &ManagedConfig) -> Result<(), Issue> {
-        let file = self.configuration_file(config);
-        let dir = self.configuration_directory(config.id);
-        let copy = || -> io::Result<()> {
-            if !dir.exists() {
-                fs::create_dir(&dir)?;
-            }
-            if !regular_directory(&dir) {
-                return Err(io::Error::other("Invalid managed configuration directory"));
-            }
-            let mut contents = fs::read(&config.base.cfg)?;
-            append_overrides(
-                &mut contents,
-                config.encoding.as_deref(),
-                config.locale.as_deref(),
-            );
-            let revision = file.parent().unwrap();
-            fs::create_dir(revision)?;
-            let result = File::create_new(&file).and_then(|mut output| {
-                output.write_all(&contents)?;
-                output.sync_all()
-            });
-            if result.is_err() {
-                self.remove_config_revision(config);
-            }
-            result
-        };
-        copy().map_err(|error| Issue::with_detail("configurationWrite", error))
-    }
-
-    pub fn remove_config_revision(&self, config: &ManagedConfig) {
-        if self.config_directory_available(config) {
-            let file = self.configuration_file(config);
-            let _ = fs::remove_file(&file);
-            let _ = fs::remove_dir(file.parent().unwrap());
-            let _ = fs::remove_dir(self.configuration_directory(config.id));
-        }
-    }
-
+    /// Rotate the thin cfg revision and then commit the metadata. A metadata
+    /// failure keeps the previous revision on disk and in configurations.json.
     pub fn update_configuration(
         &mut self,
-        next: ManagedConfig,
-        previous: Option<&ManagedConfig>,
-        replace_file: bool,
+        id: Uuid,
+        encoding: &str,
+        locale: &str,
     ) -> Result<(), Issue> {
-        if replace_file {
-            self.create_config_revision(&next)?;
-        }
-        let key = self.configuration_key(&next);
-        let old_template = replace_file.then(|| self.template_path(&key)).flatten();
-        let mut configurations = self.configurations.clone();
-        configurations.retain(|item| item.id != next.id);
-        configurations.push(next.clone());
-        let config_path = self.root.join("configurations.json");
-        if let Err(error) = write_json(&config_path, &configurations) {
-            if replace_file {
-                self.remove_config_revision(&next);
-            }
-            return Err(Issue::with_detail("settingsWrite", error));
-        }
-        let result = self.update(|settings| {
-            if previous.is_some() && replace_file {
-                settings.templates.retain(|item| item.key != key);
-            }
-        });
-        if let Err(error) = result {
-            write_json(&config_path, &self.configurations)
-                .map_err(|rollback| Issue::with_detail("settingsWrite", rollback))?;
-            if replace_file {
-                self.remove_config_revision(&next);
-            }
-            return Err(error);
-        }
-        self.configurations = configurations;
-        if replace_file && let Some(previous) = previous {
-            self.remove_config_revision(previous);
-        }
-        if let Some(path) = old_template {
-            let _ = fs::remove_dir_all(path);
-        }
-        Ok(())
-    }
-
-    pub fn delete_configuration(&mut self, config: &ManagedConfig) -> Result<(), Issue> {
-        let key = self.configuration_key(config);
-        let previous = self.template_path(&key);
-        let old_settings = self.settings.clone();
-        let mut configurations = self.configurations.clone();
-        configurations.retain(|item| item.id != config.id);
-        let result = self.update(|settings| settings.templates.retain(|item| item.key != key));
-        if let Err(error) = result {
-            return Err(error);
-        }
-        if let Err(error) = write_json(&self.root.join("configurations.json"), &configurations) {
-            write_json(&self.root.join("settings.json"), &old_settings)
-                .map_err(|rollback| Issue::with_detail("settingsWrite", rollback))?;
-            self.settings = old_settings;
-            return Err(Issue::with_detail("settingsWrite", error));
-        }
-        self.configurations = configurations;
-        self.remove_config_revision(config);
-        if let Some(path) = previous {
-            let _ = fs::remove_dir_all(path);
-        }
-        Ok(())
-    }
-
-    pub fn rollback_configuration_creation(&mut self, id: Uuid) -> Result<(), Issue> {
-        let config = self
+        let index = self
             .configurations
             .iter()
-            .find(|config| config.id == id)
-            .cloned();
-        if let Some(config) = config {
-            self.delete_configuration(&config)?;
-        }
-        Ok(())
-    }
-
-    fn template_root(&self) -> PathBuf {
-        self.root.join("templates")
-    }
-
-    pub fn template_path(&self, key: &ConfigKey) -> Option<PathBuf> {
-        let template = self
-            .settings
-            .templates
-            .iter()
-            .find(|template| &template.key == key)?;
-        let root = self.template_root();
-        let revision = root.join(template.revision?.to_string());
-        (regular_directory(&root) && regular_directory(&revision)).then_some(revision)
-    }
-
-    pub fn template_source(&self, key: &ConfigKey) -> Option<TemplateSource> {
-        let template = self
-            .settings
-            .templates
-            .iter()
-            .find(|template| &template.key == key)?;
-        if matches!(template.source, TemplateSource::Factory) || self.template_path(key).is_some() {
-            return Some(template.source.clone());
-        }
-        None
-    }
-
-    pub fn use_factory(&mut self, key: ConfigKey) -> Result<(), Issue> {
-        let previous = self.template_path(&key);
-        self.update(|settings| {
-            settings.templates.retain(|item| item.key != key);
-            settings.templates.push(Template {
-                key,
-                revision: None,
-                source: TemplateSource::Factory,
-            });
-        })?;
-        if let Some(old) = previous {
-            let _ = fs::remove_dir_all(old);
-        }
-        Ok(())
-    }
-
-    pub fn install_template(
-        &mut self,
-        key: ConfigKey,
-        directory: &Path,
-        source: TemplateSource,
-    ) -> Result<(), Issue> {
-        let root = self.template_root();
-        if !regular_directory(&root) {
-            return Err(Issue::new("templateDirectory"));
-        }
-        let staging = Builder::new()
-            .prefix("prepare-")
-            .tempdir_in(&root)
-            .map_err(|error| Issue::with_detail("templateStage", error))?;
-        copy_profile(directory, staging.path())?;
+            .position(|config| config.id == id)
+            .ok_or_else(|| Issue::new("managedConfigurationMissing"))?;
+        let current = self.configurations[index].clone();
         let revision = Uuid::new_v4();
-        let target = root.join(revision.to_string());
-        let previous = self.template_path(&key);
-        fs::rename(staging.path(), &target)
-            .map_err(|error| Issue::with_detail("templateWrite", error))?;
-        if let Err(error) = self.update(|settings| {
-            settings.templates.retain(|template| template.key != key);
-            settings.templates.push(Template {
-                key,
-                revision: Some(revision),
-                source,
-            });
-        }) {
-            let _ = fs::remove_dir_all(target);
+        let factory = current.factory.clone();
+        let request = CreateConfiguration {
+            name: current.name.clone(),
+            base: current.base.clone(),
+            factory,
+            encoding: encoding.trim().to_owned(),
+            locale: locale.trim().to_owned(),
+            profile: None,
+        };
+        if let Err(error) = self.write_thin(id, revision, &request) {
+            let _ = fs::remove_dir_all(self.revision_dir(id, revision));
             return Err(error);
         }
-        if let Some(old) = previous {
-            let _ = fs::remove_dir_all(old);
+        let mut next = self.configurations.clone();
+        next[index].revision = revision;
+        next[index].encoding = request.encoding;
+        next[index].locale = request.locale;
+        if let Err(error) = self.write_configurations(&next) {
+            let _ = fs::remove_dir_all(self.revision_dir(id, revision));
+            return Err(error);
         }
+        self.configurations = next;
+        let previous = self.revision_dir(id, current.revision);
+        if previous != self.revision_dir(id, revision) {
+            let _ = fs::remove_dir_all(previous);
+        }
+        Ok(())
+    }
+
+    pub fn delete_configuration(&mut self, id: Uuid) -> Result<(), Issue> {
+        if self.configuration(id).is_none() {
+            return Err(Issue::new("managedConfigurationMissing"));
+        }
+        let mut next = self.configurations.clone();
+        next.retain(|config| config.id != id);
+        self.write_configurations(&next)?;
+        self.configurations = next;
+        // Best effort: the metadata is already gone.
+        let _ = fs::remove_dir_all(self.configuration_dir(id));
         Ok(())
     }
 }
 
-fn append_overrides(contents: &mut Vec<u8>, encoding: Option<&str>, locale: Option<&str>) {
-    let mut lines = String::new();
-    if let Some(encoding) = encoding {
-        lines.push_str("-ENCODING ");
-        lines.push_str(encoding);
-        lines.push('\n');
-    }
-    if let Some(locale) = locale {
-        lines.push_str("-LOCALE ");
-        lines.push_str(locale);
-        lines.push('\n');
-    }
-    if lines.is_empty() {
-        return;
-    }
-    let little_endian = contents.starts_with(&[0xff, 0xfe]);
-    let big_endian = contents.starts_with(&[0xfe, 0xff]);
-    if little_endian || big_endian {
-        let newline = if little_endian {
-            [0x0a, 0x00]
-        } else {
-            [0x00, 0x0a]
-        };
-        let carriage_return = if little_endian {
-            [0x0d, 0x00]
-        } else {
-            [0x00, 0x0d]
-        };
-        if contents.len() >= 2
-            && !contents.ends_with(&newline)
-            && !contents.ends_with(&carriage_return)
-        {
-            contents.extend_from_slice(&newline);
+/// Persist a new profile revision without going through a `Store` handle. The
+/// session layer owns the snapshot copy and only needs this final metadata
+/// commit; the caller reloads the store afterwards.
+pub fn set_profile_revision_on_disk(
+    data_dir: &Path,
+    id: Uuid,
+    revision: Uuid,
+) -> Result<(), Issue> {
+    let path = data_dir.join("configurations.json");
+    let mut configurations: Vec<UserConfig> = match read_json(&path) {
+        Ok(configurations) => configurations,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            return Err(Issue::new("managedConfigurationMissing"));
         }
-        let words = lines.encode_utf16().flat_map(|word| {
-            if little_endian {
-                word.to_le_bytes()
-            } else {
-                word.to_be_bytes()
-            }
-        });
-        contents.extend(words);
-    } else {
-        if !contents.is_empty() && !contents.ends_with(b"\n") && !contents.ends_with(b"\r") {
-            contents.push(b'\n');
-        }
-        contents.extend_from_slice(lines.as_bytes());
-    }
+        Err(error) => return Err(Issue::with_detail("settingsRead", error)),
+    };
+    let entry = configurations
+        .iter_mut()
+        .find(|config| config.id == id)
+        .ok_or_else(|| Issue::new("managedConfigurationMissing"))?;
+    entry.profile_revision = Some(revision);
+    write_json(&path, &configurations).map_err(|error| Issue::with_detail("settingsWrite", error))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn appends_overrides_on_a_new_utf16_line() {
-        let mut contents = vec![0xff, 0xfe];
-        contents.extend("base".encode_utf16().flat_map(u16::to_le_bytes));
-
-        append_overrides(&mut contents, Some("wlatin1"), Some("en_US"));
-
-        let words: Vec<_> = contents[2..]
-            .chunks_exact(2)
-            .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
-            .collect();
-        assert_eq!(
-            String::from_utf16(&words).unwrap(),
-            "base\n-ENCODING wlatin1\n-LOCALE en_US\n"
-        );
-    }
-
-    #[test]
-    fn new_project_storage_keeps_optional_note_and_config_reference() {
-        let id = Uuid::new_v4();
-        let project = Project {
-            id,
-            name: "Trial".into(),
-            note: Some("Safety analysis".into()),
-            config: Some(ConfigRef::BuiltIn {
-                exe: "sas.exe".into(),
-                code: "1d".into(),
-            }),
-        };
-        let json = serde_json::to_value(&project).unwrap();
-
-        assert_eq!(json["note"], "Safety analysis");
-        assert_eq!(json["config"]["kind"], "builtIn");
-        assert_eq!(json["config"]["code"], "1d");
-    }
-
-    #[test]
-    fn deleting_a_configuration_removes_it_from_the_separate_store() {
-        let temp = tempfile::tempdir().unwrap();
-        let root = temp.path().join("v4");
-        let mut store = Store::open(root.clone()).unwrap();
-        let base = root.join("base.cfg");
-        fs::write(&base, "-ENCODING wlatin1").unwrap();
-        let config = ManagedConfig {
-            id: Uuid::new_v4(),
-            name: "Custom".into(),
-            base: ConfigKey {
-                exe: "sas.exe".into(),
-                cfg: base,
-            },
-            encoding: Some("wlatin1".into()),
-            locale: Some("en_US".into()),
-            revision: Uuid::new_v4(),
-            number: 1,
-        };
-        store
-            .update_configuration(config.clone(), None, true)
-            .unwrap();
-
-        store.delete_configuration(&config).unwrap();
-
-        let stored: Vec<ManagedConfig> = read_json(&root.join("configurations.json")).unwrap();
-        assert!(stored.is_empty());
-        assert!(store.configurations().is_empty());
-    }
-
-    #[test]
-    fn configuration_delete_rolls_back_the_config_store_when_settings_commit_fails() {
-        use std::os::windows::fs::OpenOptionsExt;
-
-        let temp = tempfile::tempdir().unwrap();
-        let root = temp.path().join("v4");
-        let mut store = Store::open(root.clone()).unwrap();
-        let base = root.join("base.cfg");
-        fs::write(&base, "-ENCODING wlatin1").unwrap();
-        let config = ManagedConfig {
-            id: Uuid::new_v4(),
-            name: "Custom".into(),
-            base: ConfigKey {
-                exe: "sas.exe".into(),
-                cfg: base,
-            },
-            encoding: Some("wlatin1".into()),
-            locale: Some("en_US".into()),
-            revision: Uuid::new_v4(),
-            number: 1,
-        };
-        store
-            .update_configuration(config.clone(), None, true)
-            .unwrap();
-        let installed_file = store.configuration_file(&config);
-        let settings_lock = File::options()
-            .read(true)
-            .share_mode(1)
-            .open(root.join("settings.json"))
-            .unwrap();
-
-        assert!(store.delete_configuration(&config).is_err());
-        drop(settings_lock);
-
-        let configurations: Vec<ManagedConfig> =
-            read_json(&root.join("configurations.json")).unwrap();
-        assert_eq!(configurations.len(), 1);
-        assert_eq!(configurations[0].id, config.id);
-        assert!(installed_file.is_file());
-        assert_eq!(store.configurations().len(), 1);
-    }
-
-    #[test]
-    fn configuration_metadata_write_failure_preserves_the_previous_file_revision() {
-        use std::os::windows::fs::OpenOptionsExt;
-
-        let temp = tempfile::tempdir().unwrap();
-        let root = temp.path().join("v4");
-        let mut store = Store::open(root.clone()).unwrap();
-        let base = root.join("base.cfg");
-        fs::write(&base, "-ENCODING wlatin1").unwrap();
-        let mut config = ManagedConfig {
-            id: Uuid::new_v4(),
-            name: "Original".into(),
-            base: ConfigKey {
-                exe: "sas.exe".into(),
-                cfg: base,
-            },
-            encoding: Some("wlatin1".into()),
-            locale: Some("en_US".into()),
-            revision: Uuid::new_v4(),
-            number: 1,
-        };
-        store
-            .update_configuration(config.clone(), None, true)
-            .unwrap();
-        let old_revision = store.configuration_file(&config);
-        config.name = "Changed".into();
-        config.revision = Uuid::new_v4();
-        let lock = File::options()
-            .read(true)
-            .share_mode(1)
-            .open(root.join("configurations.json"))
-            .unwrap();
-
-        let previous = store.configurations()[0].clone();
-        assert!(
-            store
-                .update_configuration(config.clone(), Some(&previous), true)
-                .is_err()
-        );
-        drop(lock);
-
-        let saved: Vec<ManagedConfig> = read_json(&root.join("configurations.json")).unwrap();
-        assert_eq!(saved[0].name, "Original");
-        assert!(old_revision.is_file());
-        assert!(!store.configuration_file(&config).exists());
-        assert_eq!(store.configurations()[0].name, "Original");
-    }
-
-    #[test]
-    fn custom_configuration_metadata_is_stored_separately_from_project_settings() {
-        let temp = tempfile::tempdir().unwrap();
-        let root = temp.path().join("v4");
-        let mut store = Store::open(root.clone()).unwrap();
-        let base = root.join("base.cfg");
-        fs::write(&base, "-ENCODING wlatin1\n-LOCALE en_US").unwrap();
-        let configuration = ManagedConfig {
-            id: Uuid::new_v4(),
-            name: "Custom".into(),
-            base: ConfigKey {
-                exe: "sas.exe".into(),
-                cfg: base,
-            },
-            encoding: Some("wlatin1".into()),
-            locale: Some("en_US".into()),
-            revision: Uuid::new_v4(),
-            number: 1,
-        };
-
-        store
-            .update_configuration(configuration.clone(), None, true)
-            .unwrap();
-
-        let settings: serde_json::Value = read_json(&root.join("settings.json")).unwrap();
-        let configurations: Vec<ManagedConfig> =
-            read_json(&root.join("configurations.json")).unwrap();
-        assert!(settings.get("configurations").is_none());
-        assert_eq!(configurations.len(), 1);
-        assert_eq!(configurations[0].id, configuration.id);
-        assert_eq!(configurations[0].encoding.as_deref(), Some("wlatin1"));
-        assert_eq!(configurations[0].locale.as_deref(), Some("en_US"));
-    }
-
-    #[test]
-    fn factory_restore_commits_before_cleaning_previous_template() {
-        use std::os::windows::fs::OpenOptionsExt;
-
-        let temp = tempfile::tempdir().unwrap();
-        let mut store = Store::open(temp.path().join("state")).unwrap();
-        let source = temp.path().join("source");
-        fs::create_dir(&source).unwrap();
-        fs::write(source.join("profile.sas7bcat"), b"baseline").unwrap();
-        let key = ConfigKey {
-            exe: "sas.exe".into(),
-            cfg: "sasv9.cfg".into(),
-        };
-        store
-            .install_template(key.clone(), &source, TemplateSource::Customized)
-            .unwrap();
-        let previous = store.template_path(&key).unwrap();
-        let settings = File::options()
-            .read(true)
-            .share_mode(1)
-            .open(store.root.join("settings.json"))
-            .unwrap();
-
-        assert!(store.use_factory(key.clone()).is_err());
-        assert_eq!(store.template_path(&key), Some(previous.clone()));
-        assert!(previous.is_dir());
-        drop(settings);
-
-        store.use_factory(key.clone()).unwrap();
-        assert!(matches!(
-            store.template_source(&key),
-            Some(TemplateSource::Factory)
-        ));
-        assert!(!previous.exists());
-        assert!(source.join("profile.sas7bcat").is_file());
-    }
-
-    #[test]
-    fn existing_template_survives_upgrade_and_defaults_are_scoped() {
-        let temp = tempfile::tempdir().unwrap();
-        let root = temp.path().to_path_buf();
-        Store::open(root.clone()).unwrap();
-        let key = ConfigKey {
-            exe: "sas.exe".into(),
-            cfg: "zh".into(),
-        };
-        let other = ConfigKey {
-            exe: "sas.exe".into(),
-            cfg: "u8".into(),
-        };
-        let revision = Uuid::new_v4();
-        fs::create_dir(root.join("templates").join(revision.to_string())).unwrap();
-        write_json(
-            &root.join("settings.json"),
-            &serde_json::json!({
-                "templates": [{ "key": key, "revision": revision }],
-                "projects": []
-            }),
-        )
-        .unwrap();
-        let mut store = Store::open(root).unwrap();
-        assert!(matches!(
-            store.template_source(&key),
-            Some(TemplateSource::Existing)
-        ));
-        assert!(store.template_source(&other).is_none());
-        store.use_factory(other.clone()).unwrap();
-        assert!(matches!(
-            store.template_source(&other),
-            Some(TemplateSource::Factory)
-        ));
-        assert!(store.template_path(&other).is_none());
-        assert!(store.template_path(&key).is_some());
-    }
-    #[test]
-    fn unavailable_snapshot_leaves_previous_revision_installed() {
-        let temp = tempfile::tempdir().unwrap();
-        let mut store = Store::open(temp.path().join("state")).unwrap();
-        let source = temp.path().join("source");
-        fs::create_dir(&source).unwrap();
-        let file = source.join("profile.sas7bcat");
-        fs::write(&file, b"original").unwrap();
-        let key = ConfigKey {
-            exe: "sas.exe".into(),
-            cfg: "cfg".into(),
-        };
-        store
-            .install_template(key.clone(), &source, TemplateSource::Customized)
-            .unwrap();
-        let writer = File::options().write(true).open(&file).unwrap();
-        assert!(
-            store
-                .install_template(key.clone(), &source, TemplateSource::Customized)
-                .is_err()
-        );
-        drop(writer);
-        let restored = Store::open(store.root.clone()).unwrap();
-        let profile = restored
-            .template_path(&key)
+    fn count_archives(root: &Path) -> usize {
+        fs::read_dir(root)
             .unwrap()
-            .join("profile.sas7bcat");
-        assert_eq!(fs::read(profile).unwrap(), b"original");
+            .flatten()
+            .filter(|entry| {
+                entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with("_old-")
+            })
+            .count()
     }
 
     #[test]
-    fn failed_settings_commit_preserves_previous_template() {
+    fn archives_legacy_entries_once_and_keeps_webview_profile() {
         let temp = tempfile::tempdir().unwrap();
-        let mut store = Store::open(temp.path().join("state")).unwrap();
-        let source = temp.path().join("source");
-        fs::create_dir(&source).unwrap();
-        let file = source.join("profile.sas7bcat");
-        fs::write(&file, b"original").unwrap();
-        let key = ConfigKey {
-            exe: "sas.exe".into(),
-            cfg: "cfg".into(),
-        };
-        store
-            .install_template(key.clone(), &source, TemplateSource::Customized)
-            .unwrap();
-        let before = store.template_path(&key).unwrap();
-        fs::write(&file, b"replacement").unwrap();
+        let root = temp.path().join("data");
+        fs::create_dir_all(root.join("v3")).unwrap();
+        fs::write(root.join("v3/settings.json"), br#"{"exe":"legacy.exe"}"#).unwrap();
+        fs::write(root.join("v3/configurations.json"), b"[]").unwrap();
+        fs::write(root.join("settings.json"), br#"{"projects":[]}"#).unwrap();
+        fs::create_dir_all(root.join("EBWebView/Default")).unwrap();
+        fs::write(root.join("EBWebView/Default/marker"), b"keep").unwrap();
+
+        let store = Store::open(root.clone()).unwrap();
+
+        assert!(root.join("v4").is_dir());
+        let archived = store.archived().expect("an archive folder");
+        let name = archived.file_name().unwrap().to_string_lossy().into_owned();
+        assert!(name.starts_with("_old-"), "{name}");
+        let stamp = &name["_old-".len()..];
+        assert_eq!(stamp.len(), 8, "{name}");
+        assert!(stamp.chars().all(|ch| ch.is_ascii_digit()), "{name}");
+        assert!(archived.join("v3/settings.json").is_file());
+        assert!(archived.join("settings.json").is_file());
+        // Never move the WebView2 profile, and never rename the root itself.
+        assert_eq!(fs::read(root.join("EBWebView/Default/marker")).unwrap(), b"keep");
+        assert!(!root.join("settings.json").exists());
+
+        Store::open(root.clone()).unwrap();
+        assert_eq!(count_archives(&root), 1);
+    }
+
+    #[test]
+    fn update_rotates_revision_and_keeps_previous_file_on_failure() {
         use std::os::windows::fs::OpenOptionsExt;
+
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("data");
+        let factory = temp.path().join("factory").join("sasv9.cfg");
+        fs::create_dir_all(factory.parent().unwrap()).unwrap();
+        fs::write(&factory, "-ENCODING wlatin1\n-LOCALE en_US\n").unwrap();
+        let mut store = Store::open(root.clone()).unwrap();
+
+        let id = store
+            .create_configuration(CreateConfiguration {
+                name: "Mine".into(),
+                base: ConfigBase::Default,
+                factory: factory.clone(),
+                encoding: "wlatin1".into(),
+                locale: "en_US".into(),
+                profile: None,
+            })
+            .unwrap();
+        let first = store.configuration(id).unwrap().clone();
+        let first_file = store.thin_cfg_path(&first);
+        let first_revision = first.revision;
+        let first_contents = fs::read(&first_file).unwrap();
+
         let locked = File::options()
             .read(true)
             .share_mode(1)
-            .open(store.root.join("settings.json"))
+            .open(root.join("v4/configurations.json"))
             .unwrap();
         assert!(
             store
-                .install_template(key.clone(), &source, TemplateSource::Customized)
+                .update_configuration(id, "utf-8", "zh_CN")
                 .is_err()
         );
         drop(locked);
-        assert_eq!(store.template_path(&key).unwrap(), before);
-        assert_eq!(
-            fs::read(before.join("profile.sas7bcat")).unwrap(),
-            b"original"
-        );
+
+        let reloaded = Store::open(root).unwrap();
+        let after = reloaded.configuration(id).unwrap();
+        assert_eq!(after.revision, first_revision);
+        assert_eq!(after.encoding, "wlatin1");
+        assert_eq!(fs::read(&first_file).unwrap(), first_contents);
+        // The failed revision directory must not be left behind.
+        let revisions = fs::read_dir(reloaded.revision_dir(id, first_revision).parent().unwrap())
+            .unwrap()
+            .flatten()
+            .count();
+        assert_eq!(revisions, 1);
+
+        store.update_configuration(id, "utf-8", "zh_CN").unwrap();
+        let rotated = store.configuration(id).unwrap();
+        assert_ne!(rotated.revision, first_revision);
+        assert!(!first_file.exists());
+        let contents = String::from_utf8_lossy(&fs::read(store.thin_cfg_path(rotated)).unwrap())
+            .into_owned();
+        assert!(contents.contains("-ENCODING utf-8"));
     }
 }

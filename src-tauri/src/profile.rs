@@ -6,13 +6,23 @@ use std::{
     path::Path,
 };
 
-pub const FILES: &[&str] = &["profile.sas7bcat", "profile2.sas7bcat", "regstry.sas7bitm"];
+/// The four catalog files SAS writes into its user folder.
+pub const FILES: &[&str] = &[
+    "profile.sas7bcat",
+    "profile2.sas7bcat",
+    "regstry.sas7bitm",
+    "templat.sas7bitm",
+];
 const REPARSE_POINT: u32 = 0x400;
 const FILE_SHARE_READ: u32 = 1;
 
 pub fn regular_directory(path: &Path) -> bool {
     fs::symlink_metadata(path)
         .is_ok_and(|metadata| metadata.is_dir() && metadata.file_attributes() & REPARSE_POINT == 0)
+}
+
+pub fn has_catalog_files(directory: &Path) -> bool {
+    FILES.iter().any(|name| directory.join(name).is_file())
 }
 
 pub fn copy_profile(source: &Path, destination: &Path) -> Result<(), Issue> {
@@ -64,11 +74,25 @@ mod tests {
     use super::*;
 
     #[test]
+    fn catalog_files_are_the_documented_four() {
+        assert_eq!(FILES.len(), 4);
+        for name in [
+            "profile.sas7bcat",
+            "profile2.sas7bcat",
+            "regstry.sas7bitm",
+            "templat.sas7bitm",
+        ] {
+            assert!(FILES.contains(&name), "{name}");
+        }
+    }
+
+    #[test]
     fn copies_only_supported_files_and_destinations_are_independent() {
         let temp = tempfile::tempdir().unwrap();
         let source = temp.path().join("source");
         fs::create_dir(&source).unwrap();
         fs::write(source.join("profile.sas7bcat"), b"baseline").unwrap();
+        fs::write(source.join("templat.sas7bitm"), b"templates").unwrap();
         fs::write(source.join("private.sas"), b"script").unwrap();
         let first = temp.path().join("first");
         let second = temp.path().join("second");
@@ -86,5 +110,6 @@ mod tests {
             b"baseline"
         );
         assert!(!first.join("private.sas").exists());
+        assert!(first.join("templat.sas7bitm").is_file());
     }
 }

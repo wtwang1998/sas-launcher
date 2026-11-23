@@ -1,4 +1,3 @@
-use crate::discovery::LaunchConfig;
 use crate::issue::Issue;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -29,32 +28,27 @@ pub enum Status {
     Unknown,
 }
 
-pub fn arguments(
-    config: &LaunchConfig,
-    profile: &Path,
-    title: &str,
-    encoding: &str,
-) -> Vec<OsString> {
-    let mut arguments = vec![
+/// The launch command line, in the order documented in the redesign spec.
+/// `-ENCODING`/`-LOCALE` are intentionally absent: they live in the cfg the
+/// `-CONFIG` argument points at.
+pub fn arguments(cfg: &Path, sasuser: &Path, title: &str, altlog_dir: &Path) -> Vec<OsString> {
+    vec![
         "-CONFIG".into(),
-        config.cfg_path().as_os_str().into(),
+        cfg.as_os_str().into(),
         "-SASUSER".into(),
-        profile.as_os_str().into(),
+        sasuser.as_os_str().into(),
+        "-NORSASUSER".into(),
         "-AWSTITLE".into(),
         title.into(),
-        "-NORSASUSER".into(),
-        "-ENCODING".into(),
-        encoding.to_ascii_lowercase().into(),
-    ];
-    if let Some(locale) = &config.locale {
-        arguments.push("-LOCALE".into());
-        arguments.push(locale.into());
-    }
-    arguments
+        "-ALTLOG".into(),
+        altlog_dir.as_os_str().into(),
+        "-LOGPARM".into(),
+        "WRITE=IMMEDIATE".into(),
+    ]
 }
 
-pub fn start(config: &LaunchConfig, args: &[OsString], cwd: &Path) -> Result<Child, Issue> {
-    Command::new(&config.key.exe)
+pub fn start(exe: &Path, args: &[OsString], cwd: &Path) -> Result<Child, Issue> {
+    Command::new(exe)
         .args(args)
         .current_dir(cwd)
         .spawn()
@@ -119,6 +113,38 @@ impl ProcessIdentity {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::os::windows::process::CommandExt;
+
+    #[test]
+    fn arguments_route_a_log_copy_without_changing_the_log_window() {
+        let arguments = arguments(
+            Path::new(r"C:\用户设置\配置 一\sasv9.cfg"),
+            Path::new(r"C:\用户设置\会话\sasuser"),
+            "项目一 · UTF-8",
+            Path::new(r"C:\用户设置\会话"),
+        );
+        assert_eq!(
+            arguments,
+            [
+                "-CONFIG",
+                r"C:\用户设置\配置 一\sasv9.cfg",
+                "-SASUSER",
+                r"C:\用户设置\会话\sasuser",
+                "-NORSASUSER",
+                "-AWSTITLE",
+                "项目一 · UTF-8",
+                "-ALTLOG",
+                r"C:\用户设置\会话",
+                "-LOGPARM",
+                "WRITE=IMMEDIATE",
+            ]
+            .map(OsString::from)
+        );
+        assert!(!arguments.iter().any(|argument| argument == "-ENCODING"));
+        assert!(!arguments.iter().any(|argument| argument == "-LOCALE"));
+        // -LOG is batch-only; the copy must come from -ALTLOG.
+        assert!(!arguments.iter().any(|argument| argument == "-LOG"));
+    }
 
     #[test]
     fn compares_process_creation_time_to_protect_against_pid_reuse() {
@@ -145,54 +171,4 @@ mod tests {
         assert_eq!(wrong_time, Status::Exited(None));
         assert!(matches!(identity.status(), Status::Exited(_)));
     }
-
-    #[test]
-    fn pass_paths_title_encoding_and_locale_as_distinct_os_arguments() {
-        let config = LaunchConfig {
-            reference: ConfigRef::BuiltIn {
-                exe: r"C:\Program Files\SAS\sas.exe".into(),
-                code: "u8".into(),
-            },
-            key: crate::discovery::ConfigKey {
-                exe: r"C:\Program Files\SAS\sas.exe".into(),
-                cfg: r"C:\Program Files\SAS\中文\sasv9.cfg".into(),
-            },
-            code: "u8".into(),
-            custom_id: None,
-            custom_name: None,
-            base: None,
-            file: None,
-            encoding: Some("UTF-8".into()),
-            locale: Some("en_US".into()),
-            default_profile: None,
-            ui_language: None,
-            is_default: false,
-            error: None,
-        };
-        assert_eq!(
-            arguments(
-                &config,
-                Path::new(r"C:\用户设置\会话 一"),
-                "项目一 · UTF-8",
-                "UTF-8"
-            ),
-            [
-                "-CONFIG",
-                r"C:\Program Files\SAS\中文\sasv9.cfg",
-                "-SASUSER",
-                r"C:\用户设置\会话 一",
-                "-AWSTITLE",
-                "项目一 · UTF-8",
-                "-NORSASUSER",
-                "-ENCODING",
-                "utf-8",
-                "-LOCALE",
-                "en_US",
-            ]
-            .map(OsString::from)
-        );
-    }
-
-    use crate::discovery::ConfigRef;
-    use std::os::windows::process::CommandExt;
 }
