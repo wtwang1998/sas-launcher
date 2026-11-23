@@ -3,204 +3,61 @@
   "rootConfigRead": ["无法读取 SAS 根目录的 sasv9.cfg。", "Could not read sasv9.cfg in the SAS root folder."],
   "defaultConfigPointerMissing": ["SAS 根配置没有指向有效的默认 NLS 配置。", "The SAS root configuration does not point to a valid default NLS configuration."],
   "defaultConfigUnavailable": ["SAS 默认配置指向的文件不可用。", "The file referenced by the SAS default configuration is unavailable."],
-  "invalidLocaleEncoding": ["区域设置和编码组合不在已扫描的配置中。", "The locale and encoding pair is not present in the scanned configurations."],
+  "invalidLocaleEncoding": ["区域或编码格式无效，请使用如 zh_CN、EUC-CN 的写法。", "The locale or encoding format is invalid. Use forms such as zh_CN and EUC-CN."],
   "invalidProjectNote": ["备注最多 2000 个字符，且不能包含控制字符。", "Use up to 2,000 characters and omit control characters in the notes."],
   "configurationFileMissing": ["启动配置文件不可用，请编辑或重新创建此配置。", "The configuration file is unavailable. Edit or recreate this configuration."],
   "configurationBaseMissing": ["原厂基础配置不可用，请重新选择。", "The factory base configuration is unavailable. Choose another one."],
-  "managedConfigurationMissing": ["自定义配置不存在。", "The custom configuration does not exist."],
-  "configurationSetupActive": ["请先关闭 SAS 设置会话并保存或放弃本次设置。", "Close the SAS settings session and save or discard its changes first."],
-  "configurationInUse": ["请先为绑定此配置的项目改选启动配置。", "Choose a different launch configuration for the projects using this configuration first."],
+  "managedConfigurationMissing": ["用户配置不存在。", "The user configuration does not exist."],
+  "configurationSetupActive": ["请先关闭 SAS 设置会话并保存或丢弃本次设置。", "Close the SAS settings session and save or discard its changes first."],
+  "configurationInUse": ["请先为引用此配置的项目改选启动配置。", "Choose a different launch configuration for the projects using this configuration first."],
   "invalidConfigurationName": ["配置名称最多 100 字，且不能包含控制字符。", "Use up to 100 characters and omit control characters for the configuration name."],
-  "profileNotFile": [
-    "SAS 设置项不是普通文件。",
-    "The SAS settings entry is not a regular file."
-  ],
-  "profileRead": [
-    "无法读取 SAS 设置文件。",
-    "Could not read a SAS settings file."
-  ],
-  "profileLocked": [
-    "无法打开 SAS 设置文件。请关闭正在使用该目录的 SAS 后重试。",
-    "Could not open a SAS settings file. Close SAS sessions using that folder, then try again."
-  ],
-  "profileEmpty": [
-    "这个目录里没有可导入的 SAS 个人设置。请检查目录，或打开 SAS 设置模板。",
-    "This folder contains no recognized SAS settings files. Select another folder or start with initial SAS settings."
-  ],
-  "profileCreate": [
-    "无法创建 SAS 设置文件。",
-    "Could not create the SAS settings file."
-  ],
-  "profileCopy": [
-    "无法复制 SAS 设置文件。",
-    "Could not copy the SAS settings file."
-  ],
-  "profileNotWritable": [
-    "SAS 用户目录不可写。",
-    "The SAS user folder is not writable."
-  ],
-  "sasMissing": [
-    "未找到 SAS 9.4。请选择已安装的 sas.exe。",
-    "SAS 9.4 was not found. Select the installed sas.exe."
-  ],
-  "configUnavailable": [
-    "找不到所选的 SAS 启动配置，请刷新后重新选择。",
-    "The selected SAS configuration is unavailable. Refresh and choose a configuration."
-  ],
-  "stateUnavailable": [
-    "启动器状态不可用，请重新打开。",
-    "The launcher is unavailable. Reopen the app."
-  ],
-  "invalidName": [
-    "请输入 1 到 100 个字符的项目名称。",
-    "Enter a project name of 1–100 characters."
-  ],
-  "projectMissing": [
-    "这个项目已经不存在。",
-    "This project no longer exists."
-  ],
-  "templateRequired": [
-    "请先为这个 SAS 启动配置准备用户设置模板。",
-    "Choose a settings source for this SAS configuration first."
-  ],
-  "setupAlreadyOpen": [
-    "这个配置已有模板设置会话。请先完成或放弃它。",
-    "A template editor is already open for this configuration. Finish or discard it first."
-  ],
-  "dataPath": [
-    "无法定位应用数据目录。",
-    "Could not find the application data folder."
-  ],
-  "invalidExe": [
-    "请选择已安装的 SAS 9.4 程序 sas.exe。",
-    "Select the installed SAS 9.4 executable, sas.exe."
-  ],
-  "exeAccess": [
-    "无法访问 SAS 程序。",
-    "Could not access the SAS executable."
-  ],
-  "configDirectory": [
-    "无法读取启动配置目录。",
-    "Could not read the SAS configuration folder."
-  ],
-  "configEntry": [
-    "无法读取启动配置。",
-    "Could not read an entry in the SAS configuration folder."
-  ],
-  "noConfigs": [
-    "此目录中未找到 sasv9.cfg 配置。",
-    "No sasv9.cfg configurations were found in this folder."
-  ],
-  "configRead": [
-    "无法读取配置文件。",
-    "Could not read the SAS configuration file."
-  ],
-  "encodingUnknown": [
-    "配置未声明可识别的 ENCODING。",
-    "The configuration does not declare a recognized ENCODING."
-  ],
-  "utf16Incomplete": [
-    "配置文件的 UTF-16 内容不完整。",
-    "The configuration file contains incomplete UTF-16."
-  ],
-  "configDecode": [
-    "无法读取配置文件编码。",
-    "Could not decode the SAS configuration file."
-  ],
-  "configTooLarge": [
-    "配置文件过大。",
-    "The configuration file is too large."
-  ],
-  "spawnFailed": [
-    "无法启动 SAS。",
-    "Could not start SAS."
-  ],
-  "sessionDirectory": [
-    "会话目录不可用。",
-    "The session folder is unavailable."
-  ],
-  "sessionCreate": [
-    "无法创建独立会话。",
-    "Could not create an isolated session."
-  ],
-  "sessionProfileCreate": [
-    "无法创建 SAS 用户目录。",
-    "Could not create the SAS user folder."
-  ],
-  "sessionRecord": [
-    "无法记录独立会话。",
-    "Could not save the session record."
-  ],
-  "sessionRecovery": [
-    "SAS 已启动，恢复记录保存失败，目录可能需要保留。",
-    "SAS started, but its recovery record could not be saved. Its folder may be retained."
-  ],
-  "sessionIdentity": [
-    "SAS 已启动，无法记录进程身份。",
-    "SAS started, but its process identity could not be recorded."
-  ],
-  "sasExit": [
-    "SAS 异常退出。",
-    "SAS exited with an error."
-  ],
-  "setupMissing": [
-    "没有找到这次模板设置会话。",
-    "This template editing session was not found."
-  ],
-  "setupRunning": [
-    "请先关闭设置模板的 SAS 窗口。",
-    "Close the SAS template editor before continuing."
-  ],
-  "setupFailed": [
-    "SAS 异常退出。请放弃这次设置并重新打开 SAS。",
-    "SAS exited with an error. Discard these settings and reopen SAS."
-  ],
-  "setupDirectory": [
-    "模板设置目录不可用。",
-    "The template editing folder is unavailable."
-  ],
-  "setupRecord": [
-    "无法更新模板设置记录。",
-    "Could not update the template editing record."
-  ],
-  "dataCreate": [
-    "无法创建应用数据目录。",
-    "Could not create the application data folder."
-  ],
-  "dataReparse": [
-    "应用数据目录不能是重解析点。",
-    "The application data folder cannot be a reparse point."
-  ],
-  "settingsRead": [
-    "无法读取保存的项目与模板。",
-    "Could not read saved projects and templates."
-  ],
-  "settingsWrite": [
-    "无法保存应用设置。",
-    "Could not save application settings."
-  ],
-  "templateDirectory": [
-    "模板目录不可用。",
-    "The template folder is unavailable."
-  ],
-  "templateStage": [
-    "无法准备用户设置模板。",
-    "Could not prepare the settings template."
-  ],
-  "templateWrite": [
-    "无法写入新模板。",
-    "Could not save the new settings template."
-  ],
-  "batchRunning": [
-    "项目已在运行。",
-    "The project is already running."
-  ],
-  "sourceUnavailable": [
-    "找不到选中的原有 SAS 设置。",
-    "The selected existing SAS settings are no longer available."
-  ],
-  "unexpected": [
-    "操作未完成。",
-    "The operation could not be completed."
-  ]
+  "profileNotFile": ["SAS 设置项不是普通文件。", "The SAS settings entry is not a regular file."],
+  "profileRead": ["无法读取 SAS 设置文件。", "Could not read a SAS settings file."],
+  "profileLocked": ["无法打开 SAS 设置文件。请关闭正在使用该目录的 SAS 后重试。", "Could not open a SAS settings file. Close SAS sessions using that folder, then try again."],
+  "profileEmpty": ["这个目录里没有可保存的 SAS 个人设置。请先打开 SAS 调整设置。", "This folder contains no SAS personal settings. Adjust settings in SAS first."],
+  "profileCreate": ["无法创建 SAS 设置文件。", "Could not create the SAS settings file."],
+  "profileCopy": ["无法复制 SAS 设置文件。", "Could not copy the SAS settings file."],
+  "profileNotWritable": ["SAS 用户目录不可写。", "The SAS user folder is not writable."],
+  "sasMissing": ["未找到 SAS 9.4。请选择已安装的 sas.exe。", "SAS 9.4 was not found. Select the installed sas.exe."],
+  "configUnavailable": ["找不到所选的 SAS 启动配置，请刷新后重新选择。", "The selected SAS configuration is unavailable. Refresh and choose a configuration."],
+  "stateUnavailable": ["启动器状态不可用，请重新打开。", "The launcher is unavailable. Reopen the app."],
+  "invalidName": ["请输入 1 到 100 个字符的项目名称。", "Enter a project name of 1–100 characters."],
+  "projectMissing": ["这个项目已经不存在。", "This project no longer exists."],
+  "templateRequired": ["请先为这个 SAS 启动配置准备用户设置。", "Choose a settings source for this SAS configuration first."],
+  "setupAlreadyOpen": ["这个配置已有设置会话。请先完成或丢弃它。", "A settings session is already open for this configuration. Finish or discard it first."],
+  "dataPath": ["无法定位应用数据目录。", "Could not find the application data folder."],
+  "pathUnavailable": ["路径不可用。", "The path is unavailable."],
+  "invalidExe": ["请选择已安装的 SAS 9.4 程序 sas.exe。", "Select the installed SAS 9.4 executable, sas.exe."],
+  "exeAccess": ["无法访问 SAS 程序。", "Could not access the SAS executable."],
+  "configDirectory": ["无法读取启动配置目录。", "Could not read the SAS configuration folder."],
+  "configEntry": ["无法读取启动配置。", "Could not read an entry in the SAS configuration folder."],
+  "noConfigs": ["此目录中未找到 sasv9.cfg 配置。", "No sasv9.cfg configurations were found in this folder."],
+  "configRead": ["无法读取配置文件。", "Could not read the SAS configuration file."],
+  "encodingUnknown": ["配置未声明可识别的 ENCODING。", "The configuration does not declare a recognized ENCODING."],
+  "utf16Incomplete": ["配置文件的 UTF-16 内容不完整。", "The configuration file contains incomplete UTF-16."],
+  "configDecode": ["无法读取配置文件编码。", "Could not decode the SAS configuration file."],
+  "configTooLarge": ["配置文件过大。", "The configuration file is too large."],
+  "spawnFailed": ["无法启动 SAS。", "Could not start SAS."],
+  "sessionDirectory": ["会话目录不可用。", "The session folder is unavailable."],
+  "sessionCreate": ["无法创建独立会话。", "Could not create an isolated session."],
+  "sessionProfileCreate": ["无法创建 SAS 用户目录。", "Could not create the SAS user folder."],
+  "sessionRecord": ["无法记录独立会话。", "Could not save the session record."],
+  "sessionRecovery": ["SAS 已启动，恢复记录保存失败，目录可能需要保留。", "SAS started, but its recovery record could not be saved. Its folder may be retained."],
+  "sessionIdentity": ["SAS 已启动，无法记录进程身份。", "SAS started, but its process identity could not be recorded."],
+  "sasExit": ["SAS 异常退出。", "SAS exited with an error."],
+  "setupMissing": ["没有找到这次设置会话。", "This settings session was not found."],
+  "setupRunning": ["请先关闭设置 SAS 的窗口。", "Close the SAS settings window before continuing."],
+  "setupFailed": ["SAS 异常退出。请丢弃这次设置并重新打开 SAS。", "SAS exited with an error. Discard these settings and reopen SAS."],
+  "setupDirectory": ["设置会话目录不可用。", "The settings session folder is unavailable."],
+  "setupRecord": ["无法更新设置会话记录。", "Could not update the settings session record."],
+  "dataCreate": ["无法创建应用数据目录。", "Could not create the application data folder."],
+  "dataReparse": ["应用数据目录不能是重解析点。", "The application data folder cannot be a reparse point."],
+  "settingsRead": ["无法读取保存的项目与配置。", "Could not read saved projects and configurations."],
+  "settingsWrite": ["无法保存应用设置。", "Could not save application settings."],
+  "templateDirectory": ["设置快照目录不可用。", "The settings snapshot folder is unavailable."],
+  "templateStage": ["无法准备设置快照。", "Could not prepare the settings snapshot."],
+  "templateWrite": ["无法写入设置快照。", "Could not save the settings snapshot."],
+  "batchRunning": ["项目已在运行。", "The project is already running."],
+  "sourceUnavailable": ["找不到选中的原有 SAS 设置。", "The selected existing SAS settings are no longer available."],
+  "unexpected": ["操作未完成。", "The operation could not be completed."]
 }
