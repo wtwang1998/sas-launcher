@@ -60,7 +60,7 @@ export function ConfigRow({
   }
 
   return (
-    <li className={'config-row' + (layout === 'tile' ? ' tile' : '')} ref={root}>
+    <li className={`config-row${layout === 'tile' ? ' tile' : ''}`} ref={root}>
       <div className="config-row-main">
         <div className="config-row-title">
           <span className="config-name">{configLabel(t, config)}</span>
@@ -79,7 +79,7 @@ export function ConfigRow({
             <span className="config-usage">{t('usedByProjects', { count: usage })}</span>
           )}
           {config.preset !== 'verified' && (
-            <span className={'preset ' + config.preset}>{presetLabel(t, config.preset)}</span>
+            <span className={`preset ${config.preset}`}>{presetLabel(t, config.preset)}</span>
           )}
         </div>
       </div>

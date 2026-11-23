@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
-import issues from './issue-messages.json'
 import { messages, translate } from './i18n'
+import issues from './issue-messages.json'
 
 it('every_message_has_both_languages', () => {
   for (const [key, value] of Object.entries(messages)) {

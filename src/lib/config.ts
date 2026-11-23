@@ -1,11 +1,11 @@
 import {
-  sameRef,
   type Chain,
   type Config,
   type ConfigRef,
   type Language,
   type PresetStatus,
   type Project,
+  sameRef,
 } from '../api'
 import type { MessageKey, Translator } from '../i18n'
 

@@ -55,11 +55,11 @@ export function SessionRow({
         >
           <ChevronRight
             size={15}
-            className={'disclosure' + (expanded ? ' expanded' : '')}
+            className={`disclosure${expanded ? ' expanded' : ''}`}
             aria-hidden="true"
           />
           <span className="session-name">{session.name}</span>
-          <span className={'session-status ' + session.status}>
+          <span className={`session-status ${session.status}`}>
             {t(statusKeys[session.status])}
           </span>
           <span className="session-stage">
@@ -84,7 +84,7 @@ export function SessionRow({
         <div className="session-detail" id={detailId}>
           <h3>
             {t('chainHeading')}
-            {session.chain.label ? ' · ' + session.chain.label : ''}
+            {session.chain.label ? ` · ${session.chain.label}` : ''}
           </h3>
           <dl className="chain-list">
             {chainLines(session.chain).map((line) => (

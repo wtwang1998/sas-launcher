@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from 'react'
+import { type FormEvent, useId, useState } from 'react'
 import type { Config, ConfigRef, Language } from '../api'
 import type { Translator } from '../i18n'
 import { configReady } from '../lib/config'
@@ -70,7 +70,6 @@ export function ProjectForm({
           name="name"
           value={draft.name}
           maxLength={100}
-          autoFocus
           placeholder={t('example')}
           disabled={busy}
           aria-invalid={nameMissing || undefined}

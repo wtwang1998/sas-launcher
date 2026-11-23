@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PresetStatus } from '../api'
-import { translate, type MessageKey } from '../i18n'
+import { type MessageKey, translate } from '../i18n'
 import { builtIn, makeSession, userConfig } from '../test/fixtures'
 import {
   chainLines,

@@ -1,3 +1,5 @@
+import { getCurrentWindow } from '@tauri-apps/api/window'
+import { open } from '@tauri-apps/plugin-dialog'
 import {
   Activity,
   Archive,
@@ -11,26 +13,24 @@ import {
   SquareTerminal,
   X,
 } from 'lucide-react'
-import { open } from '@tauri-apps/plugin-dialog'
-import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useEffect, useRef, useState } from 'react'
 import {
   api,
-  refKey,
-  sameRef,
   type BatchResult,
   type ConfigBase,
   type Language,
   type Preference,
+  refKey,
   type Session,
+  sameRef,
   type View,
 } from './api'
-import { browserLanguage, issueText, translate, type MessageKey } from './i18n'
 import { useConfirmation } from './components/confirmation'
-import { type ProjectDraft } from './components/ProjectForm'
-import { Projects } from './pages/Projects'
+import type { ProjectDraft } from './components/ProjectForm'
+import { browserLanguage, issueText, type MessageKey, translate } from './i18n'
 import { Configurations } from './pages/Configurations'
 import { Diagnostics } from './pages/Diagnostics'
+import { Projects } from './pages/Projects'
 
 type Page = 'projects' | 'configurations' | 'diagnostics'
 
@@ -220,7 +220,7 @@ export function App() {
   }
 
   async function deleteConfiguration(id: string) {
-    const name = view?.configs.find((config) => refKey(config.reference) === 'user:' + id)?.name
+    const name = view?.configs.find((config) => refKey(config.reference) === `user:${id}`)?.name
     confirm(
       t('deleteConfigurationTitle'),
       t('deleteConfigurationDetail', { name: name ?? '' }),

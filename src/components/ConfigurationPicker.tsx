@@ -1,6 +1,6 @@
 import { ChevronDown } from 'lucide-react'
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
-import { refKey, sameRef, type Config, type ConfigRef, type Language } from '../api'
+import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
+import { type Config, type ConfigRef, type Language, refKey, sameRef } from '../api'
 import type { Translator } from '../i18n'
 import { configLabel, groupConfigs } from '../lib/config'
 import { Chips } from './Chips'
@@ -39,11 +39,11 @@ export function ConfigurationPicker({
   const selectedIndex = options.findIndex((config) => sameRef(config.reference, value))
   const selected = selectedIndex >= 0 ? options[selectedIndex] : undefined
 
-  const optionId = (index: number) => listId + '-option-' + index
+  const optionId = (index: number) => `${listId}-option-${index}`
 
   function openMenu() {
     if (disabled || !options.length) return
-    setActive(selectedIndex >= 0 ? selectedIndex : 0)
+    setActive(Math.max(selectedIndex, 0))
     const box = trigger.current?.getBoundingClientRect()
     setUp(!!box && window.innerHeight - box.bottom < 320 && box.top > 320)
     setOpen(true)
@@ -77,7 +77,7 @@ export function ConfigurationPicker({
   useEffect(() => {
     if (!open || active < 0) return
     document.getElementById(optionId(active))?.scrollIntoView({ block: 'nearest' })
-  }, [open, active])
+  }, [open, active, optionId])
 
   function onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (!open) {
@@ -171,13 +171,13 @@ export function ConfigurationPicker({
         )}
         <ChevronDown
           size={16}
-          className={'disclosure' + (open ? ' expanded' : '')}
+          className={`disclosure${open ? ' expanded' : ''}`}
           aria-hidden="true"
         />
       </button>
       {open && (
         <div
-          className={'config-menu' + (up ? ' up' : '')}
+          className={`config-menu${up ? ' up' : ''}`}
           role="listbox"
           id={listId}
           aria-label={ariaLabel}

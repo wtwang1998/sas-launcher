@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent } from 'react'
+import { type KeyboardEvent, useRef } from 'react'
 import type { Config, ConfigRef, Language } from '../api'
 import type { Translator } from '../i18n'
 import { groupConfigs, optionSummary } from '../lib/config'
@@ -119,7 +119,7 @@ export function ConfigChoice({
             aria-checked={checked}
             aria-disabled={!card.ready || undefined}
             tabIndex={checked ? 0 : -1}
-            className={'radio-card' + (checked ? ' checked' : '') + (card.ready ? '' : ' disabled')}
+            className={`radio-card${checked ? ' checked' : ''}${card.ready ? '' : ' disabled'}`}
             ref={(element) => {
               refs.current[index] = element
             }}

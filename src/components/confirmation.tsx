@@ -95,7 +95,6 @@ export function useConfirmation(t: Translator) {
       <dialog
         className="app-dialog"
         ref={dialog}
-        role="dialog"
         aria-labelledby={labelId}
         aria-describedby={detailId}
         onCancel={(event) => {

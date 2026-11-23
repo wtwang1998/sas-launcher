@@ -1,8 +1,8 @@
 import { Activity, Eraser } from 'lucide-react'
 import { useState } from 'react'
 import type { Language, View } from '../api'
-import type { Translator } from '../i18n'
 import { SessionRow } from '../components/SessionRow'
+import type { Translator } from '../i18n'
 
 export type DiagnosticsProps = {
   view: View

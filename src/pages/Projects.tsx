@@ -1,10 +1,10 @@
 import { CircleAlert, FolderPlus, Play, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import type { BatchResult, Language, Project, View } from '../api'
+import { ProjectCard } from '../components/ProjectCard'
+import { emptyProjectDraft, type ProjectDraft, ProjectForm } from '../components/ProjectForm'
 import { issueText, type Translator } from '../i18n'
 import { configsByRef } from '../lib/config'
-import { emptyProjectDraft, ProjectForm, type ProjectDraft } from '../components/ProjectForm'
-import { ProjectCard } from '../components/ProjectCard'
 
 export type ProjectsProps = {
   view: View

@@ -1,6 +1,7 @@
 import { Layers3 } from 'lucide-react'
 import { useId, useState } from 'react'
 import type { Config, ConfigBase, ConfigRef, Language, View } from '../api'
+import { ConfigRow } from '../components/ConfigRow'
 import type { Translator } from '../i18n'
 import {
   configLabel,
@@ -11,7 +12,6 @@ import {
   optionsWarning,
   usageCount,
 } from '../lib/config'
-import { ConfigRow } from '../components/ConfigRow'
 
 export type ConfigurationsProps = {
   view: View
@@ -95,8 +95,8 @@ export function Configurations({
         )}
       </header>
 
-      <section className="config-group" aria-labelledby={fieldId + '-users'}>
-        <h2 id={fieldId + '-users'}>{t('userConfigurations')}</h2>
+      <section className="config-group" aria-labelledby={`${fieldId}-users`}>
+        <h2 id={`${fieldId}-users`}>{t('userConfigurations')}</h2>
         {users.length === 0 ? (
           <div className="empty panel config-empty">
             <span className="empty-icon">
@@ -133,8 +133,8 @@ export function Configurations({
         )}
       </section>
 
-      <section className="config-group" aria-labelledby={fieldId + '-builtins'}>
-        <h2 id={fieldId + '-builtins'}>{t('builtInConfigurations')}</h2>
+      <section className="config-group" aria-labelledby={`${fieldId}-builtins`}>
+        <h2 id={`${fieldId}-builtins`}>{t('builtInConfigurations')}</h2>
         {builtIns.length === 0 ? (
           <p className="muted config-empty-note">{t('noBuiltInConfigurations')}</p>
         ) : (
@@ -177,9 +177,9 @@ export function Configurations({
               {t('editSettingsTitle', { name: configLabel(t, editing.config) })}
             </h2>
             <div className="field">
-              <label htmlFor={fieldId + '-preset'}>{t('presetCombination')}</label>
+              <label htmlFor={`${fieldId}-preset`}>{t('presetCombination')}</label>
               <select
-                id={fieldId + '-preset'}
+                id={`${fieldId}-preset`}
                 value={currentPreset?.key ?? ''}
                 disabled={busy}
                 onChange={(event) => {
@@ -203,9 +203,9 @@ export function Configurations({
               </select>
             </div>
             <div className="field">
-              <label htmlFor={fieldId + '-encoding'}>{t('encoding')}</label>
+              <label htmlFor={`${fieldId}-encoding`}>{t('encoding')}</label>
               <input
-                id={fieldId + '-encoding'}
+                id={`${fieldId}-encoding`}
                 value={editing.encoding}
                 disabled={busy}
                 placeholder={t('encodingHint')}
@@ -213,9 +213,9 @@ export function Configurations({
               />
             </div>
             <div className="field">
-              <label htmlFor={fieldId + '-locale'}>{t('locale')}</label>
+              <label htmlFor={`${fieldId}-locale`}>{t('locale')}</label>
               <input
-                id={fieldId + '-locale'}
+                id={`${fieldId}-locale`}
                 value={editing.locale}
                 disabled={busy}
                 placeholder={t('localeHint')}
@@ -257,9 +257,9 @@ export function Configurations({
             className="modal panel"
             role="dialog"
             aria-modal="true"
-            aria-labelledby={dialogTitleId + '-setup'}
+            aria-labelledby={`${dialogTitleId}-setup`}
           >
-            <h2 id={dialogTitleId + '-setup'}>
+            <h2 id={`${dialogTitleId}-setup`}>
               {t('setupDialogTitle', { name: configLabel(t, setupPrompt) })}
             </h2>
             <p className="modal-body">{t('setupDialogBody')}</p>

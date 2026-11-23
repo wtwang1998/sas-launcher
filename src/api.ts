@@ -79,7 +79,7 @@ export const sameRef = (a: ConfigRef | null | undefined, b: ConfigRef | null | u
 
 /** Stable identity of a configuration reference, used as a React key. */
 export const refKey = (ref: ConfigRef | null | undefined) =>
-  ref ? (ref.kind === 'user' ? 'user:' + ref.id : 'builtIn:' + ref.code) : 'default'
+  ref ? (ref.kind === 'user' ? `user:${ref.id}` : `builtIn:${ref.code}`) : 'default'
 
 export const api = {
   snapshot: () => invoke<View>('snapshot'),
