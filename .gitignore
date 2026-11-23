@@ -3,6 +3,3 @@ dist/
 target/
 *.log
 /src-tauri/gen/schemas/
-
-# local design notes (kept on disk, never committed)
-docs/
