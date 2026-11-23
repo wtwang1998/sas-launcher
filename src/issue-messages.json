@@ -139,6 +139,10 @@
   "templateStage": ["无法准备设置快照。", "Could not prepare the settings snapshot."],
   "templateWrite": ["无法写入设置快照。", "Could not save the settings snapshot."],
   "batchRunning": ["项目已在运行。", "The project is already running."],
+  "projectRunning": [
+    "该项目的 SAS 会话仍在运行，请先关闭它再重新启动。",
+    "This project's SAS session is still running. Close it before launching again."
+  ],
   "sourceUnavailable": [
     "找不到选中的原有 SAS 设置。",
     "The selected existing SAS settings are no longer available."

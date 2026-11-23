@@ -28,6 +28,14 @@ use tauri::{Manager, State};
 use uuid::Uuid;
 use view::{SessionView, View};
 
+/// A project whose SAS session is still running must not be launched twice: the
+/// two processes would share one sasuser folder and one set of logs.
+fn project_running(records: &[Record], id: Uuid) -> bool {
+    records.iter().any(|record| {
+        record.status == Status::Running && record.purpose == Purpose::Project { id: Some(id) }
+    })
+}
+
 struct App {
     pub(crate) store: Store,
     pub(crate) sessions: Sessions,
@@ -442,6 +450,9 @@ impl App {
             .find(|project| project.id == id)
             .cloned()
             .ok_or_else(|| Issue::new("projectMissing"))?;
+        if project_running(&self.sessions.records(), project.id) {
+            return Err(Issue::new("projectRunning"));
+        }
         let resolved = match self.resolve(project.config.as_ref()) {
             Ok(resolved) => resolved,
             Err(error) => {
@@ -546,14 +557,7 @@ impl App {
             if !selected.remove(&project.id) {
                 continue;
             }
-            let running = records.iter().any(|record| {
-                record.status == Status::Running
-                    && record.purpose
-                        == Purpose::Project {
-                            id: Some(project.id),
-                        }
-            });
-            if running {
+            if project_running(&records, project.id) {
                 results.push(BatchResult {
                     id: project.id,
                     name: Some(project.name.clone()),
@@ -964,6 +968,110 @@ mod tests {
             .unwrap();
         app.refresh();
         app
+    }
+
+    /// Write a session manifest the loader will treat as `status`, which is how
+    /// a launch in progress survives an app restart.
+    fn record_session(app: &App, purpose: Purpose, status: Status, started_at: i64) -> Uuid {
+        let id = Uuid::new_v4();
+        let directory = app.store.sessions_dir().join(id.to_string());
+        std::fs::create_dir_all(&directory).unwrap();
+        let record = Record {
+            id,
+            name: format!("session-{started_at}"),
+            title: format!("session-{started_at}"),
+            purpose,
+            stage: Stage::Started,
+            status,
+            exit_code: None,
+            started_at,
+            argv: Vec::new(),
+            sasuser: directory.join("sasuser"),
+            sasuser_writable: true,
+            thin_cfg: None,
+            factory_cfg: PathBuf::from(r"C:\SAS\sasv9.cfg"),
+            encoding: Some("UTF-8".into()),
+            locale: Some("zh_CN".into()),
+            failure: None,
+        };
+        // A manifest is the flattened record plus the liveness identity; a
+        // missing process is probed from `identity`, so `null` keeps the status.
+        let mut manifest = serde_json::to_value(&record).unwrap();
+        manifest["identity"] = serde_json::Value::Null;
+        manifest["exit_recorded"] = serde_json::Value::Bool(false);
+        std::fs::write(
+            directory.join("manifest.json"),
+            serde_json::to_string(&manifest).unwrap(),
+        )
+        .unwrap();
+        id
+    }
+
+    fn save_project(app: &mut App, name: &str) -> Uuid {
+        app.store
+            .save_project(Project {
+                id: Uuid::new_v4(),
+                name: name.into(),
+                note: None,
+                config: None,
+            })
+            .unwrap();
+        app.store
+            .projects()
+            .iter()
+            .find(|project| project.name == name)
+            .map(|project| project.id)
+            .unwrap()
+    }
+
+    #[test]
+    fn a_project_that_is_already_running_is_not_launched_again() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let live = save_project(&mut app, "Live");
+        record_session(
+            &app,
+            Purpose::Project { id: Some(live) },
+            Status::Running,
+            20,
+        );
+
+        let error = app.launch_project(live).unwrap_err();
+        assert_eq!(error.code, "projectRunning");
+        let records = app.sessions.cached();
+        assert_eq!(records.len(), 1, "a refused launch leaves no new record");
+        assert_eq!(records[0].status, Status::Running);
+
+        // An exited session must not block the next launch: the guard lets it
+        // through, so the failure comes from the fixture's unusable sas.exe.
+        let idle = save_project(&mut app, "Idle");
+        record_session(
+            &app,
+            Purpose::Project { id: Some(idle) },
+            Status::Exited,
+            10,
+        );
+        let error = app.launch_project(idle).unwrap_err();
+        assert_ne!(error.code, "projectRunning");
+    }
+
+    #[test]
+    fn one_projects_session_does_not_block_another_project() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let busy = save_project(&mut app, "Busy");
+        let other = save_project(&mut app, "Other");
+        record_session(
+            &app,
+            Purpose::Project { id: Some(busy) },
+            Status::Running,
+            20,
+        );
+
+        let error = app.launch_project(other).unwrap_err();
+        assert_ne!(error.code, "projectRunning");
     }
 
     #[test]
