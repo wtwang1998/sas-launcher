@@ -12,9 +12,15 @@
 
 ## 为什么
 
-SAS 会话把偏好存在同一份用户设置（`SASUSER`）里。开第二个项目时，它继承了上一个项目的状态——同样的编码、同样的 Preferences、同样的逻辑库定义——而后关闭的窗口会把先关闭的覆盖掉。
+SAS 能同时开多个窗口，卡住的不是多开，而是它们共用同一份用户设置目录（`SASUSER`）——字体、颜色、窗口设置和 `PROC TEMPLATE` 的默认模板库都在这一个目录里，而 SAS 对它的更新访问要求独占（[RSASUSER 系统选项](https://support.sas.com/documentation/cdl/en/hostwin/69955/HTML/default/n0npwfu9o7rvtun1f8f4ztpug83z.htm)）。
 
-SAS Launcher 给每个项目一份自己的配置，并为每次启动准备一个独立、可写的 profile 目录，会话退出即删除。多个项目因此可以同时运行，互不干扰。
+第二个窗口于是退回 Work 逻辑库里的副本，外观全是默认，改动退出即丢：
+
+> `NOTE: 无法打开 SASUSER.PROFILE。系统将改为打开 WORK.PROFILE。`
+
+出表更直接：项目专属的 ODS RTF 模板写不进这个目录，`PROC TEMPLATE` 当场报错，之后只能用默认样式——那个窗口能跑程序，却出不了你要的表。官方的 `ODS PATH` 只治模板、不治偏好；“每个项目一个快捷方式”确实可行，但项目一多就散成一堆图标。
+
+SAS Launcher 给每个项目一份自己的配置，并为每次启动准备一个独立、可写的 `SASUSER` 目录，会话退出即删除。多个项目因此可以同时出表，互不干扰。
 
 ![项目页：三个项目及其配置胶囊](docs/images/overview-projects.png)
 

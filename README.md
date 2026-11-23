@@ -12,9 +12,15 @@ Run several SAS 9.4 projects side by side, each with its own session environment
 
 ## Why
 
-A SAS session keeps its preferences in one shared user profile (`SASUSER`). Open a second project and it starts from the first one's state — the same encoding, the same Preferences, the same library definitions — and whichever window quits last writes over the other.
+SAS is happy to open more than one window. What it cannot do is keep their user settings apart — fonts, colors, window state and the default `PROC TEMPLATE` store all live in one user folder (`SASUSER`), and SAS requires exclusive update access to it ([RSASUSER system option](https://support.sas.com/documentation/cdl/en/hostwin/69955/HTML/default/n0npwfu9o7rvtun1f8f4ztpug83z.htm)).
 
-SAS Launcher gives every project its own configuration and hands each launch a private, writable profile directory that is removed when the session ends. Projects can then run at the same time without touching each other's settings.
+The second window therefore falls back to a copy in Work: default appearance, changes discarded when it exits.
+
+> `NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.`
+
+Output is blocked harder. A project's own ODS RTF templates cannot be written into that folder, so `PROC TEMPLATE` errors out and the tables come out in the default style — the window runs programs but cannot produce your tables. The official `ODS PATH` workaround covers templates only, not preferences; a shortcut per project does work, but it is one more icon to maintain per project.
+
+SAS Launcher gives every project its own configuration and hands each launch a private, writable `SASUSER` directory that is deleted when the session ends. Projects can then produce tables at the same time without touching each other's settings.
 
 ![The projects page, with three projects and their configuration chips](docs/images/overview-projects.png)
 
