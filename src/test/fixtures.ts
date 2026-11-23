@@ -1,7 +1,12 @@
 import type { Config, Session, View } from '../api'
 
 /** A built-in row: the name is the factory NLS directory code. */
-export function builtIn(code: string, encoding: string | null, locale: string | null, patch: Partial<Config> = {}): Config {
+export function builtIn(
+  code: string,
+  encoding: string | null,
+  locale: string | null,
+  patch: Partial<Config> = {},
+): Config {
   return {
     reference: { kind: 'builtIn', code },
     name: code,
@@ -17,7 +22,13 @@ export function builtIn(code: string, encoding: string | null, locale: string | 
 }
 
 /** A user configuration derived from `u8` by default. */
-export function userConfig(id: string, name: string, encoding: string | null, locale: string | null, patch: Partial<Config> = {}): Config {
+export function userConfig(
+  id: string,
+  name: string,
+  encoding: string | null,
+  locale: string | null,
+  patch: Partial<Config> = {},
+): Config {
   return {
     reference: { kind: 'user', id },
     name,

@@ -13,8 +13,10 @@ it('submitting_default_following_project_sends_null_config', async () => {
   await user.type(screen.getByLabelText(/项目名称/), '项目 A')
   await user.click(screen.getByRole('button', { name: '保存项目' }))
 
-  await waitFor(() => expect(backend.calls.filter(call => call.cmd === 'save_project')).toHaveLength(1))
-  expect(backend.calls.find(call => call.cmd === 'save_project')?.args).toEqual({
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'save_project')).toHaveLength(1),
+  )
+  expect(backend.calls.find((call) => call.cmd === 'save_project')?.args).toEqual({
     id: null,
     name: '项目 A',
     note: null,
@@ -32,14 +34,16 @@ it('name_is_required_and_trimmed', async () => {
   await user.click(screen.getByRole('button', { name: '保存项目' }))
 
   expect(screen.getByText('请填写项目名称')).toBeInTheDocument()
-  expect(backend.calls.some(call => call.cmd === 'save_project')).toBe(false)
+  expect(backend.calls.some((call) => call.cmd === 'save_project')).toBe(false)
 
   await user.clear(name)
   await user.type(name, '  项目 A  ')
   await user.click(screen.getByRole('button', { name: '保存项目' }))
 
-  await waitFor(() => expect(backend.calls.filter(call => call.cmd === 'save_project')).toHaveLength(1))
-  expect(backend.calls.find(call => call.cmd === 'save_project')?.args).toEqual({
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'save_project')).toHaveLength(1),
+  )
+  expect(backend.calls.find((call) => call.cmd === 'save_project')?.args).toEqual({
     id: null,
     name: '项目 A',
     note: null,
@@ -62,7 +66,10 @@ it('batch_launch_sends_selected_ids', async () => {
   await user.click(screen.getByRole('checkbox', { name: '选择项目 项目 B' }))
   await user.click(screen.getByRole('button', { name: /启动所选/ }))
 
-  await waitFor(() => expect(backend.calls.filter(call => call.cmd === 'launch_batch')).toHaveLength(1))
-  expect(backend.calls.find(call => call.cmd === 'launch_batch')?.args).toEqual({ ids: ['p1', 'p2'] })
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'launch_batch')).toHaveLength(1),
+  )
+  expect(backend.calls.find((call) => call.cmd === 'launch_batch')?.args).toEqual({
+    ids: ['p1', 'p2'],
+  })
 })
-

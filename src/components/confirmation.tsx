@@ -2,8 +2,19 @@ import { CircleAlert } from 'lucide-react'
 import { useId, useLayoutEffect, useRef, useState } from 'react'
 import type { Translator } from '../i18n'
 
-export type Confirm = (title: string, message: string, label: string, action: () => void | Promise<void>) => void
-type Request = { title: string; message: string; label: string; action: () => void | Promise<void>; trigger: HTMLElement | null }
+export type Confirm = (
+  title: string,
+  message: string,
+  label: string,
+  action: () => void | Promise<void>,
+) => void
+type Request = {
+  title: string
+  message: string
+  label: string
+  action: () => void | Promise<void>
+  trigger: HTMLElement | null
+}
 
 /** jsdom does not always implement the native dialog methods; fall back to the attribute. */
 function showModal(dialog: HTMLDialogElement) {
@@ -80,21 +91,34 @@ export function useConfirmation(t: Translator) {
 
   return {
     confirm,
-    confirmation: active && <dialog className="app-dialog" ref={dialog} role="dialog" aria-labelledby={labelId} aria-describedby={detailId} onCancel={event => {
-      event.preventDefault()
-      finish(false)
-    }}>
-      <div className="app-dialog-content">
-        <div className="app-dialog-heading">
-          <CircleAlert size={20} aria-hidden="true" />
-          <h2 id={labelId}>{active.title}</h2>
+    confirmation: active && (
+      <dialog
+        className="app-dialog"
+        ref={dialog}
+        role="dialog"
+        aria-labelledby={labelId}
+        aria-describedby={detailId}
+        onCancel={(event) => {
+          event.preventDefault()
+          finish(false)
+        }}
+      >
+        <div className="app-dialog-content">
+          <div className="app-dialog-heading">
+            <CircleAlert size={20} aria-hidden="true" />
+            <h2 id={labelId}>{active.title}</h2>
+          </div>
+          <p id={detailId}>{active.message}</p>
+          <div className="form-actions">
+            <button type="button" className="button" ref={cancel} onClick={() => finish(false)}>
+              {t('cancel')}
+            </button>
+            <button type="button" className="button danger-primary" onClick={() => finish(true)}>
+              {active.label}
+            </button>
+          </div>
         </div>
-        <p id={detailId}>{active.message}</p>
-        <div className="form-actions">
-          <button type="button" className="button" ref={cancel} onClick={() => finish(false)}>{t('cancel')}</button>
-          <button type="button" className="button danger-primary" onClick={() => finish(true)}>{active.label}</button>
-        </div>
-      </div>
-    </dialog>,
+      </dialog>
+    ),
   }
 }

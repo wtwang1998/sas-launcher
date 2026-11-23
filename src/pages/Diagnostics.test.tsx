@@ -7,9 +7,13 @@ import { renderApp } from '../test/harness'
 
 it('row_shows_stage_and_exit_code', async () => {
   const user = userEvent.setup()
-  renderApp(makeView({
-    sessions: [makeSession({ id: 's1', name: '项目 A', status: 'exited', exitCode: 5, stage: 'spawn' })],
-  }))
+  renderApp(
+    makeView({
+      sessions: [
+        makeSession({ id: 's1', name: '项目 A', status: 'exited', exitCode: 5, stage: 'spawn' }),
+      ],
+    }),
+  )
 
   const navigation = await screen.findByRole('navigation', { name: '主导航' })
   await user.click(within(navigation).getByRole('button', { name: '会话诊断' }))
@@ -31,9 +35,13 @@ it('chain_lists_thin_factory_and_effective_options', async () => {
     sasuser: 'C:\\data\\sessions\\s1\\sasuser',
     log: 'C:\\data\\sessions\\s1\\SAS.LOG',
   }
-  renderApp(makeView({
-    sessions: [makeSession({ id: 's1', name: '项目 A', status: 'running', stage: 'started', chain })],
-  }))
+  renderApp(
+    makeView({
+      sessions: [
+        makeSession({ id: 's1', name: '项目 A', status: 'running', stage: 'started', chain }),
+      ],
+    }),
+  )
 
   const navigation = await screen.findByRole('navigation', { name: '主导航' })
   await user.click(within(navigation).getByRole('button', { name: '会话诊断' }))
@@ -51,12 +59,16 @@ it('chain_lists_thin_factory_and_effective_options', async () => {
 it('clear_removes_records_only_after_confirmation', async () => {
   const user = userEvent.setup()
   const { backend } = renderApp(
-    makeView({ sessions: [makeSession({ id: 's1', name: '项目 A', status: 'exited', exitCode: 0 })] }),
-    { clear_diagnostics: (_args, current) => {
-      const next = { ...current.view, sessions: [] }
-      current.setView(next)
-      return next
-    } },
+    makeView({
+      sessions: [makeSession({ id: 's1', name: '项目 A', status: 'exited', exitCode: 0 })],
+    }),
+    {
+      clear_diagnostics: (_args, current) => {
+        const next = { ...current.view, sessions: [] }
+        current.setView(next)
+        return next
+      },
+    },
   )
 
   const navigation = await screen.findByRole('navigation', { name: '主导航' })
@@ -64,21 +76,31 @@ it('clear_removes_records_only_after_confirmation', async () => {
   await user.click(await screen.findByRole('button', { name: '清空记录' }))
 
   const dialog = await screen.findByRole('dialog')
-  expect(backend.calls.some(call => call.cmd === 'clear_diagnostics')).toBe(false)
+  expect(backend.calls.some((call) => call.cmd === 'clear_diagnostics')).toBe(false)
 
   await user.click(within(dialog).getByRole('button', { name: '清空记录' }))
-  await waitFor(() => expect(backend.calls.filter(call => call.cmd === 'clear_diagnostics')).toHaveLength(1))
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'clear_diagnostics')).toHaveLength(1),
+  )
   expect(await screen.findByText('还没有会话记录')).toBeInTheDocument()
 })
 
 it('preflight_hints_are_listed_for_an_expanded_session', async () => {
   const user = userEvent.setup()
-  renderApp(makeView({
-    sessions: [makeSession({
-      id: 's1', name: '项目 A', status: 'exited', exitCode: 1, stage: 'spawn',
-      hints: [{ code: 'configUnavailable', detail: 'C:\\SASHome\\nls\\u8\\sasv9.cfg' }],
-    })],
-  }))
+  renderApp(
+    makeView({
+      sessions: [
+        makeSession({
+          id: 's1',
+          name: '项目 A',
+          status: 'exited',
+          exitCode: 1,
+          stage: 'spawn',
+          hints: [{ code: 'configUnavailable', detail: 'C:\\SASHome\\nls\\u8\\sasv9.cfg' }],
+        }),
+      ],
+    }),
+  )
 
   const navigation = await screen.findByRole('navigation', { name: '主导航' })
   await user.click(within(navigation).getByRole('button', { name: '会话诊断' }))
@@ -90,12 +112,20 @@ it('preflight_hints_are_listed_for_an_expanded_session', async () => {
 
 it('a_failed_launch_shows_its_stage_and_reason', async () => {
   const user = userEvent.setup()
-  renderApp(makeView({
-    sessions: [makeSession({
-      id: 's1', name: '项目 A', status: 'exited', exitCode: null, stage: 'cfg',
-      failure: { code: 'configurationFileMissing' },
-    })],
-  }))
+  renderApp(
+    makeView({
+      sessions: [
+        makeSession({
+          id: 's1',
+          name: '项目 A',
+          status: 'exited',
+          exitCode: null,
+          stage: 'cfg',
+          failure: { code: 'configurationFileMissing' },
+        }),
+      ],
+    }),
+  )
 
   const navigation = await screen.findByRole('navigation', { name: '主导航' })
   await user.click(within(navigation).getByRole('button', { name: '会话诊断' }))

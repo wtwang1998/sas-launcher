@@ -10,7 +10,15 @@ import { Chips } from './Chips'
  * (combobox trigger + listbox + roving active option) but renders every entry
  * with the same name/chips shape as the configuration list.
  */
-export function ConfigurationPicker({ value, configs, language, t, disabled = false, ariaLabel, onChange }: {
+export function ConfigurationPicker({
+  value,
+  configs,
+  language,
+  t,
+  disabled = false,
+  ariaLabel,
+  onChange,
+}: {
   value: ConfigRef | null
   configs: Config[]
   language: Language
@@ -28,7 +36,7 @@ export function ConfigurationPicker({ value, configs, language, t, disabled = fa
 
   const { users, builtIns } = groupConfigs(configs)
   const options = [...users, ...builtIns]
-  const selectedIndex = options.findIndex(config => sameRef(config.reference, value))
+  const selectedIndex = options.findIndex((config) => sameRef(config.reference, value))
   const selected = selectedIndex >= 0 ? options[selectedIndex] : undefined
 
   const optionId = (index: number) => listId + '-option-' + index
@@ -73,7 +81,12 @@ export function ConfigurationPicker({ value, configs, language, t, disabled = fa
 
   function onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (!open) {
-      if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter' || event.key === ' ') {
+      if (
+        event.key === 'ArrowDown' ||
+        event.key === 'ArrowUp' ||
+        event.key === 'Enter' ||
+        event.key === ' '
+      ) {
         // The picker lives inside a radio card; do not let arrows move the radio group.
         event.preventDefault()
         event.stopPropagation()
@@ -84,11 +97,11 @@ export function ConfigurationPicker({ value, configs, language, t, disabled = fa
     if (event.key === 'ArrowDown') {
       event.preventDefault()
       event.stopPropagation()
-      setActive(index => Math.min(options.length - 1, index + 1))
+      setActive((index) => Math.min(options.length - 1, index + 1))
     } else if (event.key === 'ArrowUp') {
       event.preventDefault()
       event.stopPropagation()
-      setActive(index => Math.max(0, index - 1))
+      setActive((index) => Math.max(0, index - 1))
     } else if (event.key === 'Home') {
       event.preventDefault()
       event.stopPropagation()
@@ -111,33 +124,78 @@ export function ConfigurationPicker({ value, configs, language, t, disabled = fa
   }
 
   function option(config: Config, index: number) {
-    return <div key={refKey(config.reference)} id={optionId(index)} role="option" aria-selected={index === selectedIndex}
-      className={index === active ? 'config-option active' : 'config-option'}
-      onMouseDown={event => event.preventDefault()}
-      onMouseEnter={() => setActive(index)}
-      onClick={() => choose(index)}>
-      <span className="config-option-name">{configLabel(t, config)}</span>
-      <Chips config={config} language={language} t={t} />
-    </div>
+    return (
+      <div
+        key={refKey(config.reference)}
+        id={optionId(index)}
+        role="option"
+        aria-selected={index === selectedIndex}
+        className={index === active ? 'config-option active' : 'config-option'}
+        onMouseDown={(event) => event.preventDefault()}
+        onMouseEnter={() => setActive(index)}
+        onClick={() => choose(index)}
+      >
+        <span className="config-option-name">{configLabel(t, config)}</span>
+        <Chips config={config} language={language} t={t} />
+      </div>
+    )
   }
 
-  return <div className="config-picker" ref={root}>
-    <button type="button" ref={trigger} className="config-trigger" role="combobox" aria-haspopup="listbox"
-      aria-expanded={open} aria-controls={open ? listId : undefined} aria-label={ariaLabel}
-      aria-activedescendant={open && active >= 0 ? optionId(active) : undefined}
-      disabled={disabled || !options.length}
-      onClick={event => { event.stopPropagation(); if (open) closeMenu(); else openMenu() }}
-      onKeyDown={onKeyDown}>
-      {selected
-        ? <><span className="config-trigger-label">{configLabel(t, selected)}</span><Chips config={selected} language={language} t={t} /></>
-        : <span className="config-trigger-placeholder">{t('configurationPickerEmpty')}</span>}
-      <ChevronDown size={16} className={'disclosure' + (open ? ' expanded' : '')} aria-hidden="true" />
-    </button>
-    {open && <div className={'config-menu' + (up ? ' up' : '')} role="listbox" id={listId} aria-label={ariaLabel}>
-      {users.length > 0 && <div className="config-menu-group" role="presentation">{t('userConfigurations')}</div>}
-      {users.map((config, index) => option(config, index))}
-      {builtIns.length > 0 && <div className="config-menu-group" role="presentation">{t('builtInConfigurations')}</div>}
-      {builtIns.map((config, index) => option(config, users.length + index))}
-    </div>}
-  </div>
+  return (
+    <div className="config-picker" ref={root}>
+      <button
+        type="button"
+        ref={trigger}
+        className="config-trigger"
+        role="combobox"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? listId : undefined}
+        aria-label={ariaLabel}
+        aria-activedescendant={open && active >= 0 ? optionId(active) : undefined}
+        disabled={disabled || !options.length}
+        onClick={(event) => {
+          event.stopPropagation()
+          if (open) closeMenu()
+          else openMenu()
+        }}
+        onKeyDown={onKeyDown}
+      >
+        {selected ? (
+          <>
+            <span className="config-trigger-label">{configLabel(t, selected)}</span>
+            <Chips config={selected} language={language} t={t} />
+          </>
+        ) : (
+          <span className="config-trigger-placeholder">{t('configurationPickerEmpty')}</span>
+        )}
+        <ChevronDown
+          size={16}
+          className={'disclosure' + (open ? ' expanded' : '')}
+          aria-hidden="true"
+        />
+      </button>
+      {open && (
+        <div
+          className={'config-menu' + (up ? ' up' : '')}
+          role="listbox"
+          id={listId}
+          aria-label={ariaLabel}
+        >
+          {users.length > 0 && (
+            <div className="config-menu-group" role="presentation">
+              {t('userConfigurations')}
+            </div>
+          )}
+          {users.map((config, index) => option(config, index))}
+          {builtIns.length > 0 && (
+            <div className="config-menu-group" role="presentation">
+              {t('builtInConfigurations')}
+            </div>
+          )}
+          {builtIns.map((config, index) => option(config, users.length + index))}
+        </div>
+      )}
+    </div>
+  )
 }

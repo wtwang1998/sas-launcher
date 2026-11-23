@@ -1,8 +1,30 @@
-import { Activity, Archive, Check, CircleAlert, FolderOpen, Folders, Languages, Layers3, RefreshCw, SquareTerminal, X } from 'lucide-react'
+import {
+  Activity,
+  Archive,
+  Check,
+  CircleAlert,
+  FolderOpen,
+  Folders,
+  Languages,
+  Layers3,
+  RefreshCw,
+  SquareTerminal,
+  X,
+} from 'lucide-react'
 import { open } from '@tauri-apps/plugin-dialog'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useEffect, useRef, useState } from 'react'
-import { api, refKey, sameRef, type BatchResult, type ConfigBase, type Language, type Preference, type Session, type View } from './api'
+import {
+  api,
+  refKey,
+  sameRef,
+  type BatchResult,
+  type ConfigBase,
+  type Language,
+  type Preference,
+  type Session,
+  type View,
+} from './api'
 import { browserLanguage, issueText, translate, type MessageKey } from './i18n'
 import { useConfirmation } from './components/confirmation'
 import { type ProjectDraft } from './components/ProjectForm'
@@ -40,7 +62,9 @@ export function App() {
     document.documentElement.lang = language
     document.title = title
     try {
-      void getCurrentWindow().setTitle(title).catch(() => undefined)
+      void getCurrentWindow()
+        .setTitle(title)
+        .catch(() => undefined)
     } catch {
       // Not running inside a Tauri window (unit tests, plain browser preview).
     }
@@ -124,8 +148,9 @@ export function App() {
     if (!pendingDraft) return
     // The parked draft may point at a configuration deleted while the trip was
     // in progress; never restore a dead reference.
-    const alive = !pendingDraft.config
-      || (view?.configs ?? []).some(config => sameRef(config.reference, pendingDraft.config))
+    const alive =
+      !pendingDraft.config ||
+      (view?.configs ?? []).some((config) => sameRef(config.reference, pendingDraft.config))
     setDraft(alive ? pendingDraft : { ...pendingDraft, config: null })
     setPendingDraft(null)
     setPage('projects')
@@ -142,10 +167,15 @@ export function App() {
   }
 
   async function deleteProject(id: string) {
-    const name = view?.projects.find(project => project.id === id)?.name
-    confirm(t('deleteTitle'), t('deletePrompt', { name: name ?? '' }), t('deleteAction'), async () => {
-      await mutate(() => api.deleteProject(id), 'projectDeleted')
-    })
+    const name = view?.projects.find((project) => project.id === id)?.name
+    confirm(
+      t('deleteTitle'),
+      t('deletePrompt', { name: name ?? '' }),
+      t('deleteAction'),
+      async () => {
+        await mutate(() => api.deleteProject(id), 'projectDeleted')
+      },
+    )
   }
 
   async function launchProject(id: string) {
@@ -173,13 +203,15 @@ export function App() {
   }
 
   async function createConfiguration(base: ConfigBase, name: string | null) {
-    const known = new Set((view?.configs ?? []).map(config => refKey(config.reference)))
+    const known = new Set((view?.configs ?? []).map((config) => refKey(config.reference)))
     const next = await mutate(() => api.createConfiguration(base, name), 'configurationCreated')
     if (!next) return
-    const created = next.configs.find(config => !known.has(refKey(config.reference)))
+    const created = next.configs.find((config) => !known.has(refKey(config.reference)))
     const createdId = created?.reference.kind === 'user' ? created.reference.id : null
     if (createdId) {
-      setPendingDraft(pending => (pending ? { ...pending, config: { kind: 'user', id: createdId } } : pending))
+      setPendingDraft((pending) =>
+        pending ? { ...pending, config: { kind: 'user', id: createdId } } : pending,
+      )
     }
   }
 
@@ -188,10 +220,15 @@ export function App() {
   }
 
   async function deleteConfiguration(id: string) {
-    const name = view?.configs.find(config => refKey(config.reference) === 'user:' + id)?.name
-    confirm(t('deleteConfigurationTitle'), t('deleteConfigurationDetail', { name: name ?? '' }), t('deleteAction'), async () => {
-      await mutate(() => api.deleteConfiguration(id), 'configurationDeleted')
-    })
+    const name = view?.configs.find((config) => refKey(config.reference) === 'user:' + id)?.name
+    confirm(
+      t('deleteConfigurationTitle'),
+      t('deleteConfigurationDetail', { name: name ?? '' }),
+      t('deleteAction'),
+      async () => {
+        await mutate(() => api.deleteConfiguration(id), 'configurationDeleted')
+      },
+    )
   }
 
   async function startConfigSetup(id: string) {
@@ -209,21 +246,24 @@ export function App() {
   }
 
   function openLog(id: string) {
-    void api.openLog(id).catch(failure => setError(failure))
+    void api.openLog(id).catch((failure) => setError(failure))
   }
 
   function openSasuser(id: string) {
-    void api.openSasuser(id).catch(failure => setError(failure))
+    void api.openSasuser(id).catch((failure) => setError(failure))
   }
 
   function openArchive() {
-    void api.openArchive().catch(failure => setError(failure))
+    void api.openArchive().catch((failure) => setError(failure))
   }
 
   function pickExe() {
     void (async () => {
       try {
-        const selected = await open({ title: t('pickSas'), filters: [{ name: t('windowsProgram'), extensions: ['exe'] }] })
+        const selected = await open({
+          title: t('pickSas'),
+          filters: [{ name: t('windowsProgram'), extensions: ['exe'] }],
+        })
         if (typeof selected === 'string' && selected) {
           await mutate(() => api.selectInstallation(selected), 'installationUpdated')
         }
@@ -233,91 +273,171 @@ export function App() {
     })()
   }
 
-  return <div className="app">
-    <aside className="sidebar">
-      <div className="brand">
-        <span className="brand-icon"><SquareTerminal size={24} strokeWidth={1.9} aria-hidden="true" /></span>
-        <span>{t('title')}<small>{t('subtitle')}</small></span>
-      </div>
-      <nav aria-label={t('navigation')}>
-        {navigation.map(({ id, label, icon: Icon }) => <button key={id} type="button"
-          className={`nav-item ${page === id ? 'selected' : ''}`} aria-current={page === id ? 'page' : undefined}
-          onClick={() => navigate(id)}>
-          <Icon size={18} strokeWidth={1.8} aria-hidden="true" />{t(label)}
-        </button>)}
-      </nav>
-      <div className="sidebar-bottom">
-        <div className="health">
-          <span className={`status-dot ${view?.exe ? 'green' : ''}`} aria-hidden="true" />
-          {view?.exe ? t('sasDetected') : t('noInstallation')}
+  return (
+    <div className="app">
+      <aside className="sidebar">
+        <div className="brand">
+          <span className="brand-icon">
+            <SquareTerminal size={24} strokeWidth={1.9} aria-hidden="true" />
+          </span>
+          <span>
+            {t('title')}
+            <small>{t('subtitle')}</small>
+          </span>
         </div>
-        <label className="language-picker">
-          <Languages size={15} aria-hidden="true" /><span>{t('language')}</span>
-          <select aria-label={t('language')} value={view?.languagePreference ?? 'system'} disabled={busy || !view}
-            onChange={event => void mutate(() => api.setLanguage(event.target.value as Preference))}>
-            <option value="system">{t('system')}</option>
-            <option value="zh-Hans">{t('languageZhHans')}</option>
-            <option value="en">{t('languageEnglish')}</option>
-          </select>
-        </label>
-      </div>
-    </aside>
+        <nav aria-label={t('navigation')}>
+          {navigation.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              className={`nav-item ${page === id ? 'selected' : ''}`}
+              aria-current={page === id ? 'page' : undefined}
+              onClick={() => navigate(id)}
+            >
+              <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+              {t(label)}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="health">
+            <span className={`status-dot ${view?.exe ? 'green' : ''}`} aria-hidden="true" />
+            {view?.exe ? t('sasDetected') : t('noInstallation')}
+          </div>
+          <label className="language-picker">
+            <Languages size={15} aria-hidden="true" />
+            <span>{t('language')}</span>
+            <select
+              aria-label={t('language')}
+              value={view?.languagePreference ?? 'system'}
+              disabled={busy || !view}
+              onChange={(event) =>
+                void mutate(() => api.setLanguage(event.target.value as Preference))
+              }
+            >
+              <option value="system">{t('system')}</option>
+              <option value="zh-Hans">{t('languageZhHans')}</option>
+              <option value="en">{t('languageEnglish')}</option>
+            </select>
+          </label>
+        </div>
+      </aside>
 
-    <main>
-      <div className="content">
-        {error !== null && <div className="banner error" role="alert">
-          <CircleAlert size={18} aria-hidden="true" />
-          <span>{issueText(language, error)}</span>
-          <button type="button" className="icon-button" aria-label={t('closeError')} onClick={() => setError(null)}><X size={16} /></button>
-        </div>}
-        {toast && <div className="banner success" role="status">
-          <Check size={18} aria-hidden="true" />
-          <span>{t(toast.key, toast.values)}</span>
-          <button type="button" className="icon-button" aria-label={t('closeMessage')} onClick={() => setToast(null)}><X size={16} /></button>
-        </div>}
-        {view?.scanError && <div className="banner warning">
-          <CircleAlert size={18} aria-hidden="true" />
-          <span>{issueText(language, view.scanError)}</span>
-          <button type="button" className="button small" disabled={busy} onClick={pickExe}>
-            <FolderOpen size={15} aria-hidden="true" />{t('chooseExe')}
-          </button>
-        </div>}
-        {view?.defaultError && !view.scanError && <div className="banner warning">
-          <CircleAlert size={18} aria-hidden="true" />
-          <span>{issueText(language, view.defaultError)}</span>
-          <button type="button" className="button small" disabled={busy} onClick={() => void mutate(() => api.refresh(), 'refreshed')}>
-            <RefreshCw size={15} aria-hidden="true" />{t('refresh')}
-          </button>
-        </div>}
-        {view?.archived && <div className="banner info">
-          <Archive size={18} aria-hidden="true" />
-          <span>{t('archiveNotice', { path: view.archived })}</span>
-          <button type="button" className="button small" disabled={busy} onClick={openArchive}>{t('openArchive')}</button>
-        </div>}
-        {!view && error === null && <p className="muted" role="status">{t('discovering')}</p>}
+      <main>
+        <div className="content">
+          {error !== null && (
+            <div className="banner error" role="alert">
+              <CircleAlert size={18} aria-hidden="true" />
+              <span>{issueText(language, error)}</span>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label={t('closeError')}
+                onClick={() => setError(null)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
+          {toast && (
+            <div className="banner success" role="status">
+              <Check size={18} aria-hidden="true" />
+              <span>{t(toast.key, toast.values)}</span>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label={t('closeMessage')}
+                onClick={() => setToast(null)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
+          {view?.scanError && (
+            <div className="banner warning">
+              <CircleAlert size={18} aria-hidden="true" />
+              <span>{issueText(language, view.scanError)}</span>
+              <button type="button" className="button small" disabled={busy} onClick={pickExe}>
+                <FolderOpen size={15} aria-hidden="true" />
+                {t('chooseExe')}
+              </button>
+            </div>
+          )}
+          {view?.defaultError && !view.scanError && (
+            <div className="banner warning">
+              <CircleAlert size={18} aria-hidden="true" />
+              <span>{issueText(language, view.defaultError)}</span>
+              <button
+                type="button"
+                className="button small"
+                disabled={busy}
+                onClick={() => void mutate(() => api.refresh(), 'refreshed')}
+              >
+                <RefreshCw size={15} aria-hidden="true" />
+                {t('refresh')}
+              </button>
+            </div>
+          )}
+          {view?.archived && (
+            <div className="banner info">
+              <Archive size={18} aria-hidden="true" />
+              <span>{t('archiveNotice', { path: view.archived })}</span>
+              <button type="button" className="button small" disabled={busy} onClick={openArchive}>
+                {t('openArchive')}
+              </button>
+            </div>
+          )}
+          {!view && error === null && (
+            <p className="muted" role="status">
+              {t('discovering')}
+            </p>
+          )}
 
-        {view && page === 'projects' && <Projects view={view} draft={draft} language={language} t={t} busy={busy}
-          onDraft={setDraft}
-          onCreateConfiguration={beginConfigurationTrip}
-          onSaveProject={saveProject}
-          onDeleteProject={deleteProject}
-          onLaunchProject={launchProject}
-          onLaunchBatch={launchBatch} />}
+          {view && page === 'projects' && (
+            <Projects
+              view={view}
+              draft={draft}
+              language={language}
+              t={t}
+              busy={busy}
+              onDraft={setDraft}
+              onCreateConfiguration={beginConfigurationTrip}
+              onSaveProject={saveProject}
+              onDeleteProject={deleteProject}
+              onLaunchProject={launchProject}
+              onLaunchBatch={launchBatch}
+            />
+          )}
 
-        {view && page === 'configurations' && <Configurations view={view} language={language} t={t} busy={busy}
-          returnDraft={pendingDraft ? returnToDraft : null}
-          onCreate={createConfiguration}
-          onUpdate={updateConfiguration}
-          onDelete={deleteConfiguration}
-          onStartSetup={startConfigSetup}
-          onFinishSetup={finishConfigSetup} />}
+          {view && page === 'configurations' && (
+            <Configurations
+              view={view}
+              language={language}
+              t={t}
+              busy={busy}
+              returnDraft={pendingDraft ? returnToDraft : null}
+              onCreate={createConfiguration}
+              onUpdate={updateConfiguration}
+              onDelete={deleteConfiguration}
+              onStartSetup={startConfigSetup}
+              onFinishSetup={finishConfigSetup}
+            />
+          )}
 
-        {view && page === 'diagnostics' && <Diagnostics view={view} language={language} t={t} busy={busy}
-          onClear={clearDiagnostics}
-          onOpenLog={openLog}
-          onOpenSasuser={openSasuser} />}
-      </div>
-    </main>
-    {confirmation}
-  </div>
+          {view && page === 'diagnostics' && (
+            <Diagnostics
+              view={view}
+              language={language}
+              t={t}
+              busy={busy}
+              onClear={clearDiagnostics}
+              onOpenLog={openLog}
+              onOpenSasuser={openSasuser}
+            />
+          )}
+        </div>
+      </main>
+      {confirmation}
+    </div>
+  )
 }

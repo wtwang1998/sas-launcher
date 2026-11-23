@@ -21,8 +21,12 @@ export function installBackend(initial: View, handlers: Record<string, Handler> 
   let current = initial
   const backend: Backend = {
     calls,
-    get view() { return current },
-    setView(next) { current = next },
+    get view() {
+      return current
+    },
+    setView(next) {
+      current = next
+    },
   }
   mockIPC((cmd, args) => {
     const payload = args as Record<string, unknown> | undefined

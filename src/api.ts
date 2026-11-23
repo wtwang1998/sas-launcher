@@ -5,36 +5,77 @@ export type Language = 'en' | 'zh-Hans'
 export type Preference = 'system' | Language
 export type PresetStatus = 'verified' | 'failed' | 'unverified'
 export type ConfigRef = { kind: 'builtIn'; code: string } | { kind: 'user'; id: string }
-export type ConfigBase = { kind: 'default' } | { kind: 'builtIn'; code: string } | { kind: 'user'; id: string }
+export type ConfigBase =
+  | { kind: 'default' }
+  | { kind: 'builtIn'; code: string }
+  | { kind: 'user'; id: string }
 export type Config = {
-  reference: ConfigRef; name: string
-  encoding: string | null; locale: string | null; uiLanguage: string | null
-  preset: PresetStatus; derivedFrom: string | null; hasProfile: boolean; error: Issue | null
+  reference: ConfigRef
+  name: string
+  encoding: string | null
+  locale: string | null
+  uiLanguage: string | null
+  preset: PresetStatus
+  derivedFrom: string | null
+  hasProfile: boolean
+  error: Issue | null
 }
 export type Project = { id: string; name: string; note: string | null; config: ConfigRef | null }
 export type SessionStage = 'exe' | 'cfg' | 'profile' | 'spawn' | 'started'
 export type SessionStatus = 'running' | 'exited' | 'setup' | 'cleanupPending' | 'unknown'
-export type Chain = { label: string; thinCfg: string | null; factoryCfg: string | null; encoding: string | null; locale: string | null; sasuser: string; log: string | null }
+export type Chain = {
+  label: string
+  thinCfg: string | null
+  factoryCfg: string | null
+  encoding: string | null
+  locale: string | null
+  sasuser: string
+  log: string | null
+}
 export type Session = {
-  id: string; name: string; kind: 'project' | 'setup'; configId: string | null
-  status: SessionStatus; exitCode: number | null; startedAt: number; stage: SessionStage
-  argv: string[]; chain: Chain; sasuserWritable: boolean; errors: number; warnings: number
+  id: string
+  name: string
+  kind: 'project' | 'setup'
+  configId: string | null
+  status: SessionStatus
+  exitCode: number | null
+  startedAt: number
+  stage: SessionStage
+  argv: string[]
+  chain: Chain
+  sasuserWritable: boolean
+  errors: number
+  warnings: number
   hints: Issue[]
   failure: Issue | null
 }
-export type BatchResult = { id: string; name: string | null; status: 'started' | 'skipped' | 'failed'; reason: Issue | null }
+export type BatchResult = {
+  id: string
+  name: string | null
+  status: 'started' | 'skipped' | 'failed'
+  reason: Issue | null
+}
 export type View = {
-  exe: string | null; defaultConfig: Config | null; defaultError: Issue | null; scanError: Issue | null
-  configs: Config[]; projects: Project[]; sessions: Session[]
-  archived: string | null; languagePreference: Preference; language: Language; systemLanguage: string
+  exe: string | null
+  defaultConfig: Config | null
+  defaultError: Issue | null
+  scanError: Issue | null
+  configs: Config[]
+  projects: Project[]
+  sessions: Session[]
+  archived: string | null
+  languagePreference: Preference
+  language: Language
+  systemLanguage: string
 }
 
 /** Reference equality for the three-state project configuration pointer. */
 export const sameRef = (a: ConfigRef | null | undefined, b: ConfigRef | null | undefined) =>
-  a?.kind === b?.kind
-  && (a?.kind === 'user'
+  a?.kind === b?.kind &&
+  (a?.kind === 'user'
     ? a.id === (b as Extract<ConfigRef, { kind: 'user' }> | undefined)?.id
-    : a?.kind === 'builtIn' && a.code === (b as Extract<ConfigRef, { kind: 'builtIn' }> | undefined)?.code)
+    : a?.kind === 'builtIn' &&
+      a.code === (b as Extract<ConfigRef, { kind: 'builtIn' }> | undefined)?.code)
 
 /** Stable identity of a configuration reference, used as a React key. */
 export const refKey = (ref: ConfigRef | null | undefined) =>
@@ -54,7 +95,8 @@ export const api = {
     invoke<View>('update_configuration', { id, encoding, locale }),
   deleteConfiguration: (id: string) => invoke<View>('delete_configuration', { id }),
   startConfigSetup: (id: string) => invoke<View>('start_config_setup', { id }),
-  finishConfigSetup: (id: string, save: boolean) => invoke<View>('finish_config_setup', { id, save }),
+  finishConfigSetup: (id: string, save: boolean) =>
+    invoke<View>('finish_config_setup', { id, save }),
   launchProject: (id: string) => invoke<Session>('launch_project', { id }),
   launchBatch: (ids: string[]) => invoke<BatchResult[]>('launch_batch', { ids }),
   clearDiagnostics: () => invoke<View>('clear_diagnostics'),

@@ -9,7 +9,7 @@ it('exactly_three_navigation_items_without_an_install_path_entry', async () => {
 
   const navigation = await screen.findByRole('navigation', { name: '主导航' })
   const items = within(navigation).getAllByRole('button')
-  expect(items.map(item => item.textContent)).toEqual(['项目', '配置管理', '会话诊断'])
+  expect(items.map((item) => item.textContent)).toEqual(['项目', '配置管理', '会话诊断'])
   expect(screen.queryByText('管理 SAS 程序路径')).not.toBeInTheDocument()
 })
 
@@ -19,7 +19,9 @@ it('scan_error_shows_a_banner_with_the_exe_picker', async () => {
   const message = await screen.findByText(/未找到 SAS 9.4/)
   const banner = message.closest('.banner')
   expect(banner).not.toBeNull()
-  expect(within(banner as HTMLElement).getByRole('button', { name: '选择 sas.exe' })).toBeInTheDocument()
+  expect(
+    within(banner as HTMLElement).getByRole('button', { name: '选择 sas.exe' }),
+  ).toBeInTheDocument()
 })
 
 it('draft_survives_a_trip_to_configuration_management', async () => {
@@ -44,9 +46,11 @@ it('draft_survives_a_trip_to_configuration_management', async () => {
   const builtInRow = screen.getByText('u8').closest('li')
   expect(builtInRow).not.toBeNull()
   await user.click(within(builtInRow as HTMLElement).getByRole('button', { name: /配置操作/ }))
-  await user.click(within(builtInRow as HTMLElement).getByRole('menuitem', { name: '从本配置衍生' }))
+  await user.click(
+    within(builtInRow as HTMLElement).getByRole('menuitem', { name: '从本配置衍生' }),
+  )
 
-  expect(backend.calls.find(call => call.cmd === 'create_configuration')?.args).toMatchObject({
+  expect(backend.calls.find((call) => call.cmd === 'create_configuration')?.args).toMatchObject({
     base: { kind: 'builtIn', code: 'u8' },
     name: null,
   })

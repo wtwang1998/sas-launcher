@@ -17,8 +17,16 @@ it('arrow_keys_move_selection_and_subcontrol_only_renders_when_checked', async (
 
   function Wrapper() {
     const [value, setValue] = useState<ConfigRef | null>(null)
-    return <ConfigChoice value={value} configs={configs} defaultConfig={builtIn('zh', 'EUC-CN', 'zh_CN')}
-      language="zh-Hans" t={t} onChange={setValue} />
+    return (
+      <ConfigChoice
+        value={value}
+        configs={configs}
+        defaultConfig={builtIn('zh', 'EUC-CN', 'zh_CN')}
+        language="zh-Hans"
+        t={t}
+        onChange={setValue}
+      />
+    )
   }
 
   render(<Wrapper />)

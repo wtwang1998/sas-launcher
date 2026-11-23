@@ -1,4 +1,12 @@
-import { sameRef, type Chain, type Config, type ConfigRef, type Language, type PresetStatus, type Project } from '../api'
+import {
+  sameRef,
+  type Chain,
+  type Config,
+  type ConfigRef,
+  type Language,
+  type PresetStatus,
+  type Project,
+} from '../api'
 import type { MessageKey, Translator } from '../i18n'
 
 /** Display name of a configuration: the user-given name, or the factory directory code. */
@@ -9,7 +17,11 @@ export function configLabel(t: Translator, config: Config): string {
 }
 
 export function presetLabel(t: Translator, preset: PresetStatus): string {
-  return preset === 'failed' ? t('presetFailed') : preset === 'unverified' ? t('presetUnverified') : t('presetVerified')
+  return preset === 'failed'
+    ? t('presetFailed')
+    : preset === 'unverified'
+      ? t('presetUnverified')
+      : t('presetVerified')
 }
 
 const collator = new Intl.Collator('zh-Hans', { numeric: true, sensitivity: 'base' })
@@ -27,8 +39,8 @@ function byName(configs: Config[]): Config[] {
 
 export function groupConfigs(configs: Config[]): { users: Config[]; builtIns: Config[] } {
   return {
-    users: byName(configs.filter(config => config.reference.kind === 'user')),
-    builtIns: byName(configs.filter(config => config.reference.kind === 'builtIn')),
+    users: byName(configs.filter((config) => config.reference.kind === 'user')),
+    builtIns: byName(configs.filter((config) => config.reference.kind === 'builtIn')),
   }
 }
 
@@ -53,8 +65,13 @@ export type OptionCheck = { status: PresetStatus; warning: MessageKey | null }
  * (factory combinations plus launch history); this only turns it into copy and
  * flags missing or unverified combinations without ever blocking a launch.
  */
-export function optionsWarning(encoding: string | null, locale: string | null, preset: PresetStatus): OptionCheck {
-  if (!encoding?.trim() || !locale?.trim()) return { status: 'unverified', warning: 'optionPairMissing' }
+export function optionsWarning(
+  encoding: string | null,
+  locale: string | null,
+  preset: PresetStatus,
+): OptionCheck {
+  if (!encoding?.trim() || !locale?.trim())
+    return { status: 'unverified', warning: 'optionPairMissing' }
   if (preset === 'failed') return { status: 'failed', warning: 'presetFailedHint' }
   if (preset === 'unverified') return { status: 'unverified', warning: 'presetUnverifiedHint' }
   return { status: 'verified', warning: null }
@@ -77,7 +94,12 @@ export function chainLines(chain: Chain): ChainLine[] {
 export function formatStartedAt(ms: number, language: Language): string {
   if (!Number.isFinite(ms) || ms <= 0) return '—'
   return new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'zh-CN', {
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
   }).format(new Date(ms))
 }
 
@@ -87,9 +109,21 @@ export function formatStartedAt(ms: number, language: Language): string {
  */
 /** SAS writes some factory `-LOCALE` values as bare English language names. */
 const sasLanguageNames: Record<string, string> = {
-  arabic: 'ar', danish: 'da', dutch: 'nl', french: 'fr', german: 'de',
-  hebrew: 'he', hungarian: 'hu', italian: 'it', norwegian: 'no', polish: 'pl',
-  portuguese: 'pt', russian: 'ru', spanish: 'es', swedish: 'sv', turkish: 'tr',
+  arabic: 'ar',
+  danish: 'da',
+  dutch: 'nl',
+  french: 'fr',
+  german: 'de',
+  hebrew: 'he',
+  hungarian: 'hu',
+  italian: 'it',
+  norwegian: 'no',
+  polish: 'pl',
+  portuguese: 'pt',
+  russian: 'ru',
+  spanish: 'es',
+  swedish: 'sv',
+  turkish: 'tr',
 }
 
 export function localeLanguageName(language: Language, locale: string | null): string | null {
@@ -97,19 +131,27 @@ export function localeLanguageName(language: Language, locale: string | null): s
   if (!value) return null
   const match = /^([A-Za-z]{2,3})(?:[-_]([A-Za-z]{2}))?$/.exec(value)
   if (!match) {
-    return sasLanguageNames[value.toLowerCase()] ? localeLanguageName(language, sasLanguageNames[value.toLowerCase()]) : value
+    return sasLanguageNames[value.toLowerCase()]
+      ? localeLanguageName(language, sasLanguageNames[value.toLowerCase()])
+      : value
   }
   const subtag = match[1].toLowerCase()
   const region = match[2]?.toUpperCase() ?? ''
-  const code = subtag === 'zh' ? (['TW', 'HK', 'MO'].includes(region) ? 'zh-Hant' : 'zh-Hans') : subtag
+  const code =
+    subtag === 'zh' ? (['TW', 'HK', 'MO'].includes(region) ? 'zh-Hant' : 'zh-Hans') : subtag
   try {
-    return new Intl.DisplayNames([language], { type: 'language', fallback: 'none' }).of(code) ?? code
+    return (
+      new Intl.DisplayNames([language], { type: 'language', fallback: 'none' }).of(code) ?? code
+    )
   } catch {
     return code
   }
 }
 
-/** `简体中文 · EUC-CN`, used in the "follow the default configuration" hint. */export function optionSummary(language: Language, config: Config | null): string {
+/** `简体中文 · EUC-CN`, used in the "follow the default configuration" hint. */ export function optionSummary(
+  language: Language,
+  config: Config | null,
+): string {
   if (!config) return ''
   return [localeLanguageName(language, config.locale), config.encoding?.toUpperCase()]
     .filter((part): part is string => !!part)
@@ -117,12 +159,12 @@ export function localeLanguageName(language: Language, locale: string | null): s
 }
 
 export function usageCount(projects: Project[], reference: ConfigRef): number {
-  return projects.filter(project => sameRef(project.config, reference)).length
+  return projects.filter((project) => sameRef(project.config, reference)).length
 }
 
 export function configsByRef(configs: Config[], reference: ConfigRef | null): Config | undefined {
   if (!reference) return undefined
-  return configs.find(config => sameRef(config.reference, reference))
+  return configs.find((config) => sameRef(config.reference, reference))
 }
 
 /** `{kind:'user', id:''}` is the "user configuration chosen but not picked yet" state. */
@@ -134,7 +176,9 @@ export function configReady(config: ConfigRef | null): boolean {
 export type PresetOption = { key: string; encoding: string; locale: string }
 
 const presetKeyOf = (encoding: string, locale: string) =>
-  encoding.trim().toLowerCase().replaceAll('-', '_') + '|' + locale.trim().toLowerCase().replaceAll('-', '_')
+  encoding.trim().toLowerCase().replaceAll('-', '_') +
+  '|' +
+  locale.trim().toLowerCase().replaceAll('-', '_')
 
 /** Unique (encoding, locale) combinations offered by the factory NLS configurations. */
 export function factoryPresets(configs: Config[]): PresetOption[] {
@@ -144,12 +188,18 @@ export function factoryPresets(configs: Config[]): PresetOption[] {
     const key = presetKeyOf(config.encoding, config.locale)
     if (!seen.has(key)) seen.set(key, { key, encoding: config.encoding, locale: config.locale })
   }
-  return [...seen.values()].sort((a, b) => a.locale.localeCompare(b.locale) || a.encoding.localeCompare(b.encoding))
+  return [...seen.values()].sort(
+    (a, b) => a.locale.localeCompare(b.locale) || a.encoding.localeCompare(b.encoding),
+  )
 }
 
 /** The factory preset a pair of options belongs to, or `null` for a hand-written combination. */
-export function matchPreset(presets: PresetOption[], encoding: string | null, locale: string | null): PresetOption | null {
+export function matchPreset(
+  presets: PresetOption[],
+  encoding: string | null,
+  locale: string | null,
+): PresetOption | null {
   if (!encoding?.trim() || !locale?.trim()) return null
   const key = presetKeyOf(encoding, locale)
-  return presets.find(preset => preset.key === key) ?? null
+  return presets.find((preset) => preset.key === key) ?? null
 }

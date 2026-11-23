@@ -8,9 +8,18 @@ export const messages = {
   projects: ['项目', 'Projects'],
   configurations: ['配置管理', 'Configurations'],
   sessions: ['会话诊断', 'Session Diagnostics'],
-  projectsHelp: ['保存常用项目的配置，一键启动 SAS。', 'Save a configuration for each project and start SAS in one click.'],
-  configurationsHelp: ['维护用户配置的编码与区域；内置配置只读。', 'Adjust the encoding and locale of your own configurations. Built-in configurations are read-only.'],
-  sessionsHelp: ['查看会话状态、解析链与真实启动参数。', 'Review session status, resolution chains and real launch arguments.'],
+  projectsHelp: [
+    '保存常用项目的配置，一键启动 SAS。',
+    'Save a configuration for each project and start SAS in one click.',
+  ],
+  configurationsHelp: [
+    '维护用户配置的编码与区域；内置配置只读。',
+    'Adjust the encoding and locale of your own configurations. Built-in configurations are read-only.',
+  ],
+  sessionsHelp: [
+    '查看会话状态、解析链与真实启动参数。',
+    'Review session status, resolution chains and real launch arguments.',
+  ],
 
   language: ['应用语言', 'App language'],
   languageZhHans: ['简体中文', 'Simplified Chinese'],
@@ -55,23 +64,41 @@ export const messages = {
   projectDeleted: ['项目已删除。', 'Project deleted.'],
   launched: ['已启动「{name}」。', 'Started “{name}”.'],
   noProjects: ['还没有保存的项目', 'No saved projects yet'],
-  noProjectsHelp: ['保存常用项目的名称和配置，下次直接启动。', 'Save a project name and configuration to start it next time.'],
+  noProjectsHelp: [
+    '保存常用项目的名称和配置，下次直接启动。',
+    'Save a project name and configuration to start it next time.',
+  ],
   firstProject: ['添加第一个项目', 'Add your first project'],
   checkAll: ['全选', 'Select all'],
   launchSelected: ['启动所选（{count}）', 'Launch selected ({count})'],
   batchFailures: ['部分项目未能启动', 'Some projects could not be started'],
   unavailableProject: ['项目不可用', 'Unavailable project'],
-  missingConfig: ['配置不可用，请编辑项目重新选择', 'The configuration is unavailable. Edit the project to choose another one.'],
+  missingConfig: [
+    '配置不可用，请编辑项目重新选择',
+    'The configuration is unavailable. Edit the project to choose another one.',
+  ],
   configSelection: ['配置选择', 'Configuration'],
 
   followDefaultOption: ['跟随默认配置', 'Follow the default configuration'],
-  followDefaultOptionHint: ['启动时读取 SAS 安装的默认配置', 'Reads the SAS installation default when starting'],
-  followDefaultOptionHintWith: ['启动时读取 SAS 安装的默认配置（{options}）', 'Reads the SAS installation default when starting ({options})'],
+  followDefaultOptionHint: [
+    '启动时读取 SAS 安装的默认配置',
+    'Reads the SAS installation default when starting',
+  ],
+  followDefaultOptionHintWith: [
+    '启动时读取 SAS 安装的默认配置（{options}）',
+    'Reads the SAS installation default when starting ({options})',
+  ],
   followDefaultMissing: ['当前未检测到默认配置', 'No default configuration detected'],
   builtInOption: ['内置配置', 'Built-in configuration'],
-  builtInOptionHint: ['跟到某个 SAS 出厂目录，SAS 升级后可能变化', 'Follows a factory SAS locale folder; it may change when SAS is updated'],
+  builtInOptionHint: [
+    '跟到某个 SAS 出厂目录，SAS 升级后可能变化',
+    'Follows a factory SAS locale folder; it may change when SAS is updated',
+  ],
   userOption: ['用户配置', 'User configuration'],
-  userOptionHint: ['跟到你自己维护的配置，可单独保存 SAS 设置', 'Follows a configuration you maintain, with its own saved SAS settings'],
+  userOptionHint: [
+    '跟到你自己维护的配置，可单独保存 SAS 设置',
+    'Follows a configuration you maintain, with its own saved SAS settings',
+  ],
   createConfiguration: ['创建新配置', 'Create a configuration'],
   configurationPickerEmpty: ['没有可选的配置', 'No configurations available'],
   helpHint: ['说明', 'Help'],
@@ -79,7 +106,10 @@ export const messages = {
   userConfigurations: ['用户配置', 'User configurations'],
   builtInConfigurations: ['内置配置（只读）', 'Built-in configurations (read-only)'],
   noUserConfigurations: ['还没有用户配置', 'No user configurations yet'],
-  noUserConfigurationsHelp: ['从任一内置配置衍生一份，就能单独调整编码与区域。', 'Derive one from a built-in configuration to adjust its encoding and locale.'],
+  noUserConfigurationsHelp: [
+    '从任一内置配置衍生一份，就能单独调整编码与区域。',
+    'Derive one from a built-in configuration to adjust its encoding and locale.',
+  ],
   noBuiltInConfigurations: ['没有检测到内置配置', 'No built-in configurations found'],
   configActions: ['配置操作：{name}', 'Actions for {name}'],
   deriveAction: ['从本配置衍生', 'Derive from this configuration'],
@@ -88,18 +118,27 @@ export const messages = {
   openSasSettings: ['打开 SAS 调整设置', 'Adjust settings in SAS'],
   deleteConfiguration: ['删除配置', 'Delete configuration'],
   deleteConfigurationTitle: ['删除配置', 'Delete configuration'],
-  deleteConfigurationDetail: ['删除用户配置「{name}」及其设置快照？', 'Delete the user configuration “{name}” and its saved settings?'],
+  deleteConfigurationDetail: [
+    '删除用户配置「{name}」及其设置快照？',
+    'Delete the user configuration “{name}” and its saved settings?',
+  ],
   configurationDeleted: ['配置已删除。', 'Configuration deleted.'],
   configurationSaved: ['配置已保存。', 'Configuration saved.'],
   configurationCreated: ['配置已创建。', 'Configuration created.'],
   setupSessionRunning: ['设置会话进行中', 'Settings session in progress'],
   saveSessionSettings: ['保存这次的设置', 'Save these settings'],
   discard: ['丢弃', 'Discard'],
-  setupStarted: ['已打开 SAS 设置会话，改完关闭 SAS 窗口再回来保存。', 'The SAS settings session is open. Close its window, then come back to save.'],
+  setupStarted: [
+    '已打开 SAS 设置会话，改完关闭 SAS 窗口再回来保存。',
+    'The SAS settings session is open. Close its window, then come back to save.',
+  ],
   setupSaved: ['已保存这次的设置。', 'These settings were saved.'],
   setupDiscarded: ['已丢弃这次的设置。', 'These settings were discarded.'],
   setupDialogTitle: ['打开 SAS 调整设置：{name}', 'Adjust settings in SAS: {name}'],
-  setupDialogBody: ['会打开一个独立的 SAS 会话。在 SAS 里修改的设置（Preferences、窗口布局、快捷键、Results 选项卡、Explorer 配置、启动时启用的 libref）可以在退出后保存到这个配置。', 'This opens a separate SAS session. Settings changed there (Preferences, window layout, shortcuts, Results tabs, Explorer settings and start-up librefs) can be saved to this configuration after it exits.'],
+  setupDialogBody: [
+    '会打开一个独立的 SAS 会话。在 SAS 里修改的设置（Preferences、窗口布局、快捷键、Results 选项卡、Explorer 配置、启动时启用的 libref）可以在退出后保存到这个配置。',
+    'This opens a separate SAS session. Settings changed there (Preferences, window layout, shortcuts, Results tabs, Explorer settings and start-up librefs) can be saved to this configuration after it exits.',
+  ],
   setupDialogConfirm: ['打开 SAS', 'Open SAS'],
   editSettingsTitle: ['编辑设置：{name}', 'Edit settings: {name}'],
   encoding: ['编码', 'Encoding'],
@@ -108,11 +147,17 @@ export const messages = {
   presetCombination: ['预设组合', 'Preset combination'],
   presetCustom: ['自定义组合', 'Custom combination'],
   localeHint: ['例如 zh_CN、en_US', 'e.g. zh_CN, en_US'],
-  editorSettingsNotIncluded: ['SAS 的增强编辑器字体/颜色/按键存在 Windows 注册表，不随配置保存', 'Enhanced Editor fonts, colors and keys live in the Windows registry and are not saved with a configuration'],
+  editorSettingsNotIncluded: [
+    'SAS 的增强编辑器字体/颜色/按键存在 Windows 注册表，不随配置保存',
+    'Enhanced Editor fonts, colors and keys live in the Windows registry and are not saved with a configuration',
+  ],
   presetVerified: ['已验证', 'Verified'],
   presetFailed: ['上次启动失败', 'Last start failed'],
   presetUnverified: ['未验证', 'Unverified'],
-  presetUnverifiedHint: ['这个编码与区域组合未经验证，仍可启动。', 'This encoding and locale combination is unverified; you can still start SAS.'],
+  presetUnverifiedHint: [
+    '这个编码与区域组合未经验证，仍可启动。',
+    'This encoding and locale combination is unverified; you can still start SAS.',
+  ],
   presetFailedHint: ['上次用这个组合启动失败。', 'The last start with this combination failed.'],
   optionPairMissing: ['请填写编码与区域', 'Enter an encoding and a locale'],
   includesSettings: ['含设置', 'Has settings'],
@@ -125,10 +170,16 @@ export const messages = {
   sasUiLanguage: ['SAS 界面语言：{language}', 'SAS interface language: {language}'],
 
   diagnosticsEmpty: ['还没有会话记录', 'No session records yet'],
-  diagnosticsEmptyHelp: ['启动项目后，会话的解析链与真实启动参数会记录在这里。', 'After you start a project, its resolution chain and real launch arguments are recorded here.'],
+  diagnosticsEmptyHelp: [
+    '启动项目后，会话的解析链与真实启动参数会记录在这里。',
+    'After you start a project, its resolution chain and real launch arguments are recorded here.',
+  ],
   clearRecords: ['清空记录', 'Clear records'],
   clearRecordsTitle: ['清空会话记录？', 'Clear session records?'],
-  clearRecordsDetail: ['将删除全部会话记录与日志副本；运行中的会话保留。', 'This deletes every session record and log copy. Running sessions are kept.'],
+  clearRecordsDetail: [
+    '将删除全部会话记录与日志副本；运行中的会话保留。',
+    'This deletes every session record and log copy. Running sessions are kept.',
+  ],
   clearRecordsAction: ['清空记录', 'Clear records'],
   recordsCleared: ['会话记录已清空。', 'Session records cleared.'],
   openLog: ['打开日志', 'Open log'],
@@ -171,18 +222,26 @@ export type MessageKey = keyof typeof messages
 export type Translator = (key: MessageKey, values?: Record<string, string | number>) => string
 
 export function translate(language: Language): Translator {
-  return (key, values = {}) => messages[key][language === 'en' ? 1 : 0]
-    .replace(/{(\w+)}/g, (_, name: string) => String(values[name] ?? ''))
+  return (key, values = {}) =>
+    messages[key][language === 'en' ? 1 : 0].replace(/{(\w+)}/g, (_, name: string) =>
+      String(values[name] ?? ''),
+    )
 }
 
 export function issueText(language: Language, error: unknown) {
   const catalog = issues as unknown as Record<string, [string, string]>
-  const known = error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
-    ? catalog[error.code]
-    : undefined
-  const detail = error && typeof error === 'object' && 'detail' in error && typeof error.detail === 'string'
-    ? error.detail
-    : typeof error === 'string' ? error : error instanceof Error ? error.message : ''
+  const known =
+    error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
+      ? catalog[error.code]
+      : undefined
+  const detail =
+    error && typeof error === 'object' && 'detail' in error && typeof error.detail === 'string'
+      ? error.detail
+      : typeof error === 'string'
+        ? error
+        : error instanceof Error
+          ? error.message
+          : ''
   const title = (known ?? catalog.unexpected)[language === 'en' ? 1 : 0]
   return detail ? `${title} (${detail})` : title
 }
