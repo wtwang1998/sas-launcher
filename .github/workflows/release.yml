@@ -55,8 +55,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          tag="${{ github.ref_name }}"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            # A re-run after a failed step must not fail on the release it
+            # created last time.
+            echo "release $tag already exists, reusing it"
+            exit 0
+          fi
           version="$(node -p "require('./src-tauri/tauri.conf.json').version")"
-          gh release create "${{ github.ref_name }}" \
+          gh release create "$tag" \
             --draft \
             --title "SAS Launcher ${version}" \
             --generate-notes
@@ -80,4 +87,4 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.ref_name }}" release-assets/*.exe
+        run: gh release upload "${{ github.ref_name }}" release-assets/*.exe --clobber
