@@ -1,0 +1,84 @@
+# AGENTS.md
+
+面向在本仓库工作的 AI 编码 agent；人类文档见 `README.md`。
+
+**本文件是常驻上下文，每加一行都会挤掉别的约束的注意力。硬上限 100 行：超出时删旧，不增新。**
+
+事实基线：Windows 10/11 x64、SAS Foundation 9.4、Tauri 2 + React 19 + TypeScript(strict) + Rust edition 2024。
+仓库以 **CRLF** 存盘且没有 `.gitattributes`，所有格式化工具必须保持 CRLF（见「硬约束」）。
+
+## 命令
+
+```bash
+npm ci                    # 首次安装；用 ci 不用 install，后者会改写 lock
+npm run check             # 全部门禁，约 12 秒 —— 提交前跑这个
+npm run format            # biome format --write + cargo fmt
+npm run lint              # biome lint + knip
+npm run lint:rust         # clippy --all-targets -- -D warnings
+npm run typecheck         # tsc --noEmit
+npm run test              # vitest，38 个，约 4 秒
+npm run test:rust         # cargo test，39 个，约 1 秒（增量已编译）
+npm run build             # tsc --noEmit + vite build
+```
+
+- 只跑一个前端测试：`npm run test -- src/api.test.ts`
+- 只跑一个 Rust 测试：`npm run test:rust -- <测试名>`
+- 所有 `cargo` 命令都要带 `--manifest-path src-tauri/Cargo.toml`：根目录不是 workspace，裸 `cargo` 会失败。
+- `npm run tauri dev` 与 `npm run package:windows` **只在用户明确要求时**执行：首次编译 Rust 依赖 3–10 分钟，打包会写 `src-tauri/target/release/`。
+
+## 目录地图
+
+```text
+src/                    React 外壳：App.tsx（路由 + 2.8s 轮询）、api.ts（唯一的 invoke 封装）、i18n.ts（[zh, en] 词典）
+src/pages/              三个页面；只接收 props 与回调，不 import api
+src/components/         可复用控件：自绘 listbox、确认对话框、表单字段
+src/lib/                纯函数：标签、排序、默认名、argv 引号 —— 必须可表驱动测试
+src/test/               harness.tsx（mockIPC 假后端 + renderApp）、fixtures.ts
+src-tauri/src/          Rust：main.rs 命令层 / store.rs 持久化 / session.rs 会话 / view.rs DTO
+src-tauri/capabilities/ 窗口权限白名单
+src-tauri/windows/      NSIS 安装脚本
+scripts/                打包脚本（PowerShell）
+```
+
+## 硬约束（违反后测试照样绿）
+
+| 禁止 | 为什么 |
+|---|---|
+| 内联 style（`style={{…}}`） | CSP 是 `style-src 'self'`，打包后静默失效；改 `src/style.css` |
+| `std::fs::canonicalize` 写进 cfg | 会带 `\\?\` 前缀，SAS 打不开；用 `dunce::canonicalize` |
+| 新增 `Issue` 码不补文案 | `issue-messages.json` 必须同时有 `[zh, en]` 两条；现有检查只 `eprintln`，不会失败 |
+| 改 Rust DTO 不同步 `src/api.ts` | 契约测试只校验命令名与参数键，字段漂移无人拦 |
+| `src/pages/` 里 import `api` | 页面必须能在假后端下渲染 |
+| 改 `identifier` / `installerHooks` / NSIS 安装范围 | 会孤立用户数据与升级路径 |
+| 真实启动 SAS、动真实应用数据目录 | 测试一律 `tempfile` 临时目录；真实数据在 `%LOCALAPPDATA%\com.saslauncher.desktop` |
+| 引 UI 库或设计系统 | 只用 `src/style.css` + `lucide-react` |
+| 在 `capabilities/default.json` 加宽泛权限 | 只加当前功能必需的；不开 `fs`/`shell` 通配 |
+| 让格式化改掉 CRLF | `biome.json` 的 `lineEnding: "crlf"` 与 `rustfmt.toml` 的 `newline_style = "Windows"` 不得改 |
+
+已被测试锁死、无需在此重复：薄壳 cfg 恰好 3 行、启动参数顺序与 `-ENCODING`/`-LOCALE` 缺席、profile 快照固定 4 个文件名、诊断保留 20 条、运行中与待保存的设置会话不可被清空。
+
+## 测试
+
+- 四条缝：纯函数（表驱动）/ 页面（RTL + `mockIPC`，只断言看见什么、提交什么）/ IPC 契约（`api.test.ts`）/ Rust（`#[cfg(test)] mod tests`）。
+- 新行为先写失败测试再实现。**不要**为测试引入 trait 或 mock 文件系统：现有测试直接建 `tempfile::tempdir()`，用真实文件与真实 `powershell.exe` 子进程。
+- 样式、纯配置、文档改动不写测试。
+- 真实 SAS 启动、安装包、视觉：**命令全绿不等于完成**，必须在真机手工走一遍，并在答复里说明跑了什么、结果如何。
+- 不要假定 clippy 警告或测试失败是既有的；先确认再下结论。
+
+## 提交
+
+- conventional commits，英文祈使句；`body-max-line-length` 为 100，commitlint 会拦。
+- 一次逻辑变更一次 commit；格式化与行为改动分开提交。
+- 不加 AI 署名或 `Co-authored-by` trailer。
+
+## Known gaps（是现状，不是范例）
+
+| 现象 | 处理 |
+|---|---|
+| `issue-messages.json` 有 7 个无生产者的码（`template*` 等 v0.1 遗留） | 别照抄；新增码必须有生产者 |
+| 默认配置名生成在 `configuration.rs` 与 `src/lib/config.ts` 各一份，后者无 UI 调用 | 改一处必须同时改另一处，或先合并 |
+| `launch_project` 没有双开保护（`launch_batch` 有） | 别假定已防双开 |
+| `biome.json` 关掉了 `noDescendingSpecificity` 与 3 个文件上的 4 条 a11y 规则 | 修需人工验视觉/键盘，原因见 `overrides` |
+| MSYS 下 git 直接 exec husky 钩子报 Permission denied | 用 `git -c core.hooksPath=` 提交，再手动 `npx commitlint --from HEAD~1 --to HEAD` |
+
+代码与测试是唯一事实源：本文件与代码冲突时，先改本文件。

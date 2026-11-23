@@ -6,6 +6,8 @@
 ![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB)
 ![许可证](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)
 
+> AI 编码 agent 请先读 [AGENTS.md](AGENTS.md)。
+
 ## 功能
 
 - **三种配置来源**：跟随默认配置（SAS 安装的默认语言环境）、内置配置（`nls` 下 23 个出厂语言配置，如「简体中文 · UTF-8」）、用户配置（从任一处衍生，可改编码/区域）。
