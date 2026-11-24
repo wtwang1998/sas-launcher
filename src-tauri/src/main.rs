@@ -720,14 +720,14 @@ fn failure_stage(code: &str) -> Stage {
 /// A declared layer the source folder cannot seed at all would be dropped by the
 /// copy without a word, leaving a project that claims settings it never got.
 fn ensure_source_seeds(source: &Path, layers: Layers) -> Result<(), Issue> {
-    let missing = profile::unseeded_files(source, layers);
-    if missing.is_empty() {
-        return Ok(());
+    // An empty folder is not "a missing layer": say the plain thing first.
+    if !profile::has_catalog_files(source) {
+        return Err(Issue::new("profileEmpty"));
     }
-    Err(Issue::with_detail(
-        "profileLayerMissing",
-        missing.join(", "),
-    ))
+    match profile::first_unseeded(source, layers) {
+        None => Ok(()),
+        Some(code) => Err(Issue::new(code)),
+    }
 }
 
 fn ensure_reference_exists(app: &App, reference: &ConfigRef) -> Result<(), Issue> {
@@ -1873,11 +1873,38 @@ mod tests {
             )
             .unwrap_err();
 
-        assert_eq!(error.code, "profileLayerMissing");
+        assert_eq!(error.code, "profileEnvironmentMissing");
         assert!(
             app.store.projects().is_empty(),
             "a layer the source cannot carry is never promised silently"
         );
+    }
+
+    #[test]
+    fn an_empty_source_is_refused_before_any_layer_is_named() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut app = App::new(temp.path().join("data")).unwrap();
+        let empty = temp.path().join("Desktop");
+        std::fs::create_dir_all(&empty).unwrap();
+
+        let error = app
+            .save_project(
+                None,
+                "P".into(),
+                None,
+                None,
+                Some(ProfileChoice::SasUser {
+                    path: empty,
+                    layers: Layers::DEFAULT,
+                }),
+            )
+            .unwrap_err();
+
+        assert_eq!(
+            error.code, "profileEmpty",
+            "a folder with no SAS settings at all is not a missing layer"
+        );
+        assert!(app.store.projects().is_empty());
     }
 
     #[test]

@@ -231,7 +231,9 @@ describe('resolution chain', () => {
       'zh-Hans',
       zh,
     )
-    expect(seeded.find((line) => line.key === 'chainProfile')?.value).toBe('界面、环境 · 3 个文件')
+    expect(seeded.find((line) => line.key === 'chainProfile')?.value).toBe(
+      '界面设置、环境设置 · 3 个文件',
+    )
 
     // An untouched, fresh session says so instead of pretending.
     expect(

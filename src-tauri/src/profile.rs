@@ -124,6 +124,22 @@ pub fn unseeded_files(directory: &Path, layers: Layers) -> Vec<&'static str> {
     missing
 }
 
+/// The Issue code for the first declared layer the folder cannot seed, so the
+/// message can name the option the user ticked instead of a file name.
+pub fn first_unseeded(directory: &Path, layers: Layers) -> Option<&'static str> {
+    let missing = unseeded_files(directory, layers);
+    let hit = |files: &[&str]| files.iter().any(|name| missing.contains(name));
+    if hit(INTERFACE) {
+        Some("profileInterfaceMissing")
+    } else if hit(ENVIRONMENT) {
+        Some("profileEnvironmentMissing")
+    } else if hit(TEMPLATES) {
+        Some("profileTemplatesMissing")
+    } else {
+        None
+    }
+}
+
 pub fn copy_profile(source: &Path, destination: &Path) -> Result<(), Issue> {
     copy_profile_layers(source, destination, Layers::ALL)
 }
@@ -189,6 +205,29 @@ mod tests {
         );
         fs::write(directory.join("regstry.sas7bitm"), b"registry").unwrap();
         assert!(carries_preference(&directory, Layers::DEFAULT));
+    }
+
+    #[test]
+    fn each_unseeded_layer_names_its_own_issue_code() {
+        let temp = tempfile::tempdir().unwrap();
+        let directory = temp.path().join("user");
+        fs::create_dir(&directory).unwrap();
+        fs::write(directory.join("profile.sas7bcat"), b"settings").unwrap();
+        assert_eq!(
+            first_unseeded(&directory, Layers::DEFAULT),
+            Some("profileEnvironmentMissing")
+        );
+        fs::write(directory.join("regstry.sas7bitm"), b"registry").unwrap();
+        assert_eq!(first_unseeded(&directory, Layers::DEFAULT), None);
+        assert_eq!(
+            first_unseeded(&directory, Layers::ALL),
+            Some("profileTemplatesMissing")
+        );
+        fs::remove_file(directory.join("profile.sas7bcat")).unwrap();
+        assert_eq!(
+            first_unseeded(&directory, Layers::DEFAULT),
+            Some("profileInterfaceMissing")
+        );
     }
 
     #[test]

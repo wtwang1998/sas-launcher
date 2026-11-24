@@ -5,6 +5,27 @@ import type { BatchResult } from '../api'
 import { builtIn, makeView } from '../test/fixtures'
 import { renderApp } from '../test/harness'
 
+it('an empty user folder says so instead of promising files', async () => {
+  const user = userEvent.setup()
+  const folder = 'C:/Users/wtwang/Desktop'
+  renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [
+      {
+        path: folder,
+        version: 'Desktop',
+        files: 0,
+        present: { interface: 0, environment: 0, templates: 0 },
+        modified: 0,
+      },
+    ],
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+
+  expect(await screen.findByText('这个文件夹里没有 SAS 设置文件')).toBeInTheDocument()
+  expect(screen.queryByText(/将继承 0 个文件/)).not.toBeInTheDocument()
+})
+
 it('a project card says when its snapshot misses a declared layer', async () => {
   const folder = 'C:/Users/me/Documents/My SAS Files/9.4'
   renderApp(
@@ -27,7 +48,7 @@ it('a project card says when its snapshot misses a declared layer', async () => 
     { sasuser_candidates: () => [] },
   )
 
-  expect(await screen.findByText(/声明的层缺 1 个文件/)).toBeInTheDocument()
+  expect(await screen.findByText(/还有 1 个设置文件没带过来/)).toBeInTheDocument()
 })
 
 it('a failed save can be retried from the form', async () => {

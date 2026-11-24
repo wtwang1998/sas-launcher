@@ -170,10 +170,12 @@ export function UserFolderChoice({
               )}
               {checked && card.kind === 'sasUser' && chosen && (
                 <p className="radio-hint" id={hintId}>
-                  {t('inheritUserFolderSummary', {
-                    count: carriedCount(chosen.present, value.layers),
-                    when: formatModified(language, chosen.modified),
-                  })}
+                  {carriedCount(chosen.present, value.layers) === 0
+                    ? t('inheritUserFolderEmpty')
+                    : t('inheritUserFolderSummary', {
+                        count: carriedCount(chosen.present, value.layers),
+                        when: formatModified(language, chosen.modified),
+                      })}
                 </p>
               )}
               {checked && card.kind === 'configSnapshot' && (
