@@ -58,7 +58,7 @@ SAS Launcher 给每个项目一份自己的配置，并为每次启动准备一�
 
 ## 安装
 
-1. 从 [Releases](https://github.com/wtwang1998/sas-launcher/releases) 下载 `SAS-Launcher-0.2.0-x64-Setup.exe`。
+1. 从 [Releases](https://github.com/wtwang1998/sas-launcher/releases) 下载 `SAS-Launcher-0.3.0-x64-Setup.exe`。
 2. 安装包只装给当前用户，落在 `%LOCALAPPDATA%\SAS Launcher`，不需要管理员权限。
 3. 升级与卸载沿用该目录。
 
