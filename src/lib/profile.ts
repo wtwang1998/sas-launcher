@@ -1,5 +1,6 @@
 import type {
   Language,
+  LayerCounts,
   ProfileChoice,
   ProfileLayers,
   ProfileOrigin,
@@ -7,10 +8,14 @@ import type {
   ProjectProfile,
 } from '../api'
 
-/** The interface layer alone: the only one that is safe to carry by default. */
+/**
+ * The interface and environment layers: window layout, menus and function keys
+ * plus the Explorer options and library assignments. Mirrors `Layers::DEFAULT`
+ * in `src-tauri/src/profile.rs`; templates stay out because they are content.
+ */
 export const DEFAULT_LAYERS: ProfileLayers = {
   interface: true,
-  environment: false,
+  environment: true,
   templates: false,
 }
 
@@ -56,6 +61,18 @@ export function profileChoiceFor(project: Project | null, draft: ProfileDraft): 
     return { kind: 'keep' }
   }
   return draft
+}
+
+/**
+ * How many catalogs the layer ticks will really carry out of `present`. The
+ * form used to promise the folder's four files while the snapshot kept two.
+ */
+export function carriedCount(present: LayerCounts, layers: ProfileLayers): number {
+  return (
+    (layers.interface ? present.interface : 0) +
+    (layers.environment ? present.environment : 0) +
+    (layers.templates ? present.templates : 0)
+  )
 }
 
 /** The submit button waits for a source that can actually be copied. */

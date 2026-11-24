@@ -144,8 +144,8 @@ export const messages = {
     'Start from an empty SASUSER with nothing inherited; the interface you tune here is kept',
   ],
   profileLayersCarryOver: [
-    '窗口布局、功能键与菜单会沿用你现在的设置。',
-    'Your window layout, function keys and menus carry over.',
+    '窗口布局、功能键、菜单与资源管理器视图会沿用你现在的设置。',
+    'Your window layout, function keys, menus and Explorer view carry over.',
   ],
   profileLayersAlso: ['还可以带上：', 'Also bring:'],
   profileLayersEnvironment: [
@@ -272,6 +272,11 @@ export const messages = {
   chainEncoding: ['编码', 'Encoding'],
   chainLocale: ['区域', 'Locale'],
   chainSasuser: ['SASUSER', 'SASUSER'],
+  chainProfile: ['偏好', 'Preference'],
+  layerInterface: ['界面', 'Interface'],
+  layerEnvironment: ['环境', 'Environment'],
+  layerTemplates: ['模板', 'Templates'],
+  profileSeedValue: ['{layers} · {count} 个文件', '{layers} · {count} files'],
   chainLog: ['日志副本', 'Log copy'],
   chainNone: ['未使用', 'Not used'],
   statusRunning: ['运行中', 'Running'],

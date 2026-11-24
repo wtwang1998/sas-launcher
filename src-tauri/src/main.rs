@@ -457,6 +457,18 @@ impl App {
         self.store.reload()
     }
 
+    /// Resolve a project's launch config and let its own preference choice own
+    /// the seed: either its snapshot or nothing at all. Only projects that
+    /// predate the field keep following their configuration. The single and the
+    /// batch launch both go through here so they cannot drift apart.
+    fn resolved_for(&self, project: &Project) -> Result<Resolved, Issue> {
+        let mut resolved = self.resolve(project.config.as_ref())?;
+        if project.profile.is_some() {
+            resolved.profile = self.store.project_profile_source(project);
+        }
+        Ok(resolved)
+    }
+
     fn launch_project(&mut self, id: Uuid) -> Result<Record, Issue> {
         self.refresh();
         let project = self
@@ -469,7 +481,7 @@ impl App {
         if project_running(&self.sessions.records(), project.id) {
             return Err(Issue::new("projectRunning"));
         }
-        let mut resolved = match self.resolve(project.config.as_ref()) {
+        let resolved = match self.resolved_for(&project) {
             Ok(resolved) => resolved,
             Err(error) => {
                 let error = self.record_launch_failure(
@@ -483,12 +495,6 @@ impl App {
                 return Err(error);
             }
         };
-        // A project-level choice owns the preference: either its own snapshot or
-        // nothing at all. Only projects that predate the field keep following
-        // their configuration.
-        if project.profile.is_some() {
-            resolved.profile = self.store.project_profile_source(&project);
-        }
         self.launch(
             resolved,
             project.name.clone(),
@@ -591,7 +597,7 @@ impl App {
             let purpose = Purpose::Project {
                 id: Some(project.id),
             };
-            let outcome = match self.resolve(project.config.as_ref()) {
+            let outcome = match self.resolved_for(project) {
                 Ok(resolved) => self.launch(resolved, project.name.clone(), purpose.clone()),
                 Err(error) => Err(self.record_launch_failure(
                     purpose.clone(),
@@ -1376,6 +1382,7 @@ mod tests {
             argv: Vec::new(),
             sasuser: directory.join("sasuser"),
             sasuser_writable: true,
+            profile_files: Vec::new(),
             thin_cfg: None,
             factory_cfg: PathBuf::from(r"C:\SAS\sasv9.cfg"),
             encoding: Some("UTF-8".into()),
@@ -1737,7 +1744,48 @@ mod tests {
     }
 
     #[test]
-    fn a_new_project_inheriting_a_user_folder_captures_the_interface_layer_only() {
+    fn a_batched_launch_honours_the_projects_preference_snapshot() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let source = user_folder_with(temp.path(), &["profile.sas7bcat"]);
+        app.save_project(
+            None,
+            "P".into(),
+            None,
+            None,
+            Some(ProfileChoice::SasUser {
+                path: source.clone(),
+                layers: Layers::DEFAULT,
+            }),
+        )
+        .unwrap();
+        let id = app.store.projects()[0].id;
+
+        let results = app.launch_batch(vec![id]);
+        assert_eq!(results.len(), 1);
+
+        // The fixture's sas.exe cannot start, so the launch stops right after the
+        // profile was seeded. Reading the folder straight off disk keeps the
+        // assertion independent of the sweep that later reaps it.
+        let mut entries: Vec<_> = std::fs::read_dir(app.store.sessions_dir())
+            .unwrap()
+            .flatten()
+            .map(|entry| entry.path())
+            .collect();
+        entries.sort();
+        assert_eq!(entries.len(), 1, "one session folder");
+        assert!(
+            entries[0]
+                .join("sasuser")
+                .join("profile.sas7bcat")
+                .is_file(),
+            "a batch launch seeds the project's own snapshot, like a single launch"
+        );
+    }
+
+    #[test]
+    fn a_new_project_inheriting_a_user_folder_captures_the_default_layers() {
         let temp = tempfile::tempdir().unwrap();
         let mut app = App::new(temp.path().join("data")).unwrap();
         let source = user_folder_with(temp.path(), &["profile.sas7bcat", "regstry.sas7bitm"]);
@@ -1763,7 +1811,7 @@ mod tests {
         let revision = profile.revision.unwrap();
         let snapshot = app.store.project_profile_dir(project.id, revision);
         assert!(snapshot.join("profile.sas7bcat").is_file());
-        assert!(!snapshot.join("regstry.sas7bitm").exists());
+        assert!(snapshot.join("regstry.sas7bitm").is_file());
     }
 
     #[test]

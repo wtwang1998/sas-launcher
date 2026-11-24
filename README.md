@@ -37,6 +37,7 @@ SAS Launcher gives every project its own configuration and hands each launch a p
 **One environment per window**
 
 - Every launch gets its own writable `-SASUSER` directory, deleted when the session exits.
+- A project's snapshot carries the interface and environment layers by default — window layout, function keys, menus, Explorer options and library assignments — and takes back whatever the session changed when it exits, whatever the exit code. ODS templates stay opt-in.
 - Batch-launch the projects you use daily; projects that are already running are skipped.
 
 **Diagnostics you can act on**

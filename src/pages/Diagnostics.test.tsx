@@ -32,6 +32,7 @@ it('chain_lists_thin_factory_and_effective_options', async () => {
     factoryCfg: 'C:\\SASHome\\SASFoundation\\9.4\\nls\\u8\\sasv9.cfg',
     encoding: 'UTF-8',
     locale: 'zh_CN',
+    profile: null,
     sasuser: 'C:\\data\\sessions\\s1\\sasuser',
     log: 'C:\\data\\sessions\\s1\\SAS.LOG',
   }

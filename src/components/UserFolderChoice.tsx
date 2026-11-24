@@ -1,7 +1,7 @@
 import { type KeyboardEvent, useId, useRef } from 'react'
 import type { Config, Language, SasuserCandidate } from '../api'
 import type { Translator } from '../i18n'
-import { formatModified, type ProfileDraft, samePath } from '../lib/profile'
+import { carriedCount, formatModified, type ProfileDraft, samePath } from '../lib/profile'
 import { Tooltip } from './Tooltip'
 
 type Kind = ProfileDraft['kind']
@@ -171,7 +171,7 @@ export function UserFolderChoice({
               {checked && card.kind === 'sasUser' && chosen && (
                 <p className="radio-hint" id={hintId}>
                   {t('inheritUserFolderSummary', {
-                    count: chosen.files,
+                    count: carriedCount(chosen.present, value.layers),
                     when: formatModified(language, chosen.modified),
                   })}
                 </p>

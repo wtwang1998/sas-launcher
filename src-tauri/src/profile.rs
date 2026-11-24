@@ -44,11 +44,13 @@ impl Layers {
         templates: true,
     };
 
-    /// The default carries the interface layer only: the other two drag in
-    /// machine-bound paths and user content.
+    /// The default carries the interface and the environment layers: window
+    /// layout, menus, function keys and the Explorer options a user tunes are
+    /// what "my settings" means. Templates stay out: they are user content, not
+    /// a preference, and they are the largest of the four.
     pub const DEFAULT: Self = Self {
         interface: true,
-        environment: false,
+        environment: true,
         templates: false,
     };
 
@@ -73,8 +75,35 @@ pub fn regular_directory(path: &Path) -> bool {
         .is_ok_and(|metadata| metadata.is_dir() && metadata.file_attributes() & REPARSE_POINT == 0)
 }
 
+/// The whitelisted catalogs `directory` holds, in whitelist order.
+pub fn catalog_files(directory: &Path) -> Vec<&'static str> {
+    FILES
+        .iter()
+        .copied()
+        .filter(|name| directory.join(name).is_file())
+        .collect()
+}
+
+/// Which layers a set of catalog names covers.
+pub fn layers_of(names: &[String]) -> Layers {
+    Layers {
+        interface: names.iter().any(|name| INTERFACE.contains(&name.as_str())),
+        environment: names
+            .iter()
+            .any(|name| ENVIRONMENT.contains(&name.as_str())),
+        templates: names.iter().any(|name| TEMPLATES.contains(&name.as_str())),
+    }
+}
+
 pub fn has_catalog_files(directory: &Path) -> bool {
     FILES.iter().any(|name| directory.join(name).is_file())
+}
+
+/// True when `directory` holds at least one catalog that `layers` would copy.
+/// A session that wrote nothing the project asked for must not be captured —
+/// an empty capture would pin the folder for a retry that can never succeed.
+pub fn carries_preference(directory: &Path, layers: Layers) -> bool {
+    layers.selected().any(|name| directory.join(name).is_file())
 }
 
 pub fn copy_profile(source: &Path, destination: &Path) -> Result<(), Issue> {
@@ -130,6 +159,43 @@ mod tests {
     use super::*;
 
     #[test]
+    fn only_a_selected_layer_counts_as_a_carried_preference() {
+        let temp = tempfile::tempdir().unwrap();
+        let directory = temp.path().join("user");
+        fs::create_dir(&directory).unwrap();
+        assert!(!carries_preference(&directory, Layers::DEFAULT));
+        fs::write(directory.join("templat.sas7bitm"), b"templates").unwrap();
+        assert!(
+            !carries_preference(&directory, Layers::DEFAULT),
+            "templates are not a preference"
+        );
+        fs::write(directory.join("regstry.sas7bitm"), b"registry").unwrap();
+        assert!(carries_preference(&directory, Layers::DEFAULT));
+    }
+
+    #[test]
+    fn a_folder_reports_the_catalogs_and_layers_it_holds() {
+        let temp = tempfile::tempdir().unwrap();
+        let directory = temp.path().join("user");
+        fs::create_dir(&directory).unwrap();
+        fs::write(directory.join("private.sas"), b"script").unwrap();
+        fs::write(directory.join("regstry.sas7bitm"), b"registry").unwrap();
+        fs::write(directory.join("profile.sas7bcat"), b"settings").unwrap();
+
+        let files = catalog_files(&directory);
+        assert_eq!(files, vec!["profile.sas7bcat", "regstry.sas7bitm"]);
+        let names: Vec<String> = files.into_iter().map(str::to_owned).collect();
+        assert_eq!(
+            layers_of(&names),
+            Layers {
+                interface: true,
+                environment: true,
+                templates: false,
+            }
+        );
+    }
+
+    #[test]
     fn catalog_files_are_the_documented_four() {
         assert_eq!(FILES.len(), 4);
         for name in [
@@ -155,13 +221,21 @@ mod tests {
         sorted.sort_unstable();
         assert_eq!(union, sorted, "every whitelisted file belongs to one layer");
         assert_eq!(Layers::ALL.selected().count(), FILES.len());
-        assert_eq!(Layers::DEFAULT.selected().count(), INTERFACE.len());
-        assert!(!Layers::DEFAULT.includes("regstry.sas7bitm"));
+        assert_eq!(
+            Layers::DEFAULT.selected().count(),
+            INTERFACE.len() + ENVIRONMENT.len(),
+            "the default carries the interface and the environment layers"
+        );
+        assert!(
+            Layers::DEFAULT.includes("regstry.sas7bitm"),
+            "Explorer options live in the environment layer"
+        );
+        assert!(!Layers::DEFAULT.includes("templat.sas7bitm"));
         assert!(Layers::ALL.includes("templat.sas7bitm"));
     }
 
     #[test]
-    fn copying_only_the_interface_layer_leaves_environment_and_content_behind() {
+    fn the_default_layers_carry_the_explorer_options_and_leave_templates_behind() {
         let temp = tempfile::tempdir().unwrap();
         let source = temp.path().join("source");
         fs::create_dir(&source).unwrap();
@@ -174,7 +248,7 @@ mod tests {
 
         assert!(destination.join("profile.sas7bcat").is_file());
         assert!(destination.join("profile2.sas7bcat").is_file());
-        assert!(!destination.join("regstry.sas7bitm").exists());
+        assert!(destination.join("regstry.sas7bitm").is_file());
         assert!(!destination.join("templat.sas7bitm").exists());
     }
 
@@ -187,7 +261,12 @@ mod tests {
         let destination = temp.path().join("destination");
         fs::create_dir(&destination).unwrap();
 
-        let error = copy_profile_layers(&source, &destination, Layers::DEFAULT).unwrap_err();
+        let interface_only = Layers {
+            interface: true,
+            environment: false,
+            templates: false,
+        };
+        let error = copy_profile_layers(&source, &destination, interface_only).unwrap_err();
         assert_eq!(error.code, "profileEmpty");
         assert_eq!(fs::read_dir(&destination).unwrap().count(), 0);
     }

@@ -23,6 +23,14 @@ const project = (profile: ProjectProfile | null): Project => ({
   profile,
 })
 
+it('an untouched preference carries the layer the Explorer options live in', () => {
+  expect(profileDraftFrom(null).layers).toEqual({
+    interface: true,
+    environment: true,
+    templates: false,
+  })
+})
+
 it('an unchanged preference is sent as keep so the snapshot survives a rename', () => {
   const current = project(stored())
   const draft = profileDraftFrom(current.profile)
@@ -40,7 +48,7 @@ it('the same folder written with another case or separator is still unchanged', 
 it('switching a layer replaces the snapshot', () => {
   const current = project(stored())
   const draft = profileDraftFrom(current.profile)
-  const changed = { ...draft, layers: { ...draft.layers, environment: true } }
+  const changed = { ...draft, layers: { ...draft.layers, templates: true } }
   expect(profileChoiceFor(current, changed)).toEqual(changed)
 })
 

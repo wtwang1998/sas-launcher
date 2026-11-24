@@ -4,6 +4,7 @@ import {
   type ConfigRef,
   type Language,
   type PresetStatus,
+  type ProfileSeed,
   type Project,
   sameRef,
 } from '../api'
@@ -79,16 +80,38 @@ export function optionsWarning(
 
 export type ChainLine = { key: MessageKey; value: string | null }
 
-/** Thin config → factory config → effective ENCODING/LOCALE/SASUSER. */
-export function chainLines(chain: Chain): ChainLine[] {
+/** Thin config → factory config → effective options → what seeded the SASUSER. */
+export function chainLines(chain: Chain, language: Language, t: Translator): ChainLine[] {
   return [
     { key: 'chainThinCfg', value: chain.thinCfg },
     { key: 'chainFactoryCfg', value: chain.factoryCfg },
     { key: 'chainEncoding', value: chain.encoding },
     { key: 'chainLocale', value: chain.locale },
     { key: 'chainSasuser', value: chain.sasuser },
+    { key: 'chainProfile', value: preferenceValue(chain.profile, language, t) },
     { key: 'chainLog', value: chain.log },
   ]
+}
+
+/**
+ * `界面、环境 · 3 个文件` — what this launch actually copied, never what the
+ * project asked for. `null` renders as `chainNone`, i.e. a clean SASUSER.
+ */
+function preferenceValue(
+  seed: ProfileSeed | null,
+  language: Language,
+  t: Translator,
+): string | null {
+  if (!seed) return null
+  const layers = [
+    seed.layers.interface ? t('layerInterface') : null,
+    seed.layers.environment ? t('layerEnvironment') : null,
+    seed.layers.templates ? t('layerTemplates') : null,
+  ].filter((name): name is string => name !== null)
+  return t('profileSeedValue', {
+    layers: layers.join(language === 'en' ? ', ' : '、'),
+    count: seed.files,
+  })
 }
 
 export function formatStartedAt(ms: number, language: Language): string {

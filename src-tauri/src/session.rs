@@ -63,6 +63,9 @@ pub struct Record {
     pub argv: Vec<String>,
     pub sasuser: PathBuf,
     pub sasuser_writable: bool,
+    /// Catalogs the launch copied into `sasuser`; empty for a fresh environment.
+    #[serde(default)]
+    pub profile_files: Vec<String>,
     pub thin_cfg: Option<PathBuf>,
     pub factory_cfg: PathBuf,
     pub encoding: Option<String>,
@@ -218,6 +221,7 @@ impl Sessions {
                 .collect(),
             sasuser: sasuser.clone(),
             sasuser_writable: false,
+            profile_files: Vec::new(),
             thin_cfg: request.thin_cfg.clone(),
             factory_cfg: request.factory_cfg.clone(),
             encoding: Some(request.encoding.clone()),
@@ -249,6 +253,10 @@ impl Sessions {
             return Err(error);
         }
         record.sasuser_writable = writable;
+        record.profile_files = crate::profile::catalog_files(&sasuser)
+            .into_iter()
+            .map(str::to_owned)
+            .collect();
         record.stage = Stage::Spawn;
         let manifest = Manifest {
             record: record.clone(),
@@ -432,10 +440,12 @@ impl Sessions {
                 continue;
             }
             let mut keep_folder = false;
+            // Save whatever the session wrote, whatever the exit code: a launch
+            // that ends through the window button never reports one, and those
+            // catalogs are the only copy of the settings the user tuned.
             if let Some(project) = project_of(&record)
-                && record.exit_code == Some(0)
                 && let Some(layers) = crate::store::project_layers(&self.data_dir(), project)
-                && layers.selected().next().is_some()
+                && crate::profile::carries_preference(&record.sasuser, layers)
             {
                 match crate::store::capture_project_profile(
                     &self.data_dir(),
@@ -507,6 +517,7 @@ impl Sessions {
             argv: Vec::new(),
             sasuser: directory.join(SASUSER),
             sasuser_writable: false,
+            profile_files: Vec::new(),
             thin_cfg: request.thin_cfg,
             factory_cfg: request.factory_cfg.unwrap_or_default(),
             encoding: request.encoding,
@@ -668,6 +679,7 @@ mod tests {
             argv: Vec::new(),
             sasuser: directory.join("sasuser"),
             sasuser_writable: true,
+            profile_files: Vec::new(),
             thin_cfg: None,
             factory_cfg: PathBuf::from(r"C:\SAS\sasv9.cfg"),
             encoding: Some("utf-8".into()),
@@ -946,6 +958,104 @@ mod tests {
             b"settings"
         );
         assert!(!snapshot.join("regstry.sas7bitm").exists());
+    }
+
+    #[test]
+    fn an_exited_session_without_an_exit_code_still_captures_its_profile() {
+        let temp = tempfile::tempdir().unwrap();
+        let data = temp.path().join("v4");
+        let root = data.join("sessions");
+        fs::create_dir_all(&root).unwrap();
+        let project = Uuid::new_v4();
+        seeded_project(
+            &data,
+            project,
+            Some(crate::store::ProjectProfile {
+                revision: None,
+                origin: None,
+                layers: crate::profile::Layers::DEFAULT,
+                fresh: true,
+            }),
+        );
+        let id = Uuid::new_v4();
+        let mut manifest = test_manifest(
+            &root,
+            id,
+            Purpose::Project { id: Some(project) },
+            Status::Exited,
+            5,
+        );
+        // Closing the SAS window leaves the probe without an exit code, yet the
+        // catalogs it wrote are still the only copy of what the user tuned.
+        manifest.record.exit_code = None;
+        write_json(&root.join(id.to_string()).join("manifest.json"), &manifest).unwrap();
+        let sasuser = manifest.record.sasuser.clone();
+        fs::create_dir_all(&sasuser).unwrap();
+        fs::write(sasuser.join("profile.sas7bcat"), b"settings").unwrap();
+
+        let mut sessions = Sessions::new(root);
+        assert!(
+            sessions.sweep(),
+            "an unknown exit code still saves the profile"
+        );
+        assert!(!sasuser.exists(), "the folder is reaped after the capture");
+        let stored: Vec<crate::store::Project> = read_json(&data.join("projects.json")).unwrap();
+        let revision = stored[0]
+            .profile
+            .as_ref()
+            .and_then(|profile| profile.revision)
+            .expect("the snapshot is committed");
+        let snapshot = data
+            .join("projects")
+            .join(project.to_string())
+            .join("profile")
+            .join(revision.to_string());
+        assert_eq!(
+            fs::read(snapshot.join("profile.sas7bcat")).unwrap(),
+            b"settings"
+        );
+    }
+
+    #[test]
+    fn a_session_that_saved_no_wanted_layer_is_reaped_without_a_capture() {
+        let temp = tempfile::tempdir().unwrap();
+        let data = temp.path().join("v4");
+        let root = data.join("sessions");
+        fs::create_dir_all(&root).unwrap();
+        let project = Uuid::new_v4();
+        seeded_project(
+            &data,
+            project,
+            Some(crate::store::ProjectProfile {
+                revision: None,
+                origin: None,
+                layers: crate::profile::Layers::DEFAULT,
+                fresh: true,
+            }),
+        );
+        let id = Uuid::new_v4();
+        let manifest = test_manifest(
+            &root,
+            id,
+            Purpose::Project { id: Some(project) },
+            Status::Exited,
+            5,
+        );
+        let sasuser = manifest.record.sasuser.clone();
+        fs::create_dir_all(&sasuser).unwrap();
+        fs::write(sasuser.join("templat.sas7bitm"), b"templates").unwrap();
+
+        let mut sessions = Sessions::new(root);
+        assert!(
+            !sessions.sweep(),
+            "nothing of the wanted layers was written"
+        );
+        assert!(
+            !sasuser.exists(),
+            "an empty capture does not pin the folder"
+        );
+        let stored: Vec<crate::store::Project> = read_json(&data.join("projects.json")).unwrap();
+        assert!(stored[0].profile.as_ref().unwrap().revision.is_none());
     }
 
     #[test]

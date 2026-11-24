@@ -889,8 +889,8 @@ mod tests {
         let snapshot = project_profile_root(&data, id).join(first.to_string());
         assert!(snapshot.join("profile.sas7bcat").is_file());
         assert!(
-            !snapshot.join("regstry.sas7bitm").exists(),
-            "the environment layer stays out by default"
+            snapshot.join("regstry.sas7bitm").is_file(),
+            "the environment layer rides along with the interface"
         );
 
         let second = capture_project_profile(&data, id, &source, Some(Layers::ALL)).unwrap();

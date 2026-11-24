@@ -40,10 +40,13 @@ export type ProfileChoice =
   | { kind: 'configSnapshot'; config: string; layers: ProfileLayers }
   | { kind: 'fresh'; layers: ProfileLayers }
 /** A version folder under `Documents\My SAS Files` that holds catalogs. */
+/** Per-layer count of the whitelisted catalogs a folder holds. */
+export type LayerCounts = { interface: number; environment: number; templates: number }
 export type SasuserCandidate = {
   path: string
   version: string
   files: number
+  present: LayerCounts
   modified: number
 }
 export type Project = {
@@ -55,6 +58,8 @@ export type Project = {
 }
 export type SessionStage = 'exe' | 'cfg' | 'profile' | 'spawn' | 'started'
 export type SessionStatus = 'running' | 'exited' | 'setup' | 'cleanupPending' | 'unknown'
+/** The preference layers a launch actually seeded, not the ones it asked for. */
+export type ProfileSeed = { files: number; layers: ProfileLayers }
 export type Chain = {
   label: string
   thinCfg: string | null
@@ -62,6 +67,7 @@ export type Chain = {
   encoding: string | null
   locale: string | null
   sasuser: string
+  profile: ProfileSeed | null
   log: string | null
 }
 export type Session = {

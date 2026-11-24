@@ -81,6 +81,7 @@ mod tests {
             locale: Some("zh_CN".into()),
             sasuser,
             log: None,
+            profile: None,
         }
     }
 
