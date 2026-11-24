@@ -4,6 +4,11 @@ use std::path::Path;
 /// The per-user Run key Windows reads at login.
 const RUN_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
 
+/// Where Task Manager keeps its own enable/disable choice for Run entries.
+/// Disabling does not delete the Run value, it writes a flag here.
+const APPROVAL_KEY: &str =
+    r"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
+
 /// Value name; this is also what Task Manager → Startup shows.
 const VALUE: &str = "SAS Launcher";
 
@@ -21,13 +26,33 @@ pub fn command(exe: &Path, minimized: bool) -> String {
     }
 }
 
-/// Whether the login entry exists. Any read failure counts as "not set", which
-/// is also what the UI should show when the key is unreadable.
+/// A `StartupApproved` entry is a little-endian flag followed by a timestamp.
+/// The low bit of the flag is set when Task Manager disabled the entry; a
+/// missing or trimmed value means Windows treats the entry as enabled.
+pub fn approval_disabled(bytes: &[u8]) -> bool {
+    bytes.len() >= 4 && bytes[0] & 1 == 1
+}
+
+/// Whether the login entry exists *and* Task Manager has not disabled it.
+/// Any read failure counts as "not set", which is what the UI should show when
+/// the key is unreadable.
 pub fn enabled() -> bool {
-    windows_registry::CURRENT_USER
+    let registered = windows_registry::CURRENT_USER
         .open(RUN_KEY)
         .and_then(|key| key.get_string(VALUE))
-        .is_ok()
+        .is_ok();
+    if !registered {
+        return false;
+    }
+    !approval().is_some_and(|bytes| approval_disabled(&bytes))
+}
+
+fn approval() -> Option<Vec<u8>> {
+    windows_registry::CURRENT_USER
+        .open(APPROVAL_KEY)
+        .and_then(|key| key.get_value(VALUE))
+        .ok()
+        .map(|value| value.as_ref().to_vec())
 }
 
 /// Create, rewrite or delete the login entry. Rewriting is idempotent, so the
@@ -39,19 +64,32 @@ pub fn set(exe: &Path, enabled: bool, minimized: bool) -> Result<(), Issue> {
     windows_registry::CURRENT_USER
         .create(RUN_KEY)
         .and_then(|key| key.set_string(VALUE, command(exe, minimized)))
-        .map_err(|error| Issue::with_detail("autostartWrite", error))
+        .map_err(|error| Issue::with_detail("autostartWrite", error))?;
+    // Task Manager's "disabled" flag outlives the Run value, so re-enabling has
+    // to drop it or the entry still would not start.
+    delete_value(APPROVAL_KEY)
 }
 
 fn clear() -> Result<(), Issue> {
-    // Two opens on purpose: `write()` alone cannot read the value back, and the
-    // read-only handle below is what tells "nothing to delete" from a failure.
-    if !enabled() {
+    delete_value(RUN_KEY)?;
+    delete_value(APPROVAL_KEY)
+}
+
+/// Delete one of our values. Two opens on purpose: a write handle cannot read
+/// the value back, and the read-only handle is what separates "nothing to
+/// delete" from a real failure.
+fn delete_value(key_path: &str) -> Result<(), Issue> {
+    let present = windows_registry::CURRENT_USER
+        .open(key_path)
+        .and_then(|key| key.get_value(VALUE))
+        .is_ok();
+    if !present {
         return Ok(());
     }
     windows_registry::CURRENT_USER
         .options()
         .write()
-        .open(RUN_KEY)
+        .open(key_path)
         .and_then(|key| key.remove_value(VALUE))
         .map_err(|error| Issue::with_detail("autostartWrite", error))
 }
@@ -76,6 +114,23 @@ mod tests {
             command(exe, true),
             r#""C:\Users\me\AppData\Local\Programs\SAS Launcher\sas-launcher.exe" --minimized"#
         );
+    }
+
+    #[test]
+    fn the_task_manager_flag_is_read_from_the_low_bit() {
+        // 02 = enabled, 03 = disabled, followed by the FILETIME Task Manager writes.
+        assert!(!approval_disabled(&[
+            2, 0, 0, 0, 0x9f, 0xd1, 0xf9, 5, 0x17, 0x23, 0xdc, 1
+        ]));
+        assert!(approval_disabled(&[
+            3, 0, 0, 0, 0x9f, 0xd1, 0xf9, 5, 0x17, 0x23, 0xdc, 1
+        ]));
+        assert!(!approval_disabled(&[6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
+        assert!(approval_disabled(&[7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
+        // No entry, or a value Windows would not be able to interpret: enabled.
+        assert!(!approval_disabled(&[]));
+        assert!(!approval_disabled(&[3]));
+        assert!(!approval_disabled(&[3, 0, 0]));
     }
 
     #[test]
