@@ -1,13 +1,18 @@
 import { useEffect, useId, useState } from 'react'
-import type { Preference, ThemePreference, View } from '../api'
+import type { Language, Preference, ThemePreference, View } from '../api'
+import { NoticeBanner } from '../components/Notice'
 import { Switch } from '../components/Switch'
 import type { Translator } from '../i18n'
+import type { Notice } from '../lib/notice'
 import { startMinimizedActive } from '../lib/settings'
 
 export type SettingsProps = {
   view: View
   t: Translator
+  language: Language
   busy: boolean
+  notice: Notice | null
+  onDismissNotice: () => void
   onTheme: (preference: ThemePreference) => void
   onLanguage: (preference: Preference) => void
   onSavePath: (path: string) => Promise<void>
@@ -21,7 +26,10 @@ export type SettingsProps = {
 export function Settings({
   view,
   t,
+  language,
   busy,
+  notice,
+  onDismissNotice,
   onTheme,
   onLanguage,
   onSavePath,
@@ -88,6 +96,15 @@ export function Settings({
             </select>
           </div>
         </div>
+        {notice?.target === 'interface' && (
+          <NoticeBanner
+            notice={notice}
+            language={language}
+            t={t}
+            onDismiss={onDismissNotice}
+            className="section-notice"
+          />
+        )}
       </section>
 
       <section className="settings-group panel" aria-labelledby={`${id}-sas`}>
@@ -134,6 +151,15 @@ export function Settings({
           </div>
         </div>
         <p className="setting-hint">{t('sasPathHint')}</p>
+        {notice?.target === 'sas' && (
+          <NoticeBanner
+            notice={notice}
+            language={language}
+            t={t}
+            onDismiss={onDismissNotice}
+            className="section-notice"
+          />
+        )}
       </section>
 
       <section className="settings-group panel" aria-labelledby={`${id}-window`}>
@@ -186,6 +212,15 @@ export function Settings({
             />
           </div>
         </div>
+        {notice?.target === 'window' && (
+          <NoticeBanner
+            notice={notice}
+            language={language}
+            t={t}
+            onDismiss={onDismissNotice}
+            className="section-notice"
+          />
+        )}
       </section>
     </>
   )

@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import type { BatchResult } from '../api'
 import { builtIn, makeView } from '../test/fixtures'
 import { renderApp } from '../test/harness'
@@ -205,4 +205,105 @@ it('batch_launch_sends_selected_ids', async () => {
   expect(backend.calls.find((call) => call.cmd === 'launch_batch')?.args).toEqual({
     ids: ['p1', 'p2'],
   })
+})
+
+it('a_failed_save_explains_itself_next_to_the_buttons', async () => {
+  const user = userEvent.setup()
+  renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [],
+    save_project: () => {
+      throw { code: 'unexpected', detail: 'profile busy' }
+    },
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+  await user.type(screen.getByLabelText(/项目名称/), '项目 A')
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+
+  const alert = await screen.findByRole('alert')
+  expect(alert).toHaveTextContent('profile busy')
+  // It belongs to the form, not to a banner above the page.
+  expect(alert.closest('.edit-panel')).not.toBeNull()
+  expect(document.querySelector('.content > .banner')).toBeNull()
+})
+
+it('a_failed_launch_explains_itself_in_the_project_list', async () => {
+  const user = userEvent.setup()
+  const project = {
+    id: 'p1',
+    name: '项目 A',
+    note: null,
+    config: null,
+    profile: null,
+  }
+  renderApp(makeView({ projects: [project] }), {
+    launch_project: () => {
+      throw { code: 'unexpected', detail: 'exe missing' }
+    },
+  })
+
+  await user.click(await screen.findByRole('button', { name: '启动' }))
+
+  const alert = await screen.findByRole('alert')
+  expect(alert).toHaveTextContent('exe missing')
+  expect(alert.classList.contains('page-notice')).toBe(true)
+})
+
+it('a_failed_delete_keeps_the_confirmation_open_and_says_why', async () => {
+  const user = userEvent.setup()
+  const project = {
+    id: 'p1',
+    name: '项目 A',
+    note: null,
+    config: null,
+    profile: null,
+  }
+  renderApp(makeView({ projects: [project] }), {
+    delete_project: () => {
+      throw { code: 'unexpected', detail: 'still running' }
+    },
+  })
+
+  await user.click(await screen.findByRole('button', { name: '删除 项目 A' }))
+  const dialog = await screen.findByRole('dialog')
+  await user.click(within(dialog).getByRole('button', { name: '删除' }))
+
+  const alert = await within(dialog).findByRole('alert')
+  expect(alert).toHaveTextContent('still running')
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+})
+
+it('a_notice_brings_itself_into_view', async () => {
+  const user = userEvent.setup()
+  const scrolled = vi.fn()
+  Element.prototype.scrollIntoView = scrolled
+  renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [],
+    save_project: () => {
+      throw { code: 'unexpected', detail: 'still busy' }
+    },
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+  await user.type(screen.getByLabelText(/项目名称/), '项目 A')
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+
+  await screen.findByRole('alert')
+  expect(scrolled).toHaveBeenCalled()
+})
+
+it('a_saved_project_reports_on_the_page_once_the_form_closes', async () => {
+  const user = userEvent.setup()
+  renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [],
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+  await user.type(screen.getByLabelText(/项目名称/), '项目 A')
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+
+  const status = await screen.findByRole('status')
+  expect(status).toHaveTextContent('项目已保存')
+  expect(status.classList.contains('page-notice')).toBe(true)
+  expect(screen.queryByLabelText(/项目名称/)).not.toBeInTheDocument()
 })

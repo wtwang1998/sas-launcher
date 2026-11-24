@@ -601,6 +601,20 @@ details[open] .disclosure {
   }
 }
 
+/* Action feedback sits next to the control that produced it. */
+.notice-block {
+  flex-wrap: wrap;
+}
+.page-notice {
+  margin: 0 0 14px;
+}
+.form-notice {
+  margin: 12px 0 0;
+}
+.section-notice {
+  margin: 10px 0 6px;
+}
+
 /* ---------- 设置页 ---------- */
 .settings-group {
   padding: 4px 18px 6px;

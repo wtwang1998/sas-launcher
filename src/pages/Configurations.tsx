@@ -2,6 +2,7 @@ import { Layers3 } from 'lucide-react'
 import { useId, useState } from 'react'
 import type { Config, ConfigBase, ConfigRef, Language, View } from '../api'
 import { ConfigRow } from '../components/ConfigRow'
+import { NoticeBanner } from '../components/Notice'
 import type { Translator } from '../i18n'
 import {
   configLabel,
@@ -12,16 +13,19 @@ import {
   optionsWarning,
   usageCount,
 } from '../lib/config'
+import type { Notice } from '../lib/notice'
 
 export type ConfigurationsProps = {
   view: View
   language: Language
   t: Translator
   busy: boolean
+  notice: Notice | null
+  onDismissNotice: () => void
   /** Set while a half-written project is parked: renders the return affordance. */
   returnDraft: (() => void) | null
   onCreate: (base: ConfigBase, name: string | null) => Promise<void>
-  onUpdate: (id: string, encoding: string, locale: string) => Promise<void>
+  onUpdate: (id: string, encoding: string, locale: string) => Promise<boolean>
   onDelete: (id: string) => Promise<void>
   onStartSetup: (id: string) => Promise<void>
   onFinishSetup: (id: string, save: boolean) => Promise<void>
@@ -34,6 +38,8 @@ export function Configurations({
   language,
   t,
   busy,
+  notice,
+  onDismissNotice,
   returnDraft,
   onCreate,
   onUpdate,
@@ -64,8 +70,9 @@ export function Configurations({
   async function saveEditing() {
     if (!editing) return
     const { config, encoding, locale } = editing
-    setEditing(null)
-    await onUpdate(idOf(config.reference), encoding.trim(), locale.trim())
+    // Stay open on failure: the dialog carries the reason next to the button.
+    const saved = await onUpdate(idOf(config.reference), encoding.trim(), locale.trim())
+    if (saved) setEditing(null)
   }
 
   const changedOptions = editing
@@ -94,6 +101,16 @@ export function Configurations({
           </button>
         )}
       </header>
+
+      {notice?.target === 'page' && (
+        <NoticeBanner
+          notice={notice}
+          language={language}
+          t={t}
+          onDismiss={onDismissNotice}
+          className="page-notice"
+        />
+      )}
 
       <section className="config-group" aria-labelledby={`${fieldId}-users`}>
         <h2 id={`${fieldId}-users`}>{t('userConfigurations')}</h2>
@@ -224,6 +241,15 @@ export function Configurations({
             </div>
             {check?.warning && <p className="option-warning">{t(check.warning)}</p>}
             <p className="field-hint">{t('editorSettingsNotIncluded')}</p>
+            {notice?.target === 'dialog' && (
+              <NoticeBanner
+                notice={notice}
+                language={language}
+                t={t}
+                onDismiss={onDismissNotice}
+                className="form-notice"
+              />
+            )}
             <div className="form-actions">
               <button
                 type="button"

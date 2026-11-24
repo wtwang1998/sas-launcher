@@ -140,3 +140,21 @@ it('starting_minimized_is_editable_once_the_login_entry_exists', async () => {
     enabled: true,
   })
 })
+
+it('a_failed_switch_reports_inside_its_own_group', async () => {
+  const user = userEvent.setup()
+  renderApp(makeView({ closeToTray: true }), {
+    set_close_to_tray: () => {
+      throw { code: 'unexpected', detail: 'registry locked' }
+    },
+  })
+
+  await user.click(await screen.findByRole('button', { name: '设置' }))
+  await user.click(screen.getByRole('switch', { name: '关闭时最小化到托盘' }))
+
+  const alert = await screen.findByRole('alert')
+  expect(alert).toHaveTextContent('registry locked')
+  expect(alert.closest('.settings-group')).not.toBeNull()
+  expect(alert.closest('.panel')?.textContent).toContain('关闭时最小化到托盘')
+  expect(document.querySelector('.content > .banner')).toBeNull()
+})

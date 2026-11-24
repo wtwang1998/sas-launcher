@@ -1,14 +1,18 @@
 import { Activity, Eraser } from 'lucide-react'
 import { useState } from 'react'
 import type { Language, View } from '../api'
+import { NoticeBanner } from '../components/Notice'
 import { SessionRow } from '../components/SessionRow'
 import type { Translator } from '../i18n'
+import type { Notice } from '../lib/notice'
 
 export type DiagnosticsProps = {
   view: View
   language: Language
   t: Translator
   busy: boolean
+  notice: Notice | null
+  onDismissNotice: () => void
   onClear: () => Promise<void>
   onOpenLog: (id: string) => void
   onOpenSasuser: (id: string) => void
@@ -19,6 +23,8 @@ export function Diagnostics({
   language,
   t,
   busy,
+  notice,
+  onDismissNotice,
   onClear,
   onOpenLog,
   onOpenSasuser,
@@ -51,6 +57,16 @@ export function Diagnostics({
           {t('clearRecords')}
         </button>
       </header>
+
+      {notice?.target === 'page' && (
+        <NoticeBanner
+          notice={notice}
+          language={language}
+          t={t}
+          onDismiss={onDismissNotice}
+          className="page-notice"
+        />
+      )}
 
       {view.sessions.length === 0 ? (
         <div className="empty panel">

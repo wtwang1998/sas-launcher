@@ -235,3 +235,28 @@ it('edit_dialog_offers_factory_preset_combinations', async () => {
     locale: 'zh_CN',
   })
 })
+
+it('a_failed_save_keeps_the_edit_dialog_open_with_the_reason', async () => {
+  const user = userEvent.setup()
+  const config = userConfig('cfg-1', '我的配置', 'UTF-8', 'zh_CN')
+  renderApp(makeView({ configs: [config] }), {
+    update_configuration: () => {
+      throw { code: 'unexpected', detail: 'thin cfg locked' }
+    },
+  })
+
+  await openConfigurations(user)
+  const row = (await screen.findByText('我的配置')).closest('li') as HTMLElement
+  await user.click(within(row).getByRole('button', { name: /配置操作/ }))
+  await user.click(within(row).getByRole('menuitem', { name: '编辑设置' }))
+
+  const dialog = await screen.findByRole('dialog')
+  const encoding = within(dialog).getByLabelText('编码')
+  await user.clear(encoding)
+  await user.type(encoding, 'EUC-CN')
+  await user.click(within(dialog).getByRole('button', { name: '保存' }))
+
+  const alert = await within(dialog).findByRole('alert')
+  expect(alert).toHaveTextContent('thin cfg locked')
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+})

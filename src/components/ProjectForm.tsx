@@ -1,4 +1,4 @@
-import { type FormEvent, useId, useState } from 'react'
+import { type FormEvent, type ReactNode, useId, useState } from 'react'
 import type { Config, ConfigRef, Language, SasuserCandidate } from '../api'
 import type { Translator } from '../i18n'
 import { configReady } from '../lib/config'
@@ -41,6 +41,7 @@ export function ProjectForm({
   onCancel,
   onCreateConfiguration,
   onBrowseProfile,
+  notice,
 }: {
   draft: ProjectDraft
   configs: Config[]
@@ -55,6 +56,8 @@ export function ProjectForm({
   onCancel?: () => void
   onCreateConfiguration?: () => void
   onBrowseProfile?: () => void
+  /** The last save's outcome, shown next to the buttons it belongs to. */
+  notice?: ReactNode
 }) {
   const nameId = useId()
   const noteId = useId()
@@ -138,6 +141,7 @@ export function ProjectForm({
           onChange={(event) => onChange({ ...draft, note: event.target.value })}
         />
       </div>
+      {notice}
       <div className="form-actions">
         {onCancel && (
           <button type="button" className="button" disabled={busy} onClick={onCancel}>
