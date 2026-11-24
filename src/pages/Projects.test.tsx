@@ -5,6 +5,84 @@ import type { BatchResult } from '../api'
 import { builtIn, makeView } from '../test/fixtures'
 import { renderApp } from '../test/harness'
 
+it('editing a project can turn the environment layer on', async () => {
+  const user = userEvent.setup()
+  const folder = 'C:/Users/me/Documents/My SAS Files/9.4'
+  const { backend } = renderApp(
+    makeView({
+      configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
+      projects: [
+        {
+          id: 'p1',
+          name: '项目 A',
+          note: null,
+          config: null,
+          profile: {
+            origin: { kind: 'sasUser', path: folder },
+            layers: { interface: true, environment: false, templates: false },
+            files: 2,
+          },
+        },
+      ],
+    }),
+    { sasuser_candidates: () => [] },
+  )
+
+  await user.click(await screen.findByLabelText('编辑 项目 A'))
+  await user.click(await screen.findByRole('checkbox', { name: /环境（库分配/ }))
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'save_project')).toHaveLength(1),
+  )
+  expect(backend.calls.find((call) => call.cmd === 'save_project')?.args).toMatchObject({
+    id: 'p1',
+    profile: {
+      kind: 'sasUser',
+      path: folder,
+      layers: { interface: true, environment: true, templates: false },
+    },
+  })
+})
+
+it('a failed save while editing the card explains itself there', async () => {
+  const user = userEvent.setup()
+  const folder = 'C:/Users/me/Documents/My SAS Files/9.4'
+  renderApp(
+    makeView({
+      configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
+      projects: [
+        {
+          id: 'p1',
+          name: '项目 A',
+          note: null,
+          config: null,
+          profile: {
+            origin: { kind: 'sasUser', path: folder },
+            layers: { interface: true, environment: false, templates: false },
+            files: 2,
+          },
+        },
+      ],
+    }),
+    {
+      sasuser_candidates: () => [],
+      save_project: () => {
+        throw { code: 'profileLocked', detail: 'profile.sas7bcat: 另一个程序正在使用此文件' }
+      },
+    },
+  )
+
+  await user.click(await screen.findByLabelText('编辑 项目 A'))
+  await user.click(await screen.findByRole('checkbox', { name: /环境（库分配/ }))
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+
+  const alert = await screen.findByRole('alert')
+  expect(alert).toHaveTextContent('请关闭正在使用该目录的 SAS')
+  expect(alert.closest('.inline-project-editor')).not.toBeNull()
+  expect(document.querySelector('.content > .banner')).toBeNull()
+})
+
 it('submitting_default_following_project_sends_null_config', async () => {
   const user = userEvent.setup()
   const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
