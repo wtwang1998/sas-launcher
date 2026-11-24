@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, it } from 'vitest'
 import { makeSession, makeView } from './test/fixtures'
@@ -8,7 +8,10 @@ import { renderApp } from './test/harness'
  * The shell decides what a window close means (`close_intent` in main.rs); it
  * only asks the frontend when leaving would strand running SAS sessions.
  */
-const hostEvent = (name: string) => document.dispatchEvent(new Event(name))
+const hostEvent = (name: string) =>
+  act(() => {
+    document.dispatchEvent(new Event(name))
+  })
 
 it('quitting_while_sas_is_running_asks_before_it_exits', async () => {
   const user = userEvent.setup()
@@ -18,7 +21,7 @@ it('quitting_while_sas_is_running_asks_before_it_exits', async () => {
   hostEvent('quit-requested')
 
   const dialog = await screen.findByRole('dialog')
-  expect(within(dialog).getByText(/1 个 SAS 会话/)).toBeInTheDocument()
+  await waitFor(() => expect(within(dialog).getByText(/1 个 SAS 会话/)).toBeInTheDocument())
   await user.click(within(dialog).getByRole('button', { name: '退出' }))
 
   expect(backend.calls.some((call) => call.cmd === 'quit')).toBe(true)

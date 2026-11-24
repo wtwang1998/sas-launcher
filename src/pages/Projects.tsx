@@ -1,10 +1,12 @@
 import { CircleAlert, FolderPlus, Play, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import type { BatchResult, Language, Project, SasuserCandidate, View } from '../api'
+import { NoticeBanner } from '../components/Notice'
 import { ProjectCard } from '../components/ProjectCard'
 import { type ProjectDraft, ProjectForm } from '../components/ProjectForm'
 import { issueText, type Translator } from '../i18n'
 import { configsByRef } from '../lib/config'
+import type { Notice } from '../lib/notice'
 import { profileDraftFrom } from '../lib/profile'
 
 export type ProjectsProps = {
@@ -15,6 +17,8 @@ export type ProjectsProps = {
   language: Language
   t: Translator
   busy: boolean
+  notice: Notice | null
+  onDismissNotice: () => void
   onDraft: (draft: ProjectDraft | null) => void
   onNewProject: () => void
   onCreateConfiguration: (draft: ProjectDraft) => void
@@ -32,6 +36,8 @@ export function Projects({
   language,
   t,
   busy,
+  notice,
+  onDismissNotice,
   onDraft,
   onNewProject,
   onCreateConfiguration,
@@ -86,6 +92,16 @@ export function Projects({
         </button>
       </header>
 
+      {notice?.target === 'page' && (
+        <NoticeBanner
+          notice={notice}
+          language={language}
+          t={t}
+          onDismiss={onDismissNotice}
+          className="page-notice"
+        />
+      )}
+
       {draft && draft.id === null && (
         <section className="panel edit-panel">
           <h2>{t('newProject')}</h2>
@@ -103,6 +119,17 @@ export function Projects({
             onCreateConfiguration={() => onCreateConfiguration(draft)}
             onBrowseProfile={onBrowseProfile}
             onSubmit={(next) => void onSaveProject(next)}
+            notice={
+              notice?.target === 'form' ? (
+                <NoticeBanner
+                  notice={notice}
+                  language={language}
+                  t={t}
+                  onDismiss={onDismissNotice}
+                  className="form-notice"
+                />
+              ) : null
+            }
           />
         </section>
       )}

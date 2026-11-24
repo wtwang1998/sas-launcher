@@ -3,7 +3,6 @@ import { open } from '@tauri-apps/plugin-dialog'
 import {
   Activity,
   Archive,
-  Check,
   CircleAlert,
   FolderOpen,
   Folders,
@@ -11,7 +10,6 @@ import {
   RefreshCw,
   Settings as SettingsIcon,
   SquareTerminal,
-  X,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -28,6 +26,7 @@ import {
 import { useConfirmation } from './components/confirmation'
 import { emptyProjectDraft, type ProjectDraft } from './components/ProjectForm'
 import { browserLanguage, issueText, type MessageKey, translate } from './i18n'
+import type { Notice, NoticeTarget } from './lib/notice'
 import { onHostEvent } from './lib/host'
 import { profileChoiceFor } from './lib/profile'
 import { themeAttribute } from './lib/settings'
@@ -45,8 +44,6 @@ const navigation = [
   { id: 'settings', label: 'settings', icon: SettingsIcon },
 ] as const
 
-type Toast = { key: MessageKey; values?: Record<string, string | number> }
-
 export function App() {
   const [view, setView] = useState<View | null>(null)
   const [page, setPage] = useState<Page>('projects')
@@ -54,14 +51,19 @@ export function App() {
   const [profileCandidates, setProfileCandidates] = useState<SasuserCandidate[]>([])
   const [pendingDraft, setPendingDraft] = useState<ProjectDraft | null>(null)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<unknown>(null)
-  const [toast, setToast] = useState<Toast | null>(null)
+  const [notice, setNotice] = useState<Notice | null>(null)
   const [fallbackLanguage] = useState<Language>(browserLanguage)
   const saving = useRef(false)
   const revision = useRef(0)
   const language = view?.language ?? fallbackLanguage
   const t = translate(language)
-  const { confirm, confirmation } = useConfirmation(t)
+  const dismissNotice = () => setNotice(null)
+  const { confirm, confirmation } = useConfirmation({
+    t,
+    language,
+    notice,
+    onDismissNotice: dismissNotice,
+  })
 
   useEffect(() => {
     const title = translate(language)('title')
@@ -91,7 +93,8 @@ export function App() {
         const next = await api.snapshot()
         if (alive && next && current === revision.current && !saving.current) setView(next)
       } catch (failure) {
-        if (alive && current === revision.current) setError(failure)
+        if (alive && current === revision.current)
+          setNotice({ tone: 'error', target: 'page', error: failure })
       }
     }
     void poll()
@@ -102,19 +105,25 @@ export function App() {
     }
   }, [])
 
-  async function mutate(action: () => Promise<View>, success?: MessageKey): Promise<View | null> {
+  async function mutate(
+    action: () => Promise<View>,
+    success?: MessageKey,
+    target: NoticeTarget = 'page',
+    /** Where a success shows: dialog and form surfaces disappear on success. */
+    successTarget: NoticeTarget = target,
+  ): Promise<View | null> {
     if (saving.current) return null
     saving.current = true
     revision.current += 1
     setBusy(true)
-    setError(null)
+    setNotice(null)
     try {
       const next = await action()
       if (next) setView(next)
-      if (success) setToast({ key: success })
+      if (success) setNotice({ tone: 'success', target: successTarget, key: success })
       return next ?? null
     } catch (failure) {
-      setError(failure)
+      setNotice({ tone: 'error', target, error: failure })
       return null
     } finally {
       saving.current = false
@@ -127,14 +136,14 @@ export function App() {
     saving.current = true
     revision.current += 1
     setBusy(true)
-    setError(null)
+    setNotice(null)
     try {
       const session = await action()
-      setToast({ key: success, values: { name: session.name } })
+      setNotice({ tone: 'success', target: 'page', key: success, values: { name: session.name } })
       const next = await api.snapshot()
       if (next) setView(next)
     } catch (failure) {
-      setError(failure)
+      setNotice({ tone: 'error', target: 'page', error: failure })
     } finally {
       saving.current = false
       setBusy(false)
@@ -145,15 +154,13 @@ export function App() {
     setPage(next)
     setDraft(null)
     setPendingDraft(null)
-    setError(null)
-    setToast(null)
+    setNotice(null)
   }
 
   function beginConfigurationTrip(next: ProjectDraft) {
     setPendingDraft(next)
     setPage('configurations')
-    setError(null)
-    setToast(null)
+    setNotice(null)
   }
 
   function returnToDraft() {
@@ -166,8 +173,7 @@ export function App() {
     setDraft(alive ? pendingDraft : { ...pendingDraft, config: null })
     setPendingDraft(null)
     setPage('projects')
-    setError(null)
-    setToast(null)
+    setNotice(null)
   }
 
   async function saveProject(next: ProjectDraft) {
@@ -182,6 +188,8 @@ export function App() {
           profileChoiceFor(project, next.profile),
         ),
       'projectSaved',
+      'form',
+      'page',
     )
     if (updated) setDraft(null)
   }
@@ -198,7 +206,7 @@ export function App() {
     try {
       found = await api.sasuserCandidates(null)
     } catch (failure) {
-      setError(failure)
+      setNotice({ tone: 'error', target: 'form', error: failure })
     }
     setProfileCandidates(found)
     setDraft((current) => {
@@ -231,7 +239,7 @@ export function App() {
           : current,
       )
     } catch (failure) {
-      setError(failure)
+      setNotice({ tone: 'error', target: 'page', error: failure })
     }
   }
 
@@ -242,7 +250,8 @@ export function App() {
       t('deletePrompt', { name: name ?? '' }),
       t('deleteAction'),
       async () => {
-        await mutate(() => api.deleteProject(id), 'projectDeleted')
+        const next = await mutate(() => api.deleteProject(id), 'projectDeleted', 'dialog')
+        return next !== null
       },
     )
   }
@@ -256,14 +265,14 @@ export function App() {
     saving.current = true
     revision.current += 1
     setBusy(true)
-    setError(null)
+    setNotice(null)
     try {
       const results = await api.launchBatch(ids)
       const next = await api.snapshot()
       if (next) setView(next)
       return results
     } catch (failure) {
-      setError(failure)
+      setNotice({ tone: 'error', target: 'page', error: failure })
       return []
     } finally {
       saving.current = false
@@ -285,7 +294,13 @@ export function App() {
   }
 
   async function updateConfiguration(id: string, encoding: string, locale: string) {
-    await mutate(() => api.updateConfiguration(id, encoding, locale), 'configurationSaved')
+    const next = await mutate(
+      () => api.updateConfiguration(id, encoding, locale),
+      'configurationSaved',
+      'dialog',
+      'page',
+    )
+    return next !== null
   }
 
   async function deleteConfiguration(id: string) {
@@ -295,31 +310,42 @@ export function App() {
       t('deleteConfigurationDetail', { name: name ?? '' }),
       t('deleteAction'),
       async () => {
-        await mutate(() => api.deleteConfiguration(id), 'configurationDeleted')
+        const next = await mutate(
+          () => api.deleteConfiguration(id),
+          'configurationDeleted',
+          'dialog',
+          'page',
+        )
+        return next !== null
       },
     )
   }
 
   async function startConfigSetup(id: string) {
-    await mutate(() => api.startConfigSetup(id), 'setupStarted')
+    await mutate(() => api.startConfigSetup(id), 'setupStarted', 'page')
   }
 
   async function finishConfigSetup(id: string, save: boolean) {
-    await mutate(() => api.finishConfigSetup(id, save), save ? 'setupSaved' : 'setupDiscarded')
+    await mutate(
+      () => api.finishConfigSetup(id, save),
+      save ? 'setupSaved' : 'setupDiscarded',
+      'page',
+    )
   }
 
   async function clearDiagnostics() {
     confirm(t('clearRecordsTitle'), t('clearRecordsDetail'), t('clearRecordsAction'), async () => {
-      await mutate(() => api.clearDiagnostics(), 'recordsCleared')
+      const next = await mutate(() => api.clearDiagnostics(), 'recordsCleared', 'dialog', 'page')
+      return next !== null
     })
   }
 
   async function saveSasPath(path: string) {
-    await mutate(() => api.selectInstallation(path), 'installationUpdated')
+    await mutate(() => api.selectInstallation(path), 'installationUpdated', 'sas')
   }
 
   async function autoDetectSas() {
-    await mutate(() => api.clearInstallation(), 'installationAutoDetected')
+    await mutate(() => api.clearInstallation(), 'installationAutoDetected', 'sas')
   }
 
   /**
@@ -332,21 +358,26 @@ export function App() {
       const count = view?.sessions.filter((session) => session.status === 'running').length ?? 0
       confirm(t('quitTitle'), t('quitMessage', { count }), t('quitAction'), async () => {
         await api.quit()
+        return true
       })
     }
   })
   useEffect(() => onHostEvent('quit-requested', () => quitRequested.current()), [])
 
+  function report(failure: unknown) {
+    setNotice({ tone: 'error', target: 'page', error: failure })
+  }
+
   function openLog(id: string) {
-    void api.openLog(id).catch((failure) => setError(failure))
+    void api.openLog(id).catch(report)
   }
 
   function openSasuser(id: string) {
-    void api.openSasuser(id).catch((failure) => setError(failure))
+    void api.openSasuser(id).catch(report)
   }
 
   function openArchive() {
-    void api.openArchive().catch((failure) => setError(failure))
+    void api.openArchive().catch(report)
   }
 
   function pickExe() {
@@ -357,10 +388,10 @@ export function App() {
           filters: [{ name: t('windowsProgram'), extensions: ['exe'] }],
         })
         if (typeof selected === 'string' && selected) {
-          await mutate(() => api.selectInstallation(selected), 'installationUpdated')
+          await mutate(() => api.selectInstallation(selected), 'installationUpdated', 'sas')
         }
       } catch (failure) {
-        setError(failure)
+        report(failure)
       }
     })()
   }
@@ -395,34 +426,6 @@ export function App() {
 
       <main>
         <div className="content">
-          {error !== null && (
-            <div className="banner error" role="alert">
-              <CircleAlert size={18} aria-hidden="true" />
-              <span>{issueText(language, error)}</span>
-              <button
-                type="button"
-                className="icon-button"
-                aria-label={t('closeError')}
-                onClick={() => setError(null)}
-              >
-                <X size={16} />
-              </button>
-            </div>
-          )}
-          {toast && (
-            <div className="banner success" role="status">
-              <Check size={18} aria-hidden="true" />
-              <span>{t(toast.key, toast.values)}</span>
-              <button
-                type="button"
-                className="icon-button"
-                aria-label={t('closeMessage')}
-                onClick={() => setToast(null)}
-              >
-                <X size={16} />
-              </button>
-            </div>
-          )}
           {view?.scanError && (
             <div className="banner warning">
               <CircleAlert size={18} aria-hidden="true" />
@@ -457,7 +460,7 @@ export function App() {
               </button>
             </div>
           )}
-          {!view && error === null && (
+          {!view && (
             <p className="muted" role="status">
               {t('discovering')}
             </p>
@@ -468,6 +471,8 @@ export function App() {
               view={view}
               draft={draft}
               profileCandidates={profileCandidates}
+              notice={notice}
+              onDismissNotice={dismissNotice}
               onBrowseProfile={() => void browseProfile()}
               language={language}
               t={t}
@@ -488,6 +493,8 @@ export function App() {
               language={language}
               t={t}
               busy={busy}
+              notice={notice}
+              onDismissNotice={dismissNotice}
               returnDraft={pendingDraft ? returnToDraft : null}
               onCreate={createConfiguration}
               onUpdate={updateConfiguration}
@@ -503,6 +510,8 @@ export function App() {
               language={language}
               t={t}
               busy={busy}
+              notice={notice}
+              onDismissNotice={dismissNotice}
               onClear={clearDiagnostics}
               onOpenLog={openLog}
               onOpenSasuser={openSasuser}
@@ -513,15 +522,28 @@ export function App() {
             <SettingsPage
               view={view}
               t={t}
+              language={language}
               busy={busy}
-              onTheme={(preference) => void mutate(() => api.setTheme(preference))}
-              onLanguage={(preference) => void mutate(() => api.setLanguage(preference))}
+              notice={notice}
+              onDismissNotice={dismissNotice}
+              onTheme={(preference) =>
+                void mutate(() => api.setTheme(preference), undefined, 'interface')
+              }
+              onLanguage={(preference) =>
+                void mutate(() => api.setLanguage(preference), undefined, 'interface')
+              }
               onSavePath={saveSasPath}
               onBrowse={pickExe}
               onAutoDetect={autoDetectSas}
-              onStartup={(enabled) => void mutate(() => api.setStartup(enabled))}
-              onStartMinimized={(enabled) => void mutate(() => api.setStartMinimized(enabled))}
-              onCloseToTray={(enabled) => void mutate(() => api.setCloseToTray(enabled))}
+              onStartup={(enabled) =>
+                void mutate(() => api.setStartup(enabled), undefined, 'window')
+              }
+              onStartMinimized={(enabled) =>
+                void mutate(() => api.setStartMinimized(enabled), undefined, 'window')
+              }
+              onCloseToTray={(enabled) =>
+                void mutate(() => api.setCloseToTray(enabled), undefined, 'window')
+              }
             />
           )}
         </div>
