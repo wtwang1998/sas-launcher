@@ -84,6 +84,9 @@
 * {
   box-sizing: border-box;
 }
+html {
+  overflow-x: clip;
+}
 body {
   margin: 0;
 }
@@ -1261,12 +1264,11 @@ details[open] .disclosure {
   display: inline-flex;
 }
 .tooltip-bubble {
-  visibility: hidden;
+  display: none;
   position: absolute;
   z-index: 9;
   top: calc(100% + 5px);
-  left: 50%;
-  transform: translateX(-50%);
+  right: 0;
   width: min(320px, 70vw);
   padding: 8px 10px;
   border-radius: 7px;
@@ -1281,14 +1283,13 @@ details[open] .disclosure {
   content: "";
   position: absolute;
   bottom: 100%;
-  left: 50%;
-  margin-left: -5px;
+  right: 3px;
   border: 5px solid transparent;
   border-bottom-color: var(--bubble);
 }
 .tooltip:hover .tooltip-bubble,
 .tooltip:focus-within .tooltip-bubble {
-  visibility: visible;
+  display: block;
 }
 
 /* 配置列表 */
