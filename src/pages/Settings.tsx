@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import type { Preference, ThemePreference, View } from '../api'
 import { Switch } from '../components/Switch'
 import type { Translator } from '../i18n'
+import { startMinimizedActive } from '../lib/settings'
 
 export type SettingsProps = {
   view: View
@@ -12,6 +13,8 @@ export type SettingsProps = {
   onSavePath: (path: string) => Promise<void>
   onBrowse: () => void
   onAutoDetect: () => Promise<void>
+  onStartup: (enabled: boolean) => void
+  onStartMinimized: (enabled: boolean) => void
   onCloseToTray: (enabled: boolean) => void
 }
 
@@ -24,6 +27,8 @@ export function Settings({
   onSavePath,
   onBrowse,
   onAutoDetect,
+  onStartup,
+  onStartMinimized,
   onCloseToTray,
 }: SettingsProps) {
   const id = useId()
@@ -140,6 +145,40 @@ export function Settings({
 
       <section className="settings-group panel" aria-labelledby={`${id}-window`}>
         <h2 id={`${id}-window`}>{t('windowGroup')}</h2>
+        <div className="setting-row">
+          <span className="setting-label">
+            <span id={`${id}-startup`}>{t('startup')}</span>
+            <span className="setting-state">{t('startupHint')}</span>
+          </span>
+          <div className="setting-control">
+            <Switch
+              labelledBy={`${id}-startup`}
+              checked={view.autostart}
+              disabled={busy}
+              onChange={onStartup}
+            />
+          </div>
+        </div>
+        <div className="setting-row">
+          <span className="setting-label">
+            <span id={`${id}-start-minimized`}>{t('startMinimized')}</span>
+            <span className={`setting-state ${view.autostart ? '' : 'warn'}`}>
+              {view.autostart
+                ? startMinimizedActive(view.autostart, view.startMinimized)
+                  ? t('startMinimizedActive')
+                  : t('startMinimizedShown')
+                : t('startMinimizedLocked')}
+            </span>
+          </span>
+          <div className="setting-control">
+            <Switch
+              labelledBy={`${id}-start-minimized`}
+              checked={view.startMinimized}
+              disabled={busy || !view.autostart}
+              onChange={onStartMinimized}
+            />
+          </div>
+        </div>
         <div className="setting-row">
           <span className="setting-label">
             <span id={`${id}-close-to-tray`}>{t('closeToTray')}</span>

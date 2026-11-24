@@ -71,6 +71,8 @@ export type View = {
   themePreference: ThemePreference
   closeToTray: boolean
   trayHintSeen: boolean
+  startMinimized: boolean
+  autostart: boolean
 }
 
 /** Reference equality for the three-state project configuration pointer. */
@@ -93,6 +95,8 @@ export const api = {
   clearInstallation: () => invoke<View>('clear_installation'),
   setTheme: (preference: ThemePreference) => invoke<View>('set_theme', { preference }),
   setCloseToTray: (enabled: boolean) => invoke<View>('set_close_to_tray', { enabled }),
+  setStartup: (enabled: boolean) => invoke<View>('set_startup', { enabled }),
+  setStartMinimized: (enabled: boolean) => invoke<View>('set_start_minimized', { enabled }),
   hideToTray: () => invoke<View>('hide_to_tray'),
   quit: () => invoke<void>('quit'),
   saveProject: (id: string | null, name: string, note: string | null, config: ConfigRef | null) =>

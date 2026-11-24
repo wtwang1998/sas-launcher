@@ -42,6 +42,15 @@ export const messages = {
   autoDetect: ['自动检测', 'Auto-detect'],
   installationAutoDetected: ['已恢复自动检测。', 'Auto-detect restored.'],
   windowGroup: ['启动与窗口', 'Startup and window'],
+  startup: ['开机时自动启动', 'Start at login'],
+  startupHint: [
+    '登录 Windows 后自动运行本程序。',
+    'Runs the launcher after you sign in to Windows.',
+  ],
+  startMinimized: ['启动时最小化到托盘', 'Start minimized in the tray'],
+  startMinimizedLocked: ['需先开启「开机时自动启动」', 'Turn on “Start at login” first'],
+  startMinimizedActive: ['登录后直接进入托盘运行。', 'The login launch goes straight to the tray.'],
+  startMinimizedShown: ['登录后正常显示窗口。', 'The login launch shows the window.'],
   closeToTray: ['关闭时最小化到托盘', 'Minimize to the tray on close'],
   closeToTrayHint: [
     '窗口关闭后程序继续在托盘运行。',

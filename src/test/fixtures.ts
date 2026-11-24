@@ -87,6 +87,8 @@ export function makeView(patch: Partial<View> = {}): View {
     themePreference: 'system',
     closeToTray: true,
     trayHintSeen: false,
+    startMinimized: false,
+    autostart: false,
     ...patch,
   }
 }

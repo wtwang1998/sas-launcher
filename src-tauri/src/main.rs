@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod autostart;
 mod configuration;
 mod diagnostics;
 mod discovery;
@@ -48,6 +49,8 @@ struct App {
     pub(crate) installation: Option<Installation>,
     pub(crate) scan_error: Option<Issue>,
     pub(crate) system_language: String,
+    /// Registry truth for the login entry, refreshed whenever it changes.
+    pub(crate) autostart: bool,
 }
 
 type AppState = Mutex<Result<App, Issue>>;
@@ -84,6 +87,7 @@ impl App {
             installation: None,
             scan_error: None,
             system_language: language::system_language(),
+            autostart: false,
         };
         app.refresh();
         Ok(app)
@@ -742,6 +746,35 @@ async fn select_installation(state: State<'_, AppState>, path: PathBuf) -> Resul
 }
 
 #[tauri::command]
+async fn set_startup(state: State<'_, AppState>, enabled: bool) -> Result<View, Issue> {
+    let exe =
+        std::env::current_exe().map_err(|error| Issue::with_detail("autostartPath", error))?;
+    let minimized = with_app(&state, |app| Ok(app.store.settings.start_minimized))?;
+    autostart::set(&exe, enabled, minimized)?;
+    let registered = autostart::enabled();
+    with_app(&state, |app| {
+        app.autostart = registered;
+        Ok(app.view())
+    })
+}
+
+#[tauri::command]
+async fn set_start_minimized(state: State<'_, AppState>, enabled: bool) -> Result<View, Issue> {
+    let registered = with_app(&state, |app| {
+        app.store
+            .update(|settings| settings.start_minimized = enabled)?;
+        Ok(app.autostart)
+    })?;
+    // Keep the stored login command in step with the flag it carries.
+    if registered {
+        let exe =
+            std::env::current_exe().map_err(|error| Issue::with_detail("autostartPath", error))?;
+        autostart::set(&exe, true, enabled)?;
+    }
+    with_app(&state, |app| Ok(app.view()))
+}
+
+#[tauri::command]
 async fn set_close_to_tray(state: State<'_, AppState>, enabled: bool) -> Result<View, Issue> {
     with_app(&state, |app| {
         app.store
@@ -1013,10 +1046,20 @@ fn main() {
                 Err(error) => Err(Issue::with_detail("dataPath", error)),
             });
             app.manage(state);
+            let registered = autostart::enabled();
+            let _ = with_app(&app.state::<AppState>(), |app| {
+                app.autostart = registered;
+                Ok(())
+            });
             if let Some(window) = app.get_webview_window("main") {
                 let theme = with_app(&app.state::<AppState>(), |app| Ok(app.store.settings.theme))
                     .unwrap_or_default();
                 let _ = window.set_theme(theme.window_theme());
+            }
+            if autostart::requested_minimized(&std::env::args().collect::<Vec<_>>())
+                && let Some(window) = app.get_webview_window("main")
+            {
+                let _ = window.hide();
             }
             let labels = with_app(&app.state::<AppState>(), |app| Ok(tray_labels(app)))
                 .unwrap_or(("Show window", "Quit"));
@@ -1079,6 +1122,8 @@ fn main() {
             set_language,
             set_theme,
             set_close_to_tray,
+            set_startup,
+            set_start_minimized,
             hide_to_tray,
             quit,
             clear_installation,

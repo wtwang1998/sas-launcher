@@ -478,6 +478,8 @@ export function App() {
               onSavePath={saveSasPath}
               onBrowse={pickExe}
               onAutoDetect={autoDetectSas}
+              onStartup={(enabled) => void mutate(() => api.setStartup(enabled))}
+              onStartMinimized={(enabled) => void mutate(() => api.setStartMinimized(enabled))}
               onCloseToTray={(enabled) => void mutate(() => api.setCloseToTray(enabled))}
             />
           )}

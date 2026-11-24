@@ -666,6 +666,10 @@ details[open] .disclosure {
   color: var(--muted);
   font-size: 12px;
 }
+.setting-state .warn,
+.setting-state.warn {
+  color: var(--warn-text);
+}
 .switch {
   position: relative;
   width: 42px;

@@ -102,3 +102,42 @@ it('the_close_to_tray_switch_reflects_and_updates_the_setting', async () => {
     enabled: false,
   })
 })
+
+it('the_login_switch_is_persisted_through_set_startup', async () => {
+  const user = userEvent.setup()
+  const { backend } = renderApp(makeView({ autostart: false }))
+
+  await user.click(await screen.findByRole('button', { name: '设置' }))
+  const toggle = screen.getByRole('switch', { name: '开机时自动启动' })
+  expect(toggle).toHaveAttribute('aria-checked', 'false')
+  await user.click(toggle)
+
+  expect(backend.calls.find((call) => call.cmd === 'set_startup')?.args).toMatchObject({
+    enabled: true,
+  })
+})
+
+it('starting_minimized_waits_for_the_login_entry', async () => {
+  const user = userEvent.setup()
+  renderApp(makeView({ autostart: false, startMinimized: true }))
+
+  await user.click(await screen.findByRole('button', { name: '设置' }))
+  const toggle = screen.getByRole('switch', { name: '启动时最小化到托盘' })
+  expect(toggle).toBeDisabled()
+  expect(toggle).toHaveAttribute('aria-checked', 'true')
+  expect(screen.getByText('需先开启「开机时自动启动」')).toBeInTheDocument()
+})
+
+it('starting_minimized_is_editable_once_the_login_entry_exists', async () => {
+  const user = userEvent.setup()
+  const { backend } = renderApp(makeView({ autostart: true, startMinimized: false }))
+
+  await user.click(await screen.findByRole('button', { name: '设置' }))
+  const toggle = screen.getByRole('switch', { name: '启动时最小化到托盘' })
+  expect(toggle).toBeEnabled()
+  await user.click(toggle)
+
+  expect(backend.calls.find((call) => call.cmd === 'set_start_minimized')?.args).toMatchObject({
+    enabled: true,
+  })
+})

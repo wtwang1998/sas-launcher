@@ -53,6 +53,18 @@ it('commands_match_the_rust_handler_names', async () => {
       cmd: 'set_close_to_tray',
       args: { enabled: false },
     },
+    {
+      name: 'setStartup',
+      run: () => api.setStartup(true),
+      cmd: 'set_startup',
+      args: { enabled: true },
+    },
+    {
+      name: 'setStartMinimized',
+      run: () => api.setStartMinimized(true),
+      cmd: 'set_start_minimized',
+      args: { enabled: true },
+    },
     { name: 'hideToTray', run: () => api.hideToTray(), cmd: 'hide_to_tray', args: {} },
     { name: 'quit', run: () => api.quit(), cmd: 'quit', args: {} },
     {
@@ -139,6 +151,8 @@ it('commands_match_the_rust_handler_names', async () => {
     'clearInstallation',
     'setTheme',
     'setCloseToTray',
+    'setStartup',
+    'setStartMinimized',
     'hideToTray',
     'quit',
     'saveProject',

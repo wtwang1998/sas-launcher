@@ -81,6 +81,8 @@ pub struct Settings {
     pub close_to_tray: bool,
     /// Set once the tray hint has been shown, so it only ever appears once.
     pub tray_hint_seen: bool,
+    /// Only meaningful while the login entry is registered.
+    pub start_minimized: bool,
     pub presets: Vec<Preset>,
 }
 
@@ -92,6 +94,7 @@ impl Default for Settings {
             theme: ThemePreference::default(),
             close_to_tray: true,
             tray_hint_seen: false,
+            start_minimized: false,
             presets: Vec::new(),
         }
     }
@@ -535,6 +538,7 @@ mod tests {
         // A missing close-to-tray key must default to "keep running in the tray".
         assert!(store.settings.close_to_tray);
         assert!(!store.settings.tray_hint_seen);
+        assert!(!store.settings.start_minimized);
 
         store
             .update(|settings| settings.theme = ThemePreference::Dark)
@@ -548,6 +552,12 @@ mod tests {
             .unwrap();
         store.reload().unwrap();
         assert!(!store.settings.close_to_tray);
+
+        store
+            .update(|settings| settings.start_minimized = true)
+            .unwrap();
+        store.reload().unwrap();
+        assert!(store.settings.start_minimized);
     }
 
     #[test]

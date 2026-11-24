@@ -1,4 +1,9 @@
 {
+  "autostartWrite": ["无法更新开机自启动设置。", "Could not update the start-at-login setting."],
+  "autostartPath": [
+    "无法解析程序自身的路径，开机自启动暂不可用。",
+    "Could not resolve the launcher's own path, so start-at-login is unavailable."
+  ],
   "configurationWrite": ["无法保存启动配置文件。", "Could not save the launch configuration file."],
   "rootConfigRead": [
     "无法读取 SAS 根目录的 sasv9.cfg。",
