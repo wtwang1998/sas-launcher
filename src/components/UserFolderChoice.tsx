@@ -190,22 +190,26 @@ export function UserFolderChoice({
               {checked && card.kind !== 'fresh' && (
                 <div className="radio-control" onClick={(event) => event.stopPropagation()}>
                   <div className="profile-layers">
-                    <p className="profile-layer">{t('profileLayersInterface')}</p>
-                    <label className="profile-layer">
-                      <input
-                        type="checkbox"
-                        checked={value.layers.environment}
-                        disabled={busy}
-                        onChange={(event) =>
-                          onChange({
-                            ...value,
-                            layers: { ...value.layers, environment: event.target.checked },
-                          })
-                        }
-                      />
-                      {t('profileLayersEnvironment')}
-                    </label>
-                    <label className="profile-layer">
+                    <p className="profile-layer">{t('profileLayersCarryOver')}</p>
+                    <p className="profile-layer profile-also">{t('profileLayersAlso')}</p>
+                    <div className="profile-layer">
+                      <label className="profile-option">
+                        <input
+                          type="checkbox"
+                          checked={value.layers.environment}
+                          disabled={busy}
+                          onChange={(event) =>
+                            onChange({
+                              ...value,
+                              layers: { ...value.layers, environment: event.target.checked },
+                            })
+                          }
+                        />
+                        {t('profileLayersEnvironment')}
+                      </label>
+                      <Tooltip label={t('helpHint')} text={t('profileLayersEnvironmentHint')} />
+                    </div>
+                    <label className="profile-option">
                       <input
                         type="checkbox"
                         checked={value.layers.templates}

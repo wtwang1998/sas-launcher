@@ -51,7 +51,6 @@ export const messages = {
     'Runs the launcher after you sign in to Windows.',
   ],
   startMinimized: ['启动时最小化到托盘', 'Start minimized in the tray'],
-  startMinimizedLocked: ['需先开启「开机时自动启动」', 'Turn on “Start at login” first'],
   startMinimizedActive: ['登录后直接进入托盘运行。', 'The login launch goes straight to the tray.'],
   startMinimizedShown: ['登录后正常显示窗口。', 'The login launch shows the window.'],
   closeToTray: ['关闭时最小化到托盘', 'Minimize to the tray on close'],
@@ -65,8 +64,6 @@ export const messages = {
     '{count} SAS session(s) are still running. They keep running after you quit, but this app no longer manages them.',
   ],
   quitAction: ['退出', 'Quit'],
-  sasDetected: ['已找到 SAS 程序', 'SAS executable found'],
-  noInstallation: ['未找到 SAS 程序', 'No SAS executable'],
   discovering: ['正在查找 SAS 配置…', 'Looking for SAS configurations…'],
   runningCount: ['{count} 个会话运行中', '{count} running'],
 
@@ -147,15 +144,20 @@ export const messages = {
     '启动一个全新的 SASUSER，不继承任何设置',
     'Start with a brand new SASUSER and inherit nothing',
   ],
-  profileLayersInterface: [
-    '界面：窗口布局、功能键、菜单（始终包含）',
-    'Interface: layout, function keys, menus (always included)',
+  profileLayersCarryOver: [
+    '窗口布局、功能键与菜单会沿用你现在的设置。',
+    'Your window layout, function keys and menus carry over.',
   ],
+  profileLayersAlso: ['还可以带上：', 'Also bring:'],
   profileLayersEnvironment: [
-    '环境：库分配、Explorer 选项、打印设置',
-    'Environment: library assignments, Explorer options, print setup',
+    '环境（库分配、Explorer 选项、打印设置）',
+    'Environment (library assignments, Explorer options, print setup)',
   ],
-  profileLayersTemplates: ['自定义 ODS 模板与样式', 'Custom ODS templates and styles'],
+  profileLayersEnvironmentHint: [
+    '会把你现在注册的库分配、文件快捷方式与打印设置一起带过来，其中可能指向别的项目的路径',
+    'Carries the libraries, file shortcuts and print setup registered now, which may point at another project',
+  ],
+  profileLayersTemplates: ['ODS 模板与样式', 'Custom ODS templates and styles'],
   browseFolder: ['浏览其他文件夹…', 'Browse for another folder…'],
 
   followDefaultOption: ['跟随默认配置', 'Follow the default configuration'],

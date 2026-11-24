@@ -112,15 +112,21 @@ it('the_layer_choices_belong_to_the_inheriting_card_only', async () => {
 
   await user.click(await screen.findByRole('button', { name: '新建项目' }))
 
-  // The interface layer cannot be turned off, so it is a sentence, not a tick.
-  expect(await screen.findByText(/界面：/)).toBeInTheDocument()
-  expect(screen.getByText(/始终包含/)).toBeInTheDocument()
-  expect(screen.getByText('环境：库分配、Explorer 选项、打印设置')).toBeInTheDocument()
+  // The interface layer cannot be turned off, so it is a sentence, not a tick:
+  // exactly the two optional layers have a tick box.
+  expect(await screen.findByText(/窗口布局、功能键与菜单会沿用/)).toBeInTheDocument()
+  expect(screen.getByText('还可以带上：')).toBeInTheDocument()
+  expect(
+    screen.getByRole('checkbox', { name: '环境（库分配、Explorer 选项、打印设置）' }),
+  ).toBeInTheDocument()
+  expect(screen.getByRole('checkbox', { name: 'ODS 模板与样式' })).toBeInTheDocument()
+  expect(screen.getAllByRole('checkbox')).toHaveLength(2)
 
   await user.click(screen.getByRole('radio', { name: /干净环境/ }))
 
-  expect(screen.queryByText('环境：库分配、Explorer 选项、打印设置')).not.toBeInTheDocument()
-  expect(screen.queryByText(/始终包含/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/窗口布局、功能键与菜单会沿用/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('checkbox', { name: /环境/ })).not.toBeInTheDocument()
+  expect(screen.queryByRole('checkbox', { name: 'ODS 模板与样式' })).not.toBeInTheDocument()
 })
 
 it('name_is_required_and_trimmed', async () => {

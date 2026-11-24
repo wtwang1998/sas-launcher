@@ -660,9 +660,15 @@ details[open] .disclosure {
   gap: 7px;
 }
 .path-control input {
-  flex: 1 1 240px;
+  flex: 1 1 300px;
+  min-width: 0;
+  max-width: 460px;
   font-family: "Cascadia Mono", Consolas, monospace;
   font-size: 12px;
+}
+/* The path needs the room; its label column stays fixed instead of growing. */
+.setting-row.wide {
+  grid-template-columns: 132px minmax(0, 1fr);
 }
 .setting-hint {
   padding: 0 0 10px;
@@ -707,7 +713,8 @@ details[open] .disclosure {
   background: var(--on-accent);
 }
 @media (max-width: 760px) {
-  .setting-row {
+  .setting-row,
+  .setting-row.wide {
     grid-template-columns: minmax(0, 1fr);
   }
   .setting-control {
@@ -1251,14 +1258,20 @@ details[open] .disclosure {
   margin-top: 10px;
 }
 /* `.editor label` sets a grid, which stacks a tick box above its text. */
-.editor .profile-layer {
+.editor .profile-layer,
+.editor .profile-option {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin: 0;
   color: var(--muted);
   font-size: 12px;
 }
-.profile-layer input {
+.profile-also {
+  margin-top: 2px;
+}
+.profile-layer input,
+.profile-option input {
   flex: none;
   margin: 0;
   accent-color: var(--accent);
