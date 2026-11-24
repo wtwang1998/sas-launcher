@@ -923,26 +923,6 @@ details[open] .disclosure {
 .template-restore .template-actions {
   margin: 6px 0 3px;
 }
-.setup-tooltip {
-  position: relative;
-}
-.setup-tip {
-  visibility: hidden;
-  position: absolute;
-  z-index: 3;
-  top: 100%;
-  left: 0;
-  width: min(310px, 64vw);
-  padding: 8px 10px;
-  border-radius: 7px;
-  background: var(--bubble);
-  color: white;
-  font-size: 12px;
-}
-.setup-tooltip:hover .setup-tip,
-.setup-tooltip:focus-within .setup-tip {
-  visibility: visible;
-}
 
 .configuration-heading {
   flex-wrap: wrap;
@@ -1040,11 +1020,6 @@ details[open] .disclosure {
 .info-button:hover {
   color: var(--text);
   background: var(--hover-soft);
-}
-.field-label-row .setup-tip {
-  left: auto;
-  right: 0;
-  z-index: 7;
 }
 .follow-default-current {
   padding: 8px 10px;
