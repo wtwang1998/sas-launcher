@@ -7,9 +7,9 @@ import {
   CircleAlert,
   FolderOpen,
   Folders,
-  Languages,
   Layers3,
   RefreshCw,
+  Settings as SettingsIcon,
   SquareTerminal,
   X,
 } from 'lucide-react'
@@ -19,7 +19,6 @@ import {
   type BatchResult,
   type ConfigBase,
   type Language,
-  type Preference,
   refKey,
   type Session,
   sameRef,
@@ -31,13 +30,15 @@ import { browserLanguage, issueText, type MessageKey, translate } from './i18n'
 import { Configurations } from './pages/Configurations'
 import { Diagnostics } from './pages/Diagnostics'
 import { Projects } from './pages/Projects'
+import { Settings as SettingsPage } from './pages/Settings'
 
-type Page = 'projects' | 'configurations' | 'diagnostics'
+type Page = 'projects' | 'configurations' | 'diagnostics' | 'settings'
 
 const navigation = [
   { id: 'projects', label: 'projects', icon: Folders },
   { id: 'configurations', label: 'configurations', icon: Layers3 },
   { id: 'diagnostics', label: 'sessions', icon: Activity },
+  { id: 'settings', label: 'settings', icon: SettingsIcon },
 ] as const
 
 type Toast = { key: MessageKey; values?: Record<string, string | number> }
@@ -245,6 +246,14 @@ export function App() {
     })
   }
 
+  async function saveSasPath(path: string) {
+    await mutate(() => api.selectInstallation(path), 'installationUpdated')
+  }
+
+  async function autoDetectSas() {
+    await mutate(() => api.clearInstallation(), 'installationAutoDetected')
+  }
+
   function openLog(id: string) {
     void api.openLog(id).catch((failure) => setError(failure))
   }
@@ -299,28 +308,6 @@ export function App() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-bottom">
-          <div className="health">
-            <span className={`status-dot ${view?.exe ? 'green' : ''}`} aria-hidden="true" />
-            {view?.exe ? t('sasDetected') : t('noInstallation')}
-          </div>
-          <label className="language-picker">
-            <Languages size={15} aria-hidden="true" />
-            <span>{t('language')}</span>
-            <select
-              aria-label={t('language')}
-              value={view?.languagePreference ?? 'system'}
-              disabled={busy || !view}
-              onChange={(event) =>
-                void mutate(() => api.setLanguage(event.target.value as Preference))
-              }
-            >
-              <option value="system">{t('system')}</option>
-              <option value="zh-Hans">{t('languageZhHans')}</option>
-              <option value="en">{t('languageEnglish')}</option>
-            </select>
-          </label>
-        </div>
       </aside>
 
       <main>
@@ -433,6 +420,18 @@ export function App() {
               onClear={clearDiagnostics}
               onOpenLog={openLog}
               onOpenSasuser={openSasuser}
+            />
+          )}
+
+          {view && page === 'settings' && (
+            <SettingsPage
+              view={view}
+              t={t}
+              busy={busy}
+              onLanguage={(preference) => void mutate(() => api.setLanguage(preference))}
+              onSavePath={saveSasPath}
+              onBrowse={pickExe}
+              onAutoDetect={autoDetectSas}
             />
           )}
         </div>

@@ -747,6 +747,16 @@ async fn set_language(
     })
 }
 
+/// Drop the manually pinned executable and fall back to scanning the machine.
+#[tauri::command]
+async fn clear_installation(state: State<'_, AppState>) -> Result<View, Issue> {
+    with_app(&state, |app| {
+        app.store.update(|settings| settings.exe = None)?;
+        app.refresh();
+        Ok(app.view())
+    })
+}
+
 #[tauri::command]
 async fn save_project(
     state: State<'_, AppState>,
@@ -916,6 +926,7 @@ fn main() {
             refresh_configs,
             select_installation,
             set_language,
+            clear_installation,
             save_project,
             delete_project,
             create_configuration,

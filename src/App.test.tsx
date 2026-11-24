@@ -4,13 +4,14 @@ import { expect, it } from 'vitest'
 import { builtIn, makeView, userConfig } from './test/fixtures'
 import { renderApp } from './test/harness'
 
-it('exactly_three_navigation_items_without_an_install_path_entry', async () => {
+it('navigation_lists_every_page_and_keeps_settings_out_of_the_sidebar_footer', async () => {
   renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }))
 
   const navigation = await screen.findByRole('navigation', { name: '主导航' })
   const items = within(navigation).getAllByRole('button')
-  expect(items.map((item) => item.textContent)).toEqual(['项目', '配置管理', '会话诊断'])
+  expect(items.map((item) => item.textContent)).toEqual(['项目', '配置管理', '会话诊断', '设置'])
   expect(screen.queryByText('管理 SAS 程序路径')).not.toBeInTheDocument()
+  expect(screen.queryByRole('combobox', { name: '应用语言' })).not.toBeInTheDocument()
 })
 
 it('scan_error_shows_a_banner_with_the_exe_picker', async () => {

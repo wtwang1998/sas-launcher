@@ -36,6 +36,12 @@ it('commands_match_the_rust_handler_names', async () => {
       args: { preference: 'en' },
     },
     {
+      name: 'clearInstallation',
+      run: () => api.clearInstallation(),
+      cmd: 'clear_installation',
+      args: {},
+    },
+    {
       name: 'saveProject',
       run: () => api.saveProject('p1', '项目 A', '备注', userRef),
       cmd: 'save_project',
@@ -116,6 +122,7 @@ it('commands_match_the_rust_handler_names', async () => {
     'refresh',
     'selectInstallation',
     'setLanguage',
+    'clearInstallation',
     'saveProject',
     'deleteProject',
     'createConfiguration',

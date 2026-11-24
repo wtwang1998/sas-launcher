@@ -86,6 +86,7 @@ export const api = {
   refresh: () => invoke<View>('refresh_configs'),
   selectInstallation: (path: string) => invoke<View>('select_installation', { path }),
   setLanguage: (preference: Preference) => invoke<View>('set_language', { preference }),
+  clearInstallation: () => invoke<View>('clear_installation'),
   saveProject: (id: string | null, name: string, note: string | null, config: ConfigRef | null) =>
     invoke<View>('save_project', { id, name, note, config }),
   deleteProject: (id: string) => invoke<View>('delete_project', { id }),

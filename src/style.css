@@ -120,19 +120,6 @@ nav {
 .nav-arrow {
   margin-left: auto;
 }
-.sidebar-bottom {
-  margin-top: auto;
-  border-top: 1px solid var(--line);
-  padding: 12px 4px 0;
-  color: var(--muted);
-}
-.health {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 7px 9px;
-  font-size: 12px;
-}
 .status-dot {
   width: 7px;
   height: 7px;
@@ -560,17 +547,69 @@ details[open] .disclosure {
   }
 }
 
-.language-picker {
+/* ---------- 设置页 ---------- */
+.settings-group {
+  padding: 4px 18px 6px;
+  margin-bottom: 14px;
+}
+.settings-group > h2 {
+  padding: 12px 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.setting-row {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4px 7px;
+  grid-template-columns: minmax(150px, 0.9fr) minmax(0, 1.5fr);
+  gap: 10px 22px;
   align-items: center;
-  padding: 7px;
+  padding: 13px 0;
+  border-top: 1px solid var(--line);
+}
+.setting-label {
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.setting-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+.setting-control {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.setting-control > select {
+  min-width: 168px;
+}
+.path-control {
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.path-control input {
+  flex: 1 1 240px;
+  font-family: "Cascadia Mono", Consolas, monospace;
   font-size: 12px;
 }
-.language-picker select {
-  grid-column: 1 / -1;
-  padding-block: 5px;
+.setting-hint {
+  padding: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 760px) {
+  .setting-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .setting-control {
+    justify-content: flex-start;
+  }
 }
 .batch-bar {
   display: flex;
