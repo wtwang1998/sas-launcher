@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core'
 export type Issue = { code: string; detail?: string }
 export type Language = 'en' | 'zh-Hans'
 export type Preference = 'system' | Language
+export type ThemePreference = 'system' | 'dark' | 'light'
 export type PresetStatus = 'verified' | 'failed' | 'unverified'
 export type ConfigRef = { kind: 'builtIn'; code: string } | { kind: 'user'; id: string }
 export type ConfigBase =
@@ -67,6 +68,7 @@ export type View = {
   languagePreference: Preference
   language: Language
   systemLanguage: string
+  themePreference: ThemePreference
 }
 
 /** Reference equality for the three-state project configuration pointer. */
@@ -87,6 +89,7 @@ export const api = {
   selectInstallation: (path: string) => invoke<View>('select_installation', { path }),
   setLanguage: (preference: Preference) => invoke<View>('set_language', { preference }),
   clearInstallation: () => invoke<View>('clear_installation'),
+  setTheme: (preference: ThemePreference) => invoke<View>('set_theme', { preference }),
   saveProject: (id: string | null, name: string, note: string | null, config: ConfigRef | null) =>
     invoke<View>('save_project', { id, name, note, config }),
   deleteProject: (id: string) => invoke<View>('delete_project', { id }),

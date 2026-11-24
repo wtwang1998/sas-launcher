@@ -62,3 +62,28 @@ it('auto_detect_drops_a_manual_override', async () => {
 
   expect(backend.calls.some((call) => call.cmd === 'clear_installation')).toBe(true)
 })
+
+it('the_theme_choice_is_persisted_through_set_theme', async () => {
+  const user = userEvent.setup()
+  const { backend } = renderApp(makeView({ themePreference: 'system' }))
+
+  await user.click(await screen.findByRole('button', { name: '设置' }))
+  const theme = screen.getByRole('combobox', { name: '主题' })
+  expect(theme).toHaveValue('system')
+  await user.selectOptions(theme, 'dark')
+
+  expect(backend.calls.find((call) => call.cmd === 'set_theme')?.args).toMatchObject({
+    preference: 'dark',
+  })
+})
+
+it('an_explicit_theme_marks_the_document_and_following_system_does_not', async () => {
+  const explicit = renderApp(makeView({ themePreference: 'dark' }))
+  await screen.findByRole('heading', { name: '项目' })
+  expect(document.documentElement.dataset.theme).toBe('dark')
+  explicit.unmount()
+
+  renderApp(makeView({ themePreference: 'system' }))
+  await screen.findByRole('heading', { name: '项目' })
+  expect(document.documentElement.dataset.theme).toBeUndefined()
+})

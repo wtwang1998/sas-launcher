@@ -27,6 +27,7 @@ import {
 import { useConfirmation } from './components/confirmation'
 import type { ProjectDraft } from './components/ProjectForm'
 import { browserLanguage, issueText, type MessageKey, translate } from './i18n'
+import { themeAttribute } from './lib/settings'
 import { Configurations } from './pages/Configurations'
 import { Diagnostics } from './pages/Diagnostics'
 import { Projects } from './pages/Projects'
@@ -70,6 +71,12 @@ export function App() {
       // Not running inside a Tauri window (unit tests, plain browser preview).
     }
   }, [language])
+
+  useEffect(() => {
+    const theme = themeAttribute(view?.themePreference ?? 'system')
+    if (theme) document.documentElement.dataset.theme = theme
+    else delete document.documentElement.dataset.theme
+  }, [view?.themePreference])
 
   useEffect(() => {
     let alive = true
@@ -428,6 +435,7 @@ export function App() {
               view={view}
               t={t}
               busy={busy}
+              onTheme={(preference) => void mutate(() => api.setTheme(preference))}
               onLanguage={(preference) => void mutate(() => api.setLanguage(preference))}
               onSavePath={saveSasPath}
               onBrowse={pickExe}

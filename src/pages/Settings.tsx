@@ -1,11 +1,12 @@
 import { useEffect, useId, useState } from 'react'
-import type { Preference, View } from '../api'
+import type { Preference, ThemePreference, View } from '../api'
 import type { Translator } from '../i18n'
 
 export type SettingsProps = {
   view: View
   t: Translator
   busy: boolean
+  onTheme: (preference: ThemePreference) => void
   onLanguage: (preference: Preference) => void
   onSavePath: (path: string) => Promise<void>
   onBrowse: () => void
@@ -16,6 +17,7 @@ export function Settings({
   view,
   t,
   busy,
+  onTheme,
   onLanguage,
   onSavePath,
   onBrowse,
@@ -49,6 +51,21 @@ export function Settings({
 
       <section className="settings-group panel" aria-labelledby={`${id}-interface`}>
         <h2 id={`${id}-interface`}>{t('interfaceGroup')}</h2>
+        <div className="setting-row">
+          <span className="setting-label">{t('theme')}</span>
+          <div className="setting-control">
+            <select
+              aria-label={t('theme')}
+              value={view.themePreference}
+              disabled={busy}
+              onChange={(event) => onTheme(event.target.value as ThemePreference)}
+            >
+              <option value="system">{t('system')}</option>
+              <option value="dark">{t('themeDark')}</option>
+              <option value="light">{t('themeLight')}</option>
+            </select>
+          </div>
+        </div>
         <div className="setting-row">
           <span className="setting-label">{t('language')}</span>
           <div className="setting-control">

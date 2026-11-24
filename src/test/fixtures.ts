@@ -84,6 +84,7 @@ export function makeView(patch: Partial<View> = {}): View {
     languagePreference: 'zh-Hans',
     language: 'zh-Hans',
     systemLanguage: 'zh-CN',
+    themePreference: 'system',
     ...patch,
   }
 }

@@ -42,6 +42,12 @@ it('commands_match_the_rust_handler_names', async () => {
       args: {},
     },
     {
+      name: 'setTheme',
+      run: () => api.setTheme('dark'),
+      cmd: 'set_theme',
+      args: { preference: 'dark' },
+    },
+    {
       name: 'saveProject',
       run: () => api.saveProject('p1', '项目 A', '备注', userRef),
       cmd: 'save_project',
@@ -123,6 +129,7 @@ it('commands_match_the_rust_handler_names', async () => {
     'selectInstallation',
     'setLanguage',
     'clearInstallation',
+    'setTheme',
     'saveProject',
     'deleteProject',
     'createConfiguration',

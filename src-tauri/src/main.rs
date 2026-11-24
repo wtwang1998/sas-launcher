@@ -9,6 +9,7 @@ mod process;
 mod profile;
 mod session;
 mod store;
+mod theme;
 mod view;
 
 use discovery::{BuiltIn, Installation};
@@ -24,7 +25,8 @@ use std::{
     time::Duration,
 };
 use store::{ConfigBase, ConfigRef, Project, Store};
-use tauri::{Manager, State};
+use tauri::{AppHandle, Manager, State};
+use theme::ThemePreference;
 use uuid::Uuid;
 use view::{SessionView, View};
 
@@ -747,6 +749,22 @@ async fn set_language(
     })
 }
 
+#[tauri::command]
+async fn set_theme(
+    handle: AppHandle,
+    state: State<'_, AppState>,
+    preference: ThemePreference,
+) -> Result<View, Issue> {
+    let view = with_app(&state, |app| {
+        app.store.update(|settings| settings.theme = preference)?;
+        Ok(app.view())
+    })?;
+    if let Some(window) = handle.get_webview_window("main") {
+        let _ = window.set_theme(preference.window_theme());
+    }
+    Ok(view)
+}
+
 /// Drop the manually pinned executable and fall back to scanning the machine.
 #[tauri::command]
 async fn clear_installation(state: State<'_, AppState>) -> Result<View, Issue> {
@@ -908,6 +926,11 @@ fn main() {
                 Err(error) => Err(Issue::with_detail("dataPath", error)),
             });
             app.manage(state);
+            if let Some(window) = app.get_webview_window("main") {
+                let theme = with_app(&app.state::<AppState>(), |app| Ok(app.store.settings.theme))
+                    .unwrap_or_default();
+                let _ = window.set_theme(theme.window_theme());
+            }
             let handle = app.handle().clone();
             std::thread::spawn(move || {
                 loop {
@@ -926,6 +949,7 @@ fn main() {
             refresh_configs,
             select_installation,
             set_language,
+            set_theme,
             clear_installation,
             save_project,
             delete_project,

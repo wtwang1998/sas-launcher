@@ -3,6 +3,7 @@ use crate::{
     issue::Issue,
     language::LanguagePreference,
     profile::{copy_profile, regular_directory},
+    theme::ThemePreference,
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{
@@ -70,12 +71,24 @@ pub struct Preset {
     pub ok: bool,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Settings {
     pub exe: Option<PathBuf>,
     pub language: LanguagePreference,
+    pub theme: ThemePreference,
     pub presets: Vec<Preset>,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            exe: None,
+            language: LanguagePreference::default(),
+            theme: ThemePreference::default(),
+            presets: Vec::new(),
+        }
+    }
 }
 
 pub struct Store {
@@ -497,6 +510,31 @@ mod tests {
             .flatten()
             .filter(|entry| entry.file_name().to_string_lossy().starts_with("_old-"))
             .count()
+    }
+
+    #[test]
+    fn settings_written_before_the_theme_existed_keep_the_new_defaults() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut store = Store::open(temp.path().join("data")).unwrap();
+        assert_eq!(store.settings.theme, ThemePreference::System);
+
+        fs::write(
+            store.data_dir().join("settings.json"),
+            br#"{"language":"en"}"#,
+        )
+        .unwrap();
+        store.reload().unwrap();
+        assert!(matches!(store.settings.language, LanguagePreference::En));
+        assert_eq!(store.settings.theme, ThemePreference::System);
+
+        store
+            .update(|settings| settings.theme = ThemePreference::Dark)
+            .unwrap();
+        let written = fs::read_to_string(store.data_dir().join("settings.json")).unwrap();
+        assert!(written.contains("\"theme\": \"dark\""), "{written}");
+
+        store.reload().unwrap();
+        assert_eq!(store.settings.theme, ThemePreference::Dark);
     }
 
     #[test]

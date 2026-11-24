@@ -7,6 +7,7 @@ use crate::{
     language::LanguagePreference,
     session::{Purpose, Record, Stage, Status},
     store::{ConfigBase, ConfigRef, Project, UserConfig},
+    theme::ThemePreference,
 };
 use serde::Serialize;
 use std::path::{Path, PathBuf};
@@ -83,6 +84,7 @@ pub struct View {
     pub language_preference: LanguagePreference,
     pub language: &'static str,
     pub system_language: String,
+    pub theme_preference: ThemePreference,
 }
 
 pub fn build_view(app: &App) -> View {
@@ -117,6 +119,7 @@ pub fn build_view(app: &App) -> View {
         language_preference: app.store.settings.language,
         language,
         system_language: app.system_language.clone(),
+        theme_preference: app.store.settings.theme,
     }
 }
 
@@ -353,6 +356,7 @@ mod tests {
         let json = serde_json::to_value(&view).unwrap();
         assert_eq!(json["exe"], serde_json::Value::Null);
         assert_eq!(json["scanError"]["code"], "sasMissing");
+        assert_eq!(json["themePreference"], "system");
         assert_eq!(json["configs"], serde_json::Value::Array(Vec::new()));
     }
 }

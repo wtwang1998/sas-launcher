@@ -28,6 +28,9 @@ export const messages = {
   settings: ['设置', 'Settings'],
   settingsHelp: ['应用语言与 SAS 程序路径。', 'App language and the SAS executable path.'],
   interfaceGroup: ['界面', 'Interface'],
+  theme: ['主题', 'Theme'],
+  themeDark: ['深色', 'Dark'],
+  themeLight: ['浅色', 'Light'],
   sasGroup: ['SAS 程序', 'SAS program'],
   sasPath: ['SAS 程序路径', 'SAS executable path'],
   sasPathHint: [
