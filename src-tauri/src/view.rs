@@ -37,6 +37,8 @@ pub struct ProjectProfileView {
     /// Catalog files actually present in the snapshot, so the card can say
     /// "4 files" without another round trip.
     pub files: usize,
+    /// Catalog files the declared layers need but the snapshot does not hold.
+    pub missing: usize,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -226,6 +228,15 @@ fn project_view(app: &App, project: &Project) -> ProjectView {
                             .is_file()
                     })
                     .count(),
+                None => 0,
+            },
+            // Catalogs the declared layers need but the snapshot cannot seed.
+            missing: match profile.revision {
+                Some(revision) => crate::profile::unseeded_files(
+                    &app.store.project_profile_dir(project.id, revision),
+                    profile.layers,
+                )
+                .len(),
                 None => 0,
             },
         }),

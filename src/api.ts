@@ -32,6 +32,8 @@ export type ProjectProfile = {
   origin: ProfileOrigin | null
   layers: ProfileLayers
   files: number
+  /** Catalogs the declared layers need but the snapshot does not hold. */
+  missing: number
 }
 /** What the form asks the backend to do with a project's snapshot. */
 export type ProfileChoice =

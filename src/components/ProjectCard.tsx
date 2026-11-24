@@ -59,6 +59,11 @@ export function ProjectCard({
             )}
           </div>
           {project.note && <p className="project-note">{project.note}</p>}
+          {project.profile && project.profile.missing > 0 && (
+            <p className="project-note missing">
+              {t('profileIncomplete', { count: project.profile.missing })}
+            </p>
+          )}
         </div>
         <div className="card-actions">
           <button

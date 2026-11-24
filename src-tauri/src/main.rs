@@ -717,6 +717,19 @@ fn failure_stage(code: &str) -> Stage {
     }
 }
 
+/// A declared layer the source folder cannot seed at all would be dropped by the
+/// copy without a word, leaving a project that claims settings it never got.
+fn ensure_source_seeds(source: &Path, layers: Layers) -> Result<(), Issue> {
+    let missing = profile::unseeded_files(source, layers);
+    if missing.is_empty() {
+        return Ok(());
+    }
+    Err(Issue::with_detail(
+        "profileLayerMissing",
+        missing.join(", "),
+    ))
+}
+
 fn ensure_reference_exists(app: &App, reference: &ConfigRef) -> Result<(), Issue> {
     match reference {
         ConfigRef::BuiltIn { code } => {
@@ -879,6 +892,31 @@ impl App {
     /// The row is written first because the capture commits its revision
     /// through `projects.json`; a failed capture puts the row back instead of
     /// leaving a project that claims to inherit settings it never copied.
+    /// True when the stored snapshot no longer holds catalogs its declared layers
+    /// need — a snapshot captured before a layer was turned on, or a pruned one.
+    fn snapshot_lacks(&self, id: Uuid, profile: &ProjectProfile) -> bool {
+        let Some(revision) = profile.revision else {
+            return false;
+        };
+        !profile::unseeded_files(
+            &self.store.project_profile_dir(id, revision),
+            profile.layers,
+        )
+        .is_empty()
+    }
+
+    /// Where a project's snapshot came from, so a repair can copy the same folder.
+    fn origin_source(&self, profile: &ProjectProfile) -> Option<PathBuf> {
+        match profile.origin.as_ref()? {
+            ProfileOrigin::SasUser { path } => Some(path.clone()),
+            ProfileOrigin::ConfigSnapshot { config } => self
+                .store
+                .configuration(*config)
+                .and_then(|configuration| self.store.profile_revision_dir(configuration)),
+            ProfileOrigin::Fresh => None,
+        }
+    }
+
     fn save_project(
         &mut self,
         id: Option<Uuid>,
@@ -904,12 +942,33 @@ impl App {
             .find(|project| project.id == id)
             .cloned();
         let (profile, source) = match choice {
-            None | Some(ProfileChoice::Keep) => (
-                previous
+            None | Some(ProfileChoice::Keep) => {
+                let kept = previous
                     .as_ref()
-                    .and_then(|project| project.profile.clone()),
-                None,
-            ),
+                    .and_then(|project| project.profile.clone());
+                // A snapshot captured before a layer was turned on would answer
+                // "keep" forever, so its missing catalogs are filled in while the
+                // user is saving anyway — but only when the origin can seed them:
+                // a locked folder must never block a rename.
+                match kept {
+                    Some(profile) if self.snapshot_lacks(id, &profile) => {
+                        let layers = profile.layers;
+                        match self.origin_source(&profile) {
+                            Some(source) if profile::unseeded_files(&source, layers).is_empty() => {
+                                (
+                                    Some(ProjectProfile {
+                                        revision: None,
+                                        ..profile
+                                    }),
+                                    Some(source),
+                                )
+                            }
+                            _ => (Some(profile), None),
+                        }
+                    }
+                    kept => (kept, None),
+                }
+            }
             Some(ProfileChoice::Fresh { layers }) => (
                 Some(ProjectProfile {
                     revision: None,
@@ -919,15 +978,18 @@ impl App {
                 }),
                 None,
             ),
-            Some(ProfileChoice::SasUser { path, layers }) => (
-                Some(ProjectProfile {
-                    revision: None,
-                    origin: Some(ProfileOrigin::SasUser { path: path.clone() }),
-                    layers,
-                    fresh: false,
-                }),
-                Some(path),
-            ),
+            Some(ProfileChoice::SasUser { path, layers }) => {
+                ensure_source_seeds(&path, layers)?;
+                (
+                    Some(ProjectProfile {
+                        revision: None,
+                        origin: Some(ProfileOrigin::SasUser { path: path.clone() }),
+                        layers,
+                        fresh: false,
+                    }),
+                    Some(path),
+                )
+            }
             Some(ProfileChoice::ConfigSnapshot { config, layers }) => {
                 let reference = ConfigRef::User { id: config };
                 ensure_reference_exists(self, &reference)?;
@@ -937,6 +999,7 @@ impl App {
                     .and_then(|configuration| self.store.profile_revision_dir(configuration))
                     .filter(|directory| profile::has_catalog_files(directory))
                     .ok_or_else(|| Issue::new("profileEmpty"))?;
+                ensure_source_seeds(&source, layers)?;
                 (
                     Some(ProjectProfile {
                         revision: None,
@@ -1744,11 +1807,85 @@ mod tests {
     }
 
     #[test]
+    fn a_rename_save_fills_in_a_layer_the_snapshot_missed() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut app = App::new(temp.path().join("data")).unwrap();
+        let source = user_folder_with(temp.path(), &["profile.sas7bcat", "regstry.sas7bitm"]);
+        let interface_only = Layers {
+            interface: true,
+            environment: false,
+            templates: false,
+        };
+        app.save_project(
+            None,
+            "P".into(),
+            None,
+            None,
+            Some(ProfileChoice::SasUser {
+                path: source.clone(),
+                layers: interface_only,
+            }),
+        )
+        .unwrap();
+        // What the new default leaves behind on an old project: the declaration
+        // asks for the environment layer while the snapshot has no catalog for it.
+        let mut stored = app.store.projects()[0].clone();
+        let mut profile = stored.profile.clone().unwrap();
+        profile.layers = Layers::DEFAULT;
+        stored.profile = Some(profile);
+        app.store.save_project(stored.clone()).unwrap();
+
+        app.save_project(
+            Some(stored.id),
+            "Renamed".into(),
+            None,
+            None,
+            Some(ProfileChoice::Keep),
+        )
+        .unwrap();
+
+        let profile = app.store.projects()[0].profile.clone().unwrap();
+        let snapshot = app
+            .store
+            .project_profile_dir(stored.id, profile.revision.unwrap());
+        assert!(
+            snapshot.join("regstry.sas7bitm").is_file(),
+            "keeping a project still fills in a layer its snapshot missed"
+        );
+    }
+
+    #[test]
+    fn a_source_without_the_chosen_layer_is_refused() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut app = App::new(temp.path().join("data")).unwrap();
+        let source = user_folder_with(temp.path(), &["profile.sas7bcat"]);
+
+        let error = app
+            .save_project(
+                None,
+                "P".into(),
+                None,
+                None,
+                Some(ProfileChoice::SasUser {
+                    path: source.clone(),
+                    layers: Layers::DEFAULT,
+                }),
+            )
+            .unwrap_err();
+
+        assert_eq!(error.code, "profileLayerMissing");
+        assert!(
+            app.store.projects().is_empty(),
+            "a layer the source cannot carry is never promised silently"
+        );
+    }
+
+    #[test]
     fn a_batched_launch_honours_the_projects_preference_snapshot() {
         let temp = tempfile::tempdir().unwrap();
         let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
         let mut app = app_with_install(temp.path(), &exe);
-        let source = user_folder_with(temp.path(), &["profile.sas7bcat"]);
+        let source = user_folder_with(temp.path(), &["profile.sas7bcat", "regstry.sas7bitm"]);
         app.save_project(
             None,
             "P".into(),
@@ -1820,7 +1957,7 @@ mod tests {
 
         let temp = tempfile::tempdir().unwrap();
         let mut app = App::new(temp.path().join("data")).unwrap();
-        let source = user_folder_with(temp.path(), &["profile.sas7bcat"]);
+        let source = user_folder_with(temp.path(), &["profile.sas7bcat", "regstry.sas7bitm"]);
         let locked = std::fs::File::options()
             .read(true)
             .share_mode(0)
@@ -1850,7 +1987,7 @@ mod tests {
 
         let temp = tempfile::tempdir().unwrap();
         let mut app = App::new(temp.path().join("data")).unwrap();
-        let first = user_folder_with(temp.path(), &["profile.sas7bcat"]);
+        let first = user_folder_with(temp.path(), &["profile.sas7bcat", "regstry.sas7bitm"]);
         app.save_project(
             None,
             "P".into(),
@@ -1868,6 +2005,7 @@ mod tests {
         let second = temp.path().join("other").join("9.4");
         std::fs::create_dir_all(&second).unwrap();
         std::fs::write(second.join("profile.sas7bcat"), b"other").unwrap();
+        std::fs::write(second.join("regstry.sas7bitm"), b"other").unwrap();
         let locked = std::fs::File::options()
             .read(true)
             .share_mode(0)

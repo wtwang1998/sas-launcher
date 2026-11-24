@@ -5,6 +5,94 @@ import type { BatchResult } from '../api'
 import { builtIn, makeView } from '../test/fixtures'
 import { renderApp } from '../test/harness'
 
+it('a project card says when its snapshot misses a declared layer', async () => {
+  const folder = 'C:/Users/me/Documents/My SAS Files/9.4'
+  renderApp(
+    makeView({
+      projects: [
+        {
+          id: 'p1',
+          name: '项目 A',
+          note: null,
+          config: null,
+          profile: {
+            origin: { kind: 'sasUser', path: folder },
+            layers: { interface: true, environment: true, templates: false },
+            files: 2,
+            missing: 1,
+          },
+        },
+      ],
+    }),
+    { sasuser_candidates: () => [] },
+  )
+
+  expect(await screen.findByText(/声明的层缺 1 个文件/)).toBeInTheDocument()
+})
+
+it('a failed save can be retried from the form', async () => {
+  const user = userEvent.setup()
+  const view = makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] })
+  let attempts = 0
+  const { backend } = renderApp(view, {
+    sasuser_candidates: () => [],
+    save_project: () => {
+      attempts += 1
+      if (attempts === 1) throw { code: 'profileLocked', detail: 'profile.sas7bcat: locked' }
+      return view
+    },
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+  await user.type(screen.getByLabelText(/项目名称/), '项目 A')
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+  await user.click(await screen.findByRole('button', { name: '重试' }))
+
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'save_project')).toHaveLength(2),
+  )
+})
+
+it('editing a project shows where its preference comes from', async () => {
+  const user = userEvent.setup()
+  const folder = 'C:/Users/me/Documents/My SAS Files/9.4'
+  renderApp(
+    makeView({
+      configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
+      projects: [
+        {
+          id: 'p1',
+          name: '项目 A',
+          note: null,
+          config: null,
+          profile: {
+            origin: { kind: 'sasUser', path: folder },
+            layers: { interface: true, environment: false, templates: false },
+            files: 2,
+            missing: 0,
+          },
+        },
+      ],
+    }),
+    {
+      sasuser_candidates: () => [
+        {
+          path: folder,
+          version: '9.4',
+          files: 3,
+          present: { interface: 2, environment: 1, templates: 0 },
+          modified: 0,
+        },
+      ],
+    },
+  )
+
+  await user.click(await screen.findByLabelText('编辑 项目 A'))
+
+  expect(await screen.findByLabelText('继承我的 SAS 用户目录')).toHaveDisplayValue(folder)
+  expect(screen.queryByText(/未找到 My SAS Files 下的用户偏好目录/)).not.toBeInTheDocument()
+})
+
 it('editing a project can turn the environment layer on', async () => {
   const user = userEvent.setup()
   const folder = 'C:/Users/me/Documents/My SAS Files/9.4'
@@ -21,6 +109,7 @@ it('editing a project can turn the environment layer on', async () => {
             origin: { kind: 'sasUser', path: folder },
             layers: { interface: true, environment: false, templates: false },
             files: 2,
+            missing: 0,
           },
         },
       ],
@@ -61,6 +150,7 @@ it('a failed save while editing the card explains itself there', async () => {
             origin: { kind: 'sasUser', path: folder },
             layers: { interface: true, environment: false, templates: false },
             files: 2,
+            missing: 0,
           },
         },
       ],

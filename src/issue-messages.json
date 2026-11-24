@@ -56,6 +56,10 @@
     "这个目录里没有可保存的 SAS 个人设置。请先打开 SAS 调整设置。",
     "This folder contains no SAS personal settings. Adjust settings in SAS first."
   ],
+  "profileLayerMissing": [
+    "源目录里没有所选图层的设置文件。请取消勾选该图层，或换一个来源目录。",
+    "The source folder has no files for the chosen layers. Clear those layers or pick another folder."
+  ],
   "profileCreate": ["无法创建 SAS 设置文件。", "Could not create the SAS settings file."],
   "profileCopy": ["无法复制 SAS 设置文件。", "Could not copy the SAS settings file."],
   "profileNotWritable": ["SAS 用户目录不可写。", "The SAS user folder is not writable."],

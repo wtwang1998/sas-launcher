@@ -271,6 +271,11 @@ export const messages = {
   chainFactoryCfg: ['基线配置', 'Baseline config'],
   chainEncoding: ['编码', 'Encoding'],
   chainLocale: ['区域', 'Locale'],
+  retry: ['重试', 'Retry'],
+  profileIncomplete: [
+    '声明的层缺 {count} 个文件，保存后会补齐',
+    'The declared layers miss {count} files; saving fills them in',
+  ],
   chainSasuser: ['SASUSER', 'SASUSER'],
   chainProfile: ['偏好', 'Preference'],
   layerInterface: ['界面', 'Interface'],

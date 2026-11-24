@@ -12,6 +12,7 @@ const stored = (overrides: Partial<ProjectProfile> = {}): ProjectProfile => ({
   origin: { kind: 'sasUser', path: 'C:\\Users\\me\\Documents\\My SAS Files\\9.4' },
   layers: DEFAULT_LAYERS,
   files: 2,
+  missing: 0,
   ...overrides,
 })
 
@@ -82,7 +83,12 @@ it('a user folder source needs a path, a snapshot source needs a config', () => 
 
 it('an unknown origin falls back to the first card with the stored layers', () => {
   expect(
-    profileDraftFrom({ origin: null, layers: { ...DEFAULT_LAYERS, templates: true }, files: 0 }),
+    profileDraftFrom({
+      origin: null,
+      layers: { ...DEFAULT_LAYERS, templates: true },
+      files: 0,
+      missing: 0,
+    }),
   ).toEqual({
     kind: 'sasUser',
     path: '',

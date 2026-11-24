@@ -49,6 +49,8 @@ export function App() {
   const [page, setPage] = useState<Page>('projects')
   const [draft, setDraft] = useState<ProjectDraft | null>(null)
   const [profileCandidates, setProfileCandidates] = useState<SasuserCandidate[]>([])
+  /** Which project's folders were loaded, so a keystroke never reloads them. */
+  const [candidatesFor, setCandidatesFor] = useState<string | null>(null)
   const [pendingDraft, setPendingDraft] = useState<ProjectDraft | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
@@ -221,6 +223,23 @@ export function App() {
           : { kind: 'fresh', layers: current.profile.layers },
       }
     })
+  }
+
+  /**
+   * The edit form needs the folder list too: without it the card can only say
+   * "no folder found" while the stored path sits unused in the draft. Loaded
+   * once per project, so typing in the form never re-runs the scan.
+   */
+  async function editProject(next: ProjectDraft | null) {
+    setDraft(next)
+    const id = next?.id ?? null
+    if (!id || next?.profile.kind !== 'sasUser' || candidatesFor === id) return
+    setCandidatesFor(id)
+    try {
+      setProfileCandidates(await api.sasuserCandidates(next.profile.path || null))
+    } catch (failure) {
+      setNotice({ tone: 'error', target: 'form', error: failure })
+    }
   }
 
   /** A folder outside `My SAS Files` is still a valid source, but must be picked. */
@@ -478,7 +497,7 @@ export function App() {
               t={t}
               busy={busy}
               onNewProject={() => void startNewProject()}
-              onDraft={setDraft}
+              onDraft={(next) => void editProject(next)}
               onCreateConfiguration={beginConfigurationTrip}
               onSaveProject={saveProject}
               onDeleteProject={deleteProject}

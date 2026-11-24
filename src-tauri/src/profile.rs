@@ -106,6 +106,24 @@ pub fn carries_preference(directory: &Path, layers: Layers) -> bool {
     layers.selected().any(|name| directory.join(name).is_file())
 }
 
+/// Catalogs of declared layers the folder cannot seed at all. A layer counts as
+/// carried when at least one of its catalogs is present, so a folder holding only
+/// `profile.sas7bcat` still covers the interface layer. An empty list means the
+/// folder can honour everything the layers ask for.
+pub fn unseeded_files(directory: &Path, layers: Layers) -> Vec<&'static str> {
+    let mut missing = Vec::new();
+    for (declared, files) in [
+        (layers.interface, INTERFACE),
+        (layers.environment, ENVIRONMENT),
+        (layers.templates, TEMPLATES),
+    ] {
+        if declared && !files.iter().any(|name| directory.join(name).is_file()) {
+            missing.extend(files.iter().copied());
+        }
+    }
+    missing
+}
+
 pub fn copy_profile(source: &Path, destination: &Path) -> Result<(), Issue> {
     copy_profile_layers(source, destination, Layers::ALL)
 }
@@ -171,6 +189,37 @@ mod tests {
         );
         fs::write(directory.join("regstry.sas7bitm"), b"registry").unwrap();
         assert!(carries_preference(&directory, Layers::DEFAULT));
+    }
+
+    #[test]
+    fn a_declared_layer_the_folder_cannot_seed_is_reported_with_its_files() {
+        let temp = tempfile::tempdir().unwrap();
+        let directory = temp.path().join("user");
+        fs::create_dir(&directory).unwrap();
+        // One of the two interface catalogs is enough for the layer to count.
+        fs::write(directory.join("profile.sas7bcat"), b"settings").unwrap();
+        assert_eq!(
+            unseeded_files(&directory, Layers::DEFAULT),
+            ["regstry.sas7bitm"]
+        );
+        fs::write(directory.join("regstry.sas7bitm"), b"registry").unwrap();
+        assert!(unseeded_files(&directory, Layers::DEFAULT).is_empty());
+        assert_eq!(
+            unseeded_files(&directory, Layers::ALL),
+            ["templat.sas7bitm"]
+        );
+        assert!(
+            unseeded_files(
+                &directory,
+                Layers {
+                    interface: true,
+                    environment: false,
+                    templates: false,
+                }
+            )
+            .is_empty(),
+            "a layer nobody declared is never reported"
+        );
     }
 
     #[test]
