@@ -69,6 +69,8 @@ export type View = {
   language: Language
   systemLanguage: string
   themePreference: ThemePreference
+  closeToTray: boolean
+  trayHintSeen: boolean
 }
 
 /** Reference equality for the three-state project configuration pointer. */
@@ -90,6 +92,9 @@ export const api = {
   setLanguage: (preference: Preference) => invoke<View>('set_language', { preference }),
   clearInstallation: () => invoke<View>('clear_installation'),
   setTheme: (preference: ThemePreference) => invoke<View>('set_theme', { preference }),
+  setCloseToTray: (enabled: boolean) => invoke<View>('set_close_to_tray', { enabled }),
+  hideToTray: () => invoke<View>('hide_to_tray'),
+  quit: () => invoke<void>('quit'),
   saveProject: (id: string | null, name: string, note: string | null, config: ConfigRef | null) =>
     invoke<View>('save_project', { id, name, note, config }),
   deleteProject: (id: string) => invoke<View>('delete_project', { id }),

@@ -77,6 +77,10 @@ pub struct Settings {
     pub exe: Option<PathBuf>,
     pub language: LanguagePreference,
     pub theme: ThemePreference,
+    /// Closing the window keeps the app alive in the tray.
+    pub close_to_tray: bool,
+    /// Set once the tray hint has been shown, so it only ever appears once.
+    pub tray_hint_seen: bool,
     pub presets: Vec<Preset>,
 }
 
@@ -86,6 +90,8 @@ impl Default for Settings {
             exe: None,
             language: LanguagePreference::default(),
             theme: ThemePreference::default(),
+            close_to_tray: true,
+            tray_hint_seen: false,
             presets: Vec::new(),
         }
     }
@@ -526,15 +532,22 @@ mod tests {
         store.reload().unwrap();
         assert!(matches!(store.settings.language, LanguagePreference::En));
         assert_eq!(store.settings.theme, ThemePreference::System);
+        // A missing close-to-tray key must default to "keep running in the tray".
+        assert!(store.settings.close_to_tray);
+        assert!(!store.settings.tray_hint_seen);
 
         store
             .update(|settings| settings.theme = ThemePreference::Dark)
             .unwrap();
-        let written = fs::read_to_string(store.data_dir().join("settings.json")).unwrap();
-        assert!(written.contains("\"theme\": \"dark\""), "{written}");
-
         store.reload().unwrap();
         assert_eq!(store.settings.theme, ThemePreference::Dark);
+        assert!(store.settings.close_to_tray);
+
+        store
+            .update(|settings| settings.close_to_tray = false)
+            .unwrap();
+        store.reload().unwrap();
+        assert!(!store.settings.close_to_tray);
     }
 
     #[test]

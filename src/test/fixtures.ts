@@ -85,6 +85,8 @@ export function makeView(patch: Partial<View> = {}): View {
     language: 'zh-Hans',
     systemLanguage: 'zh-CN',
     themePreference: 'system',
+    closeToTray: true,
+    trayHintSeen: false,
     ...patch,
   }
 }

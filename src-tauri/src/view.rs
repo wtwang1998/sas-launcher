@@ -85,6 +85,8 @@ pub struct View {
     pub language: &'static str,
     pub system_language: String,
     pub theme_preference: ThemePreference,
+    pub close_to_tray: bool,
+    pub tray_hint_seen: bool,
 }
 
 pub fn build_view(app: &App) -> View {
@@ -120,6 +122,8 @@ pub fn build_view(app: &App) -> View {
         language,
         system_language: app.system_language.clone(),
         theme_preference: app.store.settings.theme,
+        close_to_tray: app.store.settings.close_to_tray,
+        tray_hint_seen: app.store.settings.tray_hint_seen,
     }
 }
 
@@ -357,6 +361,8 @@ mod tests {
         assert_eq!(json["exe"], serde_json::Value::Null);
         assert_eq!(json["scanError"]["code"], "sasMissing");
         assert_eq!(json["themePreference"], "system");
+        assert_eq!(json["closeToTray"], true);
+        assert_eq!(json["trayHintSeen"], false);
         assert_eq!(json["configs"], serde_json::Value::Array(Vec::new()));
     }
 }

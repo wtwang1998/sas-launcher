@@ -87,3 +87,18 @@ it('an_explicit_theme_marks_the_document_and_following_system_does_not', async (
   await screen.findByRole('heading', { name: '项目' })
   expect(document.documentElement.dataset.theme).toBeUndefined()
 })
+
+it('the_close_to_tray_switch_reflects_and_updates_the_setting', async () => {
+  const user = userEvent.setup()
+  const { backend } = renderApp(makeView({ closeToTray: true }))
+
+  await user.click(await screen.findByRole('button', { name: '设置' }))
+  const toggle = screen.getByRole('switch', { name: '关闭时最小化到托盘' })
+  expect(toggle).toHaveAttribute('aria-checked', 'true')
+
+  await user.click(toggle)
+
+  expect(backend.calls.find((call) => call.cmd === 'set_close_to_tray')?.args).toMatchObject({
+    enabled: false,
+  })
+})

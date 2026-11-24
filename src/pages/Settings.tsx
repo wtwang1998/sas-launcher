@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import type { Preference, ThemePreference, View } from '../api'
+import { Switch } from '../components/Switch'
 import type { Translator } from '../i18n'
 
 export type SettingsProps = {
@@ -11,6 +12,7 @@ export type SettingsProps = {
   onSavePath: (path: string) => Promise<void>
   onBrowse: () => void
   onAutoDetect: () => Promise<void>
+  onCloseToTray: (enabled: boolean) => void
 }
 
 export function Settings({
@@ -22,6 +24,7 @@ export function Settings({
   onSavePath,
   onBrowse,
   onAutoDetect,
+  onCloseToTray,
 }: SettingsProps) {
   const id = useId()
   const [path, setPath] = useState(view.exe ?? '')
@@ -133,6 +136,24 @@ export function Settings({
           </div>
         </div>
         <p className="setting-hint">{t('sasPathHint')}</p>
+      </section>
+
+      <section className="settings-group panel" aria-labelledby={`${id}-window`}>
+        <h2 id={`${id}-window`}>{t('windowGroup')}</h2>
+        <div className="setting-row">
+          <span className="setting-label">
+            <span id={`${id}-close-to-tray`}>{t('closeToTray')}</span>
+            <span className="setting-state">{t('closeToTrayHint')}</span>
+          </span>
+          <div className="setting-control">
+            <Switch
+              labelledBy={`${id}-close-to-tray`}
+              checked={view.closeToTray}
+              disabled={busy}
+              onChange={onCloseToTray}
+            />
+          </div>
+        </div>
       </section>
     </>
   )

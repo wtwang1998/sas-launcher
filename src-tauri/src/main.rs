@@ -25,7 +25,11 @@ use std::{
     time::Duration,
 };
 use store::{ConfigBase, ConfigRef, Project, Store};
-use tauri::{AppHandle, Manager, State};
+use tauri::{
+    AppHandle, Emitter, Manager, State, WindowEvent,
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+};
 use theme::ThemePreference;
 use uuid::Uuid;
 use view::{SessionView, View};
@@ -738,15 +742,46 @@ async fn select_installation(state: State<'_, AppState>, path: PathBuf) -> Resul
 }
 
 #[tauri::command]
+async fn set_close_to_tray(state: State<'_, AppState>, enabled: bool) -> Result<View, Issue> {
+    with_app(&state, |app| {
+        app.store
+            .update(|settings| settings.close_to_tray = enabled)?;
+        Ok(app.view())
+    })
+}
+
+/// Hide the window in the tray; the first call also retires the tray hint.
+#[tauri::command]
+async fn hide_to_tray(handle: AppHandle, state: State<'_, AppState>) -> Result<View, Issue> {
+    let view = with_app(&state, |app| {
+        app.store
+            .update(|settings| settings.tray_hint_seen = true)?;
+        Ok(app.view())
+    })?;
+    if let Some(window) = handle.get_webview_window("main") {
+        let _ = window.hide();
+    }
+    Ok(view)
+}
+
+#[tauri::command]
+async fn quit(handle: AppHandle) {
+    handle.exit(0);
+}
+
+#[tauri::command]
 async fn set_language(
+    handle: AppHandle,
     state: State<'_, AppState>,
     preference: LanguagePreference,
 ) -> Result<View, Issue> {
-    with_app(&state, |app| {
+    let (view, labels) = with_app(&state, |app| {
         app.store
             .update(|settings| settings.language = preference)?;
-        Ok(app.view())
-    })
+        Ok((app.view(), tray_labels(app)))
+    })?;
+    refresh_tray_menu(&handle, labels);
+    Ok(view)
 }
 
 #[tauri::command]
@@ -911,13 +946,65 @@ async fn open_archive(state: State<'_, AppState>) -> Result<(), Issue> {
     })
 }
 
+/// The one tray icon this app owns.
+const TRAY_ID: &str = "main";
+
+/// Reveal the main window, whether it is hidden in the tray or minimized.
+fn show_main_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
+/// Native menu labels cannot use the TypeScript dictionary, so they are
+/// resolved here from the same language preference.
+fn tray_labels(app: &App) -> (&'static str, &'static str) {
+    match app.store.settings.language.resolve(&app.system_language) {
+        "zh-Hans" => ("显示窗口", "退出"),
+        _ => ("Show window", "Quit"),
+    }
+}
+
+fn tray_menu(app: &AppHandle, labels: (&str, &str)) -> tauri::Result<Menu<tauri::Wry>> {
+    let show = MenuItem::with_id(app, "show", labels.0, true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", labels.1, true, None::<&str>)?;
+    Menu::with_items(app, &[&show, &quit])
+}
+
+fn refresh_tray_menu(app: &AppHandle, labels: (&str, &str)) {
+    if let Some(tray) = app.tray_by_id(TRAY_ID)
+        && let Ok(menu) = tray_menu(app, labels)
+    {
+        let _ = tray.set_menu(Some(menu));
+    }
+}
+
+fn running_sessions(app: &App) -> usize {
+    app.sessions
+        .cached()
+        .iter()
+        .filter(|record| record.status == Status::Running)
+        .count()
+}
+
+/// Quitting with SAS still running would strand those sessions: ask first.
+fn request_quit(app: &AppHandle) {
+    let running =
+        with_app(&app.state::<AppState>(), |app| Ok(running_sessions(app))).unwrap_or_default();
+    if running == 0 {
+        app.exit(0);
+        return;
+    }
+    show_main_window(app);
+    let _ = app.emit("quit-requested", ());
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.unminimize();
-                let _ = window.set_focus();
-            }
+            show_main_window(app);
         }))
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
@@ -930,6 +1017,32 @@ fn main() {
                 let theme = with_app(&app.state::<AppState>(), |app| Ok(app.store.settings.theme))
                     .unwrap_or_default();
                 let _ = window.set_theme(theme.window_theme());
+            }
+            let labels = with_app(&app.state::<AppState>(), |app| Ok(tray_labels(app)))
+                .unwrap_or(("Show window", "Quit"));
+            if let Some(icon) = app.default_window_icon().cloned() {
+                let menu = tray_menu(app.handle(), labels)?;
+                TrayIconBuilder::with_id(TRAY_ID)
+                    .icon(icon)
+                    .tooltip("SAS Launcher")
+                    .menu(&menu)
+                    .show_menu_on_left_click(false)
+                    .on_menu_event(|app, event| match event.id.as_ref() {
+                        "show" => show_main_window(app),
+                        "quit" => request_quit(app),
+                        _ => {}
+                    })
+                    .on_tray_icon_event(|tray, event| {
+                        if let TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            button_state: MouseButtonState::Up,
+                            ..
+                        } = event
+                        {
+                            show_main_window(tray.app_handle());
+                        }
+                    })
+                    .build(app)?;
             }
             let handle = app.handle().clone();
             std::thread::spawn(move || {
@@ -944,12 +1057,30 @@ fn main() {
             });
             Ok(())
         })
+        .on_window_event(|window, event| {
+            let WindowEvent::CloseRequested { api, .. } = event else {
+                return;
+            };
+            // Default: hide into the tray instead of shutting the app down.
+            let close_to_tray = with_app(&window.state::<AppState>(), |app| {
+                Ok(app.store.settings.close_to_tray)
+            })
+            .unwrap_or(true);
+            if !close_to_tray {
+                return;
+            }
+            api.prevent_close();
+            let _ = window.app_handle().emit("close-requested", ());
+        })
         .invoke_handler(tauri::generate_handler![
             snapshot,
             refresh_configs,
             select_installation,
             set_language,
             set_theme,
+            set_close_to_tray,
+            hide_to_tray,
+            quit,
             clear_installation,
             save_project,
             delete_project,
