@@ -125,7 +125,7 @@ export const messages = {
   ],
   configSelection: ['配置选择', 'Configuration'],
 
-  userFolderGroup: ['用户偏好（SASUSER）', 'User preference (SASUSER)'],
+  userFolderGroup: ['用户偏好', 'User preference'],
   inheritUserFolderOption: ['继承我的 SAS 用户目录', 'Use my SAS user folder'],
   inheritUserFolderHint: [
     '把 My SAS Files 里调好的窗口布局、功能键与菜单带进这个项目',
@@ -136,13 +136,13 @@ export const messages = {
     'No user preference folder under My SAS Files',
   ],
   inheritUserFolderSummary: [
-    '将继承 {count} 个文件 · 来自 {path} · 修改于 {when}',
-    'Inherits {count} files · from {path} · last changed {when}',
+    '将继承 {count} 个文件 · 修改于 {when}',
+    'Inherits {count} files · last changed {when}',
   ],
   inheritConfigSnapshotOption: ['继承某个配置的快照', "Use a configuration's snapshot"],
   inheritConfigSnapshotHint: [
-    '沿用该配置保存过的会话设置，编码一定一致',
-    'Reuse the settings that configuration saved; the encoding always matches',
+    '沿用该配置保存过的会话设置，编码一定一致；需要先在配置管理里保存过一次会话设置',
+    'Reuse the settings that configuration saved, so the encoding always matches. Save a session first',
   ],
   inheritConfigSnapshotEmpty: [
     '没有已保存过会话设置的配置',
@@ -154,8 +154,8 @@ export const messages = {
     'Start with a brand new SASUSER and inherit nothing',
   ],
   profileLayersInterface: [
-    '界面：窗口布局、功能键、菜单',
-    'Interface: layout, function keys, menus',
+    '界面：窗口布局、功能键、菜单（始终包含）',
+    'Interface: layout, function keys, menus (always included)',
   ],
   profileLayersEnvironment: [
     '环境：库分配、Explorer 选项、打印设置',

@@ -41,7 +41,16 @@ export function profileDraftFrom(profile: ProjectProfile | null): ProfileDraft {
  * An untouched preference must reach the backend as `keep`: re-sending the same
  * source would capture a new snapshot and silently overwrite the project's one.
  */
+/**
+ * An untouched preference must reach the backend as `keep`: re-sending the same
+ * source would capture a new snapshot and silently overwrite the project's one.
+ */
 export function profileChoiceFor(project: Project | null, draft: ProfileDraft): ProfileChoice {
+  // A clean environment has nothing to inherit, and its layer choices are not
+  // shown, so the stored value must not depend on what another card last had.
+  if (!project && draft.kind === 'fresh') {
+    return { kind: 'fresh', layers: DEFAULT_LAYERS }
+  }
   const stored = project?.profile ?? null
   if (stored && sameOrigin(stored.origin, draft) && sameLayers(stored.layers, draft.layers)) {
     return { kind: 'keep' }

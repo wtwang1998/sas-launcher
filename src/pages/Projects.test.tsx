@@ -72,6 +72,57 @@ it('a_missing_user_folder_still_creates_the_project_in_a_clean_environment', asy
   expect((sent as { kind: string } | undefined)?.kind).toBe('fresh')
 })
 
+it('the_user_folder_group_is_named_without_the_sasuser_suffix', async () => {
+  const user = userEvent.setup()
+  const folder = 'C:\\Users\\me\\Documents\\My SAS Files\\9.4'
+  renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [
+      { path: folder, version: '9.4', files: 4, modified: 1_700_000_000_000 },
+    ],
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+
+  expect(await screen.findByText('用户偏好')).toBeInTheDocument()
+  expect(screen.queryByText('用户偏好（SASUSER）')).not.toBeInTheDocument()
+  expect(screen.getByLabelText('继承我的 SAS 用户目录')).toHaveDisplayValue(folder)
+  expect(screen.queryByText(/来自/)).not.toBeInTheDocument()
+  expect(await screen.findByText(/^将继承 4 个文件 · 修改于 /)).toBeInTheDocument()
+})
+
+it('a_disabled_snapshot_card_says_why_it_cannot_be_used', async () => {
+  const user = userEvent.setup()
+  renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [],
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+
+  expect(await screen.findByText('没有已保存过会话设置的配置')).toBeInTheDocument()
+})
+
+it('the_layer_choices_belong_to_the_inheriting_card_only', async () => {
+  const user = userEvent.setup()
+  const folder = 'C:\\Users\\me\\Documents\\My SAS Files\\9.4'
+  renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [
+      { path: folder, version: '9.4', files: 4, modified: 1_700_000_000_000 },
+    ],
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+
+  // The interface layer cannot be turned off, so it is a sentence, not a tick.
+  expect(await screen.findByText(/界面：/)).toBeInTheDocument()
+  expect(screen.getByText(/始终包含/)).toBeInTheDocument()
+  expect(screen.getByText('环境：库分配、Explorer 选项、打印设置')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('radio', { name: /干净环境/ }))
+
+  expect(screen.queryByText('环境：库分配、Explorer 选项、打印设置')).not.toBeInTheDocument()
+  expect(screen.queryByText(/始终包含/)).not.toBeInTheDocument()
+})
+
 it('name_is_required_and_trimmed', async () => {
   const user = userEvent.setup()
   const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {

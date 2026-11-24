@@ -1248,10 +1248,10 @@ details[open] .disclosure {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 12px;
-  padding-left: 23px;
+  margin-top: 10px;
 }
-.profile-layer {
+/* `.editor label` sets a grid, which stacks a tick box above its text. */
+.editor .profile-layer {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1259,6 +1259,7 @@ details[open] .disclosure {
   font-size: 12px;
 }
 .profile-layer input {
+  flex: none;
   margin: 0;
   accent-color: var(--accent);
 }

@@ -54,6 +54,14 @@ it('a project without a stored preference is upgraded on save', () => {
   expect(profileChoiceFor(project(null), draft)).toEqual(draft)
 })
 
+it('a clean environment stores the interface layer only, whatever the form showed', () => {
+  const draft = {
+    kind: 'fresh' as const,
+    layers: { interface: true, environment: true, templates: true },
+  }
+  expect(profileChoiceFor(null, draft)).toEqual({ kind: 'fresh', layers: DEFAULT_LAYERS })
+})
+
 it('a user folder source needs a path, a snapshot source needs a config', () => {
   expect(profileReady({ kind: 'sasUser', path: '  ', layers: DEFAULT_LAYERS })).toBe(false)
   expect(profileReady({ kind: 'sasUser', path: 'C:\\x', layers: DEFAULT_LAYERS })).toBe(true)

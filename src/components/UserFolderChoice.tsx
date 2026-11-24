@@ -130,6 +130,9 @@ export function UserFolderChoice({
                 <span className="radio-label">{card.label}</span>
                 <Tooltip label={t('helpHint')} text={card.hint} />
               </div>
+              {!card.ready && card.kind === 'configSnapshot' && (
+                <p className="radio-hint">{t('inheritConfigSnapshotEmpty')}</p>
+              )}
               {checked && card.kind === 'sasUser' && (
                 <div className="radio-control" onClick={(event) => event.stopPropagation()}>
                   {candidates.length > 0 ? (
@@ -144,7 +147,7 @@ export function UserFolderChoice({
                     >
                       {candidates.map((candidate) => (
                         <option key={candidate.path} value={candidate.path}>
-                          {candidate.version} · {candidate.path}
+                          {candidate.path}
                         </option>
                       ))}
                     </select>
@@ -157,7 +160,6 @@ export function UserFolderChoice({
                 <p className="radio-hint" id={hintId}>
                   {t('inheritUserFolderSummary', {
                     count: chosen.files,
-                    path: chosen.path,
                     when: formatModified(language, chosen.modified),
                   })}
                 </p>
@@ -185,37 +187,44 @@ export function UserFolderChoice({
                   </select>
                 </div>
               )}
+              {checked && card.kind !== 'fresh' && (
+                <div className="radio-control" onClick={(event) => event.stopPropagation()}>
+                  <div className="profile-layers">
+                    <p className="profile-layer">{t('profileLayersInterface')}</p>
+                    <label className="profile-layer">
+                      <input
+                        type="checkbox"
+                        checked={value.layers.environment}
+                        disabled={busy}
+                        onChange={(event) =>
+                          onChange({
+                            ...value,
+                            layers: { ...value.layers, environment: event.target.checked },
+                          })
+                        }
+                      />
+                      {t('profileLayersEnvironment')}
+                    </label>
+                    <label className="profile-layer">
+                      <input
+                        type="checkbox"
+                        checked={value.layers.templates}
+                        disabled={busy}
+                        onChange={(event) =>
+                          onChange({
+                            ...value,
+                            layers: { ...value.layers, templates: event.target.checked },
+                          })
+                        }
+                      />
+                      {t('profileLayersTemplates')}
+                    </label>
+                  </div>
+                </div>
+              )}
             </div>
           )
         })}
-      </div>
-      <div className="profile-layers">
-        <label className="profile-layer">
-          <input type="checkbox" checked disabled />
-          {t('profileLayersInterface')}
-        </label>
-        <label className="profile-layer">
-          <input
-            type="checkbox"
-            checked={value.layers.environment}
-            disabled={busy}
-            onChange={(event) =>
-              onChange({ ...value, layers: { ...value.layers, environment: event.target.checked } })
-            }
-          />
-          {t('profileLayersEnvironment')}
-        </label>
-        <label className="profile-layer">
-          <input
-            type="checkbox"
-            checked={value.layers.templates}
-            disabled={busy}
-            onChange={(event) =>
-              onChange({ ...value, layers: { ...value.layers, templates: event.target.checked } })
-            }
-          />
-          {t('profileLayersTemplates')}
-        </label>
       </div>
       {kind === 'sasUser' && onBrowse && (
         <div className="radio-extra">
