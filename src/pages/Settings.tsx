@@ -34,7 +34,6 @@ export function Settings({
   const id = useId()
   const [path, setPath] = useState(view.exe ?? '')
   const [dirty, setDirty] = useState(false)
-  const found = view.exe !== null
 
   useEffect(() => {
     if (!dirty) setPath(view.exe ?? '')
@@ -93,14 +92,8 @@ export function Settings({
 
       <section className="settings-group panel" aria-labelledby={`${id}-sas`}>
         <h2 id={`${id}-sas`}>{t('sasGroup')}</h2>
-        <div className="setting-row">
-          <span className="setting-label">
-            {t('sasPath')}
-            <span className={`setting-state ${found ? 'found' : ''}`}>
-              <span className={`status-dot ${found ? 'green' : ''}`} aria-hidden="true" />
-              {found ? t('sasDetected') : t('noInstallation')}
-            </span>
-          </span>
+        <div className="setting-row wide">
+          <span className="setting-label">{t('sasPath')}</span>
           <div className="setting-control path-control">
             <input
               aria-label={t('sasPath')}
@@ -159,26 +152,26 @@ export function Settings({
             />
           </div>
         </div>
-        <div className="setting-row">
-          <span className="setting-label">
-            <span id={`${id}-start-minimized`}>{t('startMinimized')}</span>
-            <span className={`setting-state ${view.autostart ? '' : 'warn'}`}>
-              {view.autostart
-                ? startMinimizedActive(view.autostart, view.startMinimized)
+        {view.autostart && (
+          <div className="setting-row">
+            <span className="setting-label">
+              <span id={`${id}-start-minimized`}>{t('startMinimized')}</span>
+              <span className="setting-state">
+                {startMinimizedActive(view.autostart, view.startMinimized)
                   ? t('startMinimizedActive')
-                  : t('startMinimizedShown')
-                : t('startMinimizedLocked')}
+                  : t('startMinimizedShown')}
+              </span>
             </span>
-          </span>
-          <div className="setting-control">
-            <Switch
-              labelledBy={`${id}-start-minimized`}
-              checked={view.startMinimized}
-              disabled={busy || !view.autostart}
-              onChange={onStartMinimized}
-            />
+            <div className="setting-control">
+              <Switch
+                labelledBy={`${id}-start-minimized`}
+                checked={view.startMinimized}
+                disabled={busy}
+                onChange={onStartMinimized}
+              />
+            </div>
           </div>
-        </div>
+        )}
         <div className="setting-row">
           <span className="setting-label">
             <span id={`${id}-close-to-tray`}>{t('closeToTray')}</span>

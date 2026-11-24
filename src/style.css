@@ -65,8 +65,6 @@
   --info-text: light-dark(#24506b, #9dc4dd);
   --info-bg: light-dark(#eef5fb, #16242f);
   --info-border: light-dark(#d3e3f0, #24384a);
-  --dot-warn: light-dark(#a17224, #c99a4a);
-  --dot-ok: light-dark(#16866e, #43c39c);
   --shadow-panel: light-dark(#1a39390a, #00000059);
   --shadow-menu: light-dark(#18382c24, #00000066);
   --shadow-dialog: light-dark(#18382c38, #00000099);
@@ -185,16 +183,6 @@ nav {
 }
 .nav-arrow {
   margin-left: auto;
-}
-.status-dot {
-  width: 7px;
-  height: 7px;
-  background: var(--dot-warn);
-  border-radius: 50%;
-  flex: 0 0 7px;
-}
-.status-dot.green {
-  background: var(--dot-ok);
 }
 .text-button {
   padding: 7px;
@@ -674,10 +662,6 @@ details[open] .disclosure {
   padding: 0 0 10px;
   color: var(--muted);
   font-size: 12px;
-}
-.setting-state .warn,
-.setting-state.warn {
-  color: var(--warn-text);
 }
 .switch {
   position: relative;

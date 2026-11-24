@@ -17,7 +17,7 @@ it('settings_page_owns_the_language_switch_and_the_sas_path', async () => {
   expect(await screen.findByRole('heading', { name: '设置' })).toBeInTheDocument()
   expect(screen.getByRole('combobox', { name: '应用语言' })).toHaveValue('zh-Hans')
   expect(screen.getByRole('textbox', { name: 'SAS 程序路径' })).toHaveValue('C:\\SAS\\sas.exe')
-  expect(screen.getByText('已找到 SAS 程序')).toBeInTheDocument()
+  expect(screen.queryByText('已找到 SAS 程序')).not.toBeInTheDocument()
 })
 
 it('changing_the_language_from_settings_calls_set_language', async () => {
@@ -117,15 +117,14 @@ it('the_login_switch_is_persisted_through_set_startup', async () => {
   })
 })
 
-it('starting_minimized_waits_for_the_login_entry', async () => {
+it('starting_minimized_only_exists_once_the_login_entry_is_on', async () => {
   const user = userEvent.setup()
   renderApp(makeView({ autostart: false, startMinimized: true }))
 
   await user.click(await screen.findByRole('button', { name: '设置' }))
-  const toggle = screen.getByRole('switch', { name: '启动时最小化到托盘' })
-  expect(toggle).toBeDisabled()
-  expect(toggle).toHaveAttribute('aria-checked', 'true')
-  expect(screen.getByText('需先开启「开机时自动启动」')).toBeInTheDocument()
+
+  expect(screen.queryByRole('switch', { name: '启动时最小化到托盘' })).not.toBeInTheDocument()
+  expect(screen.queryByText('需先开启「开机时自动启动」')).not.toBeInTheDocument()
 })
 
 it('starting_minimized_is_editable_once_the_login_entry_exists', async () => {
