@@ -76,8 +76,8 @@ Projects, configurations and diagnostics live in `%LOCALAPPDATA%\com.saslauncher
 - **App language** — Simplified Chinese, English, or follow Windows.
 - **SAS executable path** — shows the detected `sas.exe`; type a path, pick one, or use **Auto-detect** to drop a manual choice and scan again.
 - **Start at login** — writes the per-user `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` entry, quoted so paths with spaces work.
-- **Start minimized in the tray** — only the login launch starts hidden; it becomes editable once **Start at login** is on, and keeps its value when that switch is turned off.
-- **Minimize to the tray on close** — on by default. The tray icon offers *show window* and *quit*; quitting while SAS sessions still run asks first, and launching the app again reveals the hidden window.
+- **Start minimized in the tray** — only the login launch starts hidden, and the row appears once **Start at login** is on. Its value survives turning that switch off, so re-enabling restores the old behaviour.
+- **Minimize to the tray on close** — on by default: closing hides the window (the tray icon offers *show window* and *quit*). Turned off, closing quits, but asks first while SAS sessions still run. Launching the app again reveals a hidden window.
 
 ## Quick start
 
