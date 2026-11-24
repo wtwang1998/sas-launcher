@@ -68,13 +68,26 @@ SAS Launcher gives every project its own configuration and hands each launch a p
 
 Projects, configurations and diagnostics live in `%LOCALAPPDATA%\com.saslauncher.desktop`, independent of where the program was installed. Uninstalling removes the program files only — your data survives. Delete that folder by hand to start from a clean state.
 
+## Settings
+
+**Settings** collects the app-wide switches; each one applies immediately, without a save button.
+
+- **Theme** — follow Windows, or force dark or light. The palette is one `light-dark()` pair per token, so the title bar, native selects and scrollbars follow the choice; this needs a current WebView2 runtime.
+- **App language** — Simplified Chinese, English, or follow Windows.
+- **SAS executable path** — shows the detected `sas.exe`; type a path, pick one, or use **Auto-detect** to drop a manual choice and scan again.
+- **Start at login** — writes the per-user `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` entry, quoted so paths with spaces work.
+- **Start minimized in the tray** — only the login launch starts hidden; it becomes editable once **Start at login** is on, and keeps its value when that switch is turned off.
+- **Minimize to the tray on close** — on by default. The tray icon offers *show window* and *quit*; quitting while SAS sessions still run asks first, and launching the app again reveals the hidden window.
+
 ## Quick start
+
 
 1. Launch the app. It finds an installed SAS 9.4 automatically; if it cannot, the banner offers to pick `sas.exe`.
 2. In **Configurations**, review the factory configurations, or derive a user configuration and adjust its encoding and locale.
 3. In **Projects**, create a project: a name, one of the three configuration sources, and an optional note.
 4. To change SAS UI preferences for a configuration, choose **Open SAS to adjust settings**, then exit SAS and save.
 5. If a launch misbehaves, open **Diagnostics** to inspect the chain, the argv and the log.
+6. In **Settings**, change the theme, the language, the SAS path, or how the window behaves on close and at login.
 
 ## Known limitations
 
