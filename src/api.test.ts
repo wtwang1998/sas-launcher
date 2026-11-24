@@ -24,9 +24,9 @@ it('commands_match_the_rust_handler_names', async () => {
     { name: 'snapshot', run: () => api.snapshot(), cmd: 'snapshot', args: {} },
     {
       name: 'sasuserCandidates',
-      run: () => api.sasuserCandidates(),
+      run: () => api.sasuserCandidates(null),
       cmd: 'sasuser_candidates',
-      args: {},
+      args: { extra: null },
     },
     { name: 'refresh', run: () => api.refresh(), cmd: 'refresh_configs', args: {} },
     {

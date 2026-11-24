@@ -47,6 +47,7 @@
     {
       "includes": [
         "src/components/ConfigChoice.tsx",
+        "src/components/UserFolderChoice.tsx",
         "src/components/ConfigurationPicker.tsx",
         "src/pages/Configurations.tsx"
       ],

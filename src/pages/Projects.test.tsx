@@ -7,7 +7,9 @@ import { renderApp } from '../test/harness'
 
 it('submitting_default_following_project_sends_null_config', async () => {
   const user = userEvent.setup()
-  const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }))
+  const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [],
+  })
 
   await user.click(await screen.findByRole('button', { name: '新建项目' }))
   await user.type(screen.getByLabelText(/项目名称/), '项目 A')
@@ -21,13 +23,60 @@ it('submitting_default_following_project_sends_null_config', async () => {
     name: '项目 A',
     note: null,
     config: null,
-    profile: null,
+    profile: { kind: 'fresh', layers: { interface: true, environment: false, templates: false } },
   })
+})
+
+it('a_new_project_inherits_the_detected_user_folder_by_default', async () => {
+  const user = userEvent.setup()
+  const folder = 'C:\\Users\\me\\Documents\\My SAS Files\\9.4'
+  const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [{ path: folder, version: '9.4', files: 2, modified: 0 }],
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+  await user.type(screen.getByLabelText(/项目名称/), '项目 A')
+  expect(await screen.findByText(/将继承 2 个文件/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'save_project')).toHaveLength(1),
+  )
+  expect(backend.calls.find((call) => call.cmd === 'save_project')?.args).toEqual({
+    id: null,
+    name: '项目 A',
+    note: null,
+    config: null,
+    profile: {
+      kind: 'sasUser',
+      path: folder,
+      layers: { interface: true, environment: false, templates: false },
+    },
+  })
+})
+
+it('a_missing_user_folder_still_creates_the_project_in_a_clean_environment', async () => {
+  const user = userEvent.setup()
+  const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [],
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+  await user.type(screen.getByLabelText(/项目名称/), '项目 A')
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'save_project')).toHaveLength(1),
+  )
+  const sent = backend.calls.find((call) => call.cmd === 'save_project')?.args?.profile
+  expect((sent as { kind: string } | undefined)?.kind).toBe('fresh')
 })
 
 it('name_is_required_and_trimmed', async () => {
   const user = userEvent.setup()
-  const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }))
+  const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [],
+  })
 
   await user.click(await screen.findByRole('button', { name: '新建项目' }))
   const name = screen.getByLabelText(/项目名称/)
@@ -49,7 +98,7 @@ it('name_is_required_and_trimmed', async () => {
     name: '项目 A',
     note: null,
     config: null,
-    profile: null,
+    profile: { kind: 'fresh', layers: { interface: true, environment: false, templates: false } },
   })
 })
 

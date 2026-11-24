@@ -120,7 +120,8 @@ export const refKey = (ref: ConfigRef | null | undefined) =>
 
 export const api = {
   snapshot: () => invoke<View>('snapshot'),
-  sasuserCandidates: () => invoke<SasuserCandidate[]>('sasuser_candidates'),
+  sasuserCandidates: (extra: string | null) =>
+    invoke<SasuserCandidate[]>('sasuser_candidates', { extra }),
   refresh: () => invoke<View>('refresh_configs'),
   selectInstallation: (path: string) => invoke<View>('select_installation', { path }),
   setLanguage: (preference: Preference) => invoke<View>('set_language', { preference }),

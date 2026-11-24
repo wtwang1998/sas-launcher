@@ -987,15 +987,26 @@ impl App {
     }
 }
 
-/// Version folders under `Documents\My SAS Files` that actually hold catalogs.
+/// Version folders under `Documents\My SAS Files` that actually hold catalogs,
+/// plus an optional folder the user picked themselves.
 #[tauri::command]
-async fn sasuser_candidates(state: State<'_, AppState>) -> Result<Vec<sasuser::Candidate>, Issue> {
+async fn sasuser_candidates(
+    state: State<'_, AppState>,
+    extra: Option<PathBuf>,
+) -> Result<Vec<sasuser::Candidate>, Issue> {
     with_app(&state, |app| {
         let preferred = app
             .installation
             .as_ref()
             .and_then(|installation| sasuser::version_from_exe(&installation.exe));
-        Ok(sasuser::candidates(preferred.as_deref()))
+        let mut candidates = sasuser::candidates(preferred.as_deref());
+        if let Some(extra) = extra.as_deref()
+            && let Some(candidate) = sasuser::candidate_for(extra)
+            && !candidates.iter().any(|known| known.path == candidate.path)
+        {
+            candidates.insert(0, candidate);
+        }
+        Ok(candidates)
     })
 }
 

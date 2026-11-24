@@ -1,14 +1,17 @@
 import { CircleAlert, FolderPlus, Play, Plus, X } from 'lucide-react'
 import { useState } from 'react'
-import type { BatchResult, Language, Project, View } from '../api'
+import type { BatchResult, Language, Project, SasuserCandidate, View } from '../api'
 import { ProjectCard } from '../components/ProjectCard'
 import { emptyProjectDraft, type ProjectDraft, ProjectForm } from '../components/ProjectForm'
 import { issueText, type Translator } from '../i18n'
 import { configsByRef } from '../lib/config'
+import { profileDraftFrom } from '../lib/profile'
 
 export type ProjectsProps = {
   view: View
   draft: ProjectDraft | null
+  profileCandidates: SasuserCandidate[]
+  onBrowseProfile: () => void
   language: Language
   t: Translator
   busy: boolean
@@ -23,6 +26,8 @@ export type ProjectsProps = {
 export function Projects({
   view,
   draft,
+  profileCandidates,
+  onBrowseProfile,
   language,
   t,
   busy,
@@ -86,6 +91,7 @@ export function Projects({
             draft={draft}
             configs={view.configs}
             defaultConfig={view.defaultConfig}
+            profileCandidates={profileCandidates}
             language={language}
             t={t}
             busy={busy}
@@ -93,6 +99,7 @@ export function Projects({
             onChange={onDraft}
             onCancel={() => onDraft(null)}
             onCreateConfiguration={() => onCreateConfiguration(draft)}
+            onBrowseProfile={onBrowseProfile}
             onSubmit={(next) => void onSaveProject(next)}
           />
         </section>
@@ -189,6 +196,7 @@ export function Projects({
                 name: project.name,
                 note: project.note ?? '',
                 config: project.config,
+                profile: profileDraftFrom(project.profile),
               })
             }
             onDelete={() => void onDeleteProject(project.id)}
@@ -199,6 +207,7 @@ export function Projects({
                 draft={draft}
                 configs={view.configs}
                 defaultConfig={view.defaultConfig}
+                profileCandidates={profileCandidates}
                 language={language}
                 t={t}
                 busy={busy}
@@ -206,6 +215,7 @@ export function Projects({
                 onChange={onDraft}
                 onCancel={() => onDraft(null)}
                 onCreateConfiguration={() => onCreateConfiguration(draft)}
+                onBrowseProfile={onBrowseProfile}
                 onSubmit={(next) => void onSaveProject(next)}
               />
             )}

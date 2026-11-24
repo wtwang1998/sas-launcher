@@ -125,6 +125,45 @@ export const messages = {
   ],
   configSelection: ['配置选择', 'Configuration'],
 
+  userFolderGroup: ['用户偏好（SASUSER）', 'User preference (SASUSER)'],
+  inheritUserFolderOption: ['继承我的 SAS 用户目录', 'Use my SAS user folder'],
+  inheritUserFolderHint: [
+    '把 My SAS Files 里调好的窗口布局、功能键与菜单带进这个项目',
+    'Carry the layout, function keys and menus tuned in My SAS Files into this project',
+  ],
+  inheritUserFolderMissing: [
+    '未找到 My SAS Files 下的用户偏好目录',
+    'No user preference folder under My SAS Files',
+  ],
+  inheritUserFolderSummary: [
+    '将继承 {count} 个文件 · 来自 {path} · 修改于 {when}',
+    'Inherits {count} files · from {path} · last changed {when}',
+  ],
+  inheritConfigSnapshotOption: ['继承某个配置的快照', "Use a configuration's snapshot"],
+  inheritConfigSnapshotHint: [
+    '沿用该配置保存过的会话设置，编码一定一致',
+    'Reuse the settings that configuration saved; the encoding always matches',
+  ],
+  inheritConfigSnapshotEmpty: [
+    '没有已保存过会话设置的配置',
+    'No configuration has saved session settings yet',
+  ],
+  cleanEnvironmentOption: ['干净环境', 'Clean environment'],
+  cleanEnvironmentHint: [
+    '启动一个全新的 SASUSER，不继承任何设置',
+    'Start with a brand new SASUSER and inherit nothing',
+  ],
+  profileLayersInterface: [
+    '界面：窗口布局、功能键、菜单',
+    'Interface: layout, function keys, menus',
+  ],
+  profileLayersEnvironment: [
+    '环境：库分配、Explorer 选项、打印设置',
+    'Environment: library assignments, Explorer options, print setup',
+  ],
+  profileLayersTemplates: ['自定义 ODS 模板与样式', 'Custom ODS templates and styles'],
+  browseFolder: ['浏览其他文件夹…', 'Browse for another folder…'],
+
   followDefaultOption: ['跟随默认配置', 'Follow the default configuration'],
   followDefaultOptionHint: [
     '启动时读取 SAS 安装的默认配置',

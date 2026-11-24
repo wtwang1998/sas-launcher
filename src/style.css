@@ -1244,6 +1244,24 @@ details[open] .disclosure {
 .radio-extra {
   padding-left: 23px;
 }
+.profile-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding-left: 23px;
+}
+.profile-layer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.profile-layer input {
+  margin: 0;
+  accent-color: var(--accent);
+}
 .link-button {
   background: transparent;
   border: 0;

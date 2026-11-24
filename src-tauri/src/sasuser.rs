@@ -98,6 +98,19 @@ pub fn candidates_in(root: &Path, preferred: Option<&str>) -> Vec<Candidate> {
     found.into_iter().map(|(_, candidate)| candidate).collect()
 }
 
+/// A hand-picked folder. No version pattern is required, because the user may
+/// keep a renamed copy; `files: 0` tells the form it holds no catalog yet.
+pub fn candidate_for(path: &Path) -> Option<Candidate> {
+    if !path.is_dir() {
+        return None;
+    }
+    let version = path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    Some(inspect(path.to_path_buf(), version))
+}
+
 /// The version directory the configured SAS executable lives in.
 pub fn version_from_exe(exe: &Path) -> Option<String> {
     exe.parent()
@@ -213,6 +226,19 @@ mod tests {
     fn a_missing_root_yields_no_candidates() {
         let temp = tempfile::tempdir().unwrap();
         assert!(candidates_in(&temp.path().join("nowhere"), None).is_empty());
+    }
+
+    #[test]
+    fn a_hand_picked_folder_needs_no_version_name() {
+        let temp = tempfile::tempdir().unwrap();
+        let folder = temp.path().join("我的备份");
+        write_catalogs(&folder, &["profile.sas7bcat"]);
+        let candidate = candidate_for(&folder).unwrap();
+        assert_eq!(candidate.version, "我的备份");
+        assert_eq!(candidate.files, 1);
+
+        let empty = temp.path().join("C:\\nowhere");
+        assert!(candidate_for(&empty).is_none());
     }
 
     #[test]

@@ -16,8 +16,8 @@ npm run format            # biome format --write + cargo fmt
 npm run lint              # biome lint + knip
 npm run lint:rust         # clippy --all-targets -- -D warnings
 npm run typecheck         # tsc --noEmit
-npm run test              # vitest，55 个，约 4 秒
-npm run test:rust         # cargo test，41 个，约 1 秒（增量已编译）
+npm run test              # vitest，88 个，约 5 秒
+npm run test:rust         # cargo test，64 个，约 1 秒（增量已编译）
 npm run build             # tsc --noEmit + vite build
 npm run version:check -- v0.2.0   # 发布前自查：tag 与三处版本是否一致
 ```
@@ -57,8 +57,9 @@ docs/images/            README 截图（真机拍摄）
 | 引 UI 库或设计系统 | 只用 `src/style.css` + `lucide-react` |
 | 在 `capabilities/default.json` 加宽泛权限 | 只加当前功能必需的；不开 `fs`/`shell` 通配 |
 | 让格式化改掉 CRLF | `biome.json` 的 `lineEnding: "crlf"` 与 `rustfmt.toml` 的 `newline_style = "Windows"` 不得改 |
+| 把 `profbak` / `folder` / `gng` / `parms` 加进 profile 白名单 | 前三个是 SAS 的回退副本与 ASSIST、Graph-N-Go 产品资源，`parms` 是别台机器写的 ASSIST 参数，都不是用户偏好；`profile.rs` 的注释写着排除理由 |
 
-已被测试锁死、无需在此重复：薄壳 cfg 恰好 3 行、启动参数顺序与 `-ENCODING`/`-LOCALE` 缺席、profile 快照固定 4 个文件名、诊断保留 20 条、运行中与待保存的设置会话不可被清空。
+已被测试锁死、无需在此重复：薄壳 cfg 恰好 3 行、启动参数顺序与 `-ENCODING`/`-LOCALE` 缺席、profile 白名单 4 个文件且分界面/环境/模板三层、项目偏好快照保留 2 版、诊断保留 20 条、运行中与待保存的设置会话不可被清空。
 
 ## 测试
 
@@ -89,7 +90,7 @@ docs/images/            README 截图（真机拍摄）
 |---|---|
 | `unexpected` 有文案但无生产者 | 它是前端未知码的兜底标题（`src/i18n.ts`），有意保留，别删 |
 | 默认配置名生成在 `configuration.rs` 与 `src/lib/config.ts` 各一份，后者无 UI 调用 | 改一处必须同时改另一处，或先合并 |
-| `biome.json` 关掉了 `noDescendingSpecificity` 与 3 个文件上的 4 条 a11y 规则 | 修需人工验视觉/键盘，原因见 `overrides` |
+| `biome.json` 关掉了 `noDescendingSpecificity` 与 4 个文件上的 4 条 a11y 规则 | 修需人工验视觉/键盘，原因见 `overrides` |
 | MSYS 下 git 直接 exec husky 钩子报 Permission denied | 用 `git -c core.hooksPath=` 提交，再手动 `npx commitlint --from HEAD~1 --to HEAD` |
 
 代码与测试是唯一事实源：本文件与代码冲突时，先改本文件。

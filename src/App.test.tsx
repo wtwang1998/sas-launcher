@@ -5,7 +5,9 @@ import { builtIn, makeView, userConfig } from './test/fixtures'
 import { renderApp } from './test/harness'
 
 it('navigation_lists_every_page_and_keeps_settings_out_of_the_sidebar_footer', async () => {
-  renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }))
+  renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [],
+  })
 
   const navigation = await screen.findByRole('navigation', { name: '主导航' })
   const items = within(navigation).getAllByRole('button')
@@ -29,6 +31,7 @@ it('draft_survives_a_trip_to_configuration_management', async () => {
   const user = userEvent.setup()
   const created = userConfig('cfg-1', '用户配置（衍生自 u8）#1', 'UTF-8', 'zh_CN')
   const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [],
     create_configuration: (_args, current) => {
       const next = { ...current.view, configs: [...current.view.configs, created] }
       current.setView(next)

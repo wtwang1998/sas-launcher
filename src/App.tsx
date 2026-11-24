@@ -20,6 +20,7 @@ import {
   type ConfigBase,
   type Language,
   refKey,
+  type SasuserCandidate,
   type Session,
   sameRef,
   type View,
@@ -28,6 +29,7 @@ import { useConfirmation } from './components/confirmation'
 import type { ProjectDraft } from './components/ProjectForm'
 import { browserLanguage, issueText, type MessageKey, translate } from './i18n'
 import { onHostEvent } from './lib/host'
+import { profileChoiceFor } from './lib/profile'
 import { themeAttribute } from './lib/settings'
 import { Configurations } from './pages/Configurations'
 import { Diagnostics } from './pages/Diagnostics'
@@ -49,6 +51,7 @@ export function App() {
   const [view, setView] = useState<View | null>(null)
   const [page, setPage] = useState<Page>('projects')
   const [draft, setDraft] = useState<ProjectDraft | null>(null)
+  const [profileCandidates, setProfileCandidates] = useState<SasuserCandidate[]>([])
   const [pendingDraft, setPendingDraft] = useState<ProjectDraft | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
@@ -168,11 +171,66 @@ export function App() {
   }
 
   async function saveProject(next: ProjectDraft) {
+    const project = view?.projects.find((entry) => entry.id === next.id) ?? null
     const updated = await mutate(
-      () => api.saveProject(next.id, next.name.trim(), next.note.trim() || null, next.config, null),
+      () =>
+        api.saveProject(
+          next.id,
+          next.name.trim(),
+          next.note.trim() || null,
+          next.config,
+          profileChoiceFor(project, next.profile),
+        ),
       'projectSaved',
     )
     if (updated) setDraft(null)
+  }
+
+  /**
+   * Open the form, and for a new project load the folders SAS wrote before, so
+   * the first card can already point at the layout the user tuned.
+   */
+  async function openDraft(next: ProjectDraft | null) {
+    setDraft(next)
+    if (!next || next.id !== null) return
+    let found: SasuserCandidate[] = []
+    try {
+      found = await api.sasuserCandidates(null)
+    } catch (failure) {
+      setError(failure)
+    }
+    setProfileCandidates(found)
+    setDraft((current) => {
+      if (!current || current.id !== null) return current
+      if (current.profile.kind !== 'sasUser' || current.profile.path) return current
+      const first = found[0]
+      return {
+        ...current,
+        profile: first
+          ? { kind: 'sasUser', path: first.path, layers: current.profile.layers }
+          : { kind: 'fresh', layers: current.profile.layers },
+      }
+    })
+  }
+
+  /** A folder outside `My SAS Files` is still a valid source, but must be picked. */
+  async function browseProfile() {
+    try {
+      const picked = await open({ directory: true, title: t('browseFolder') })
+      if (typeof picked !== 'string' || !picked) return
+      const found = await api.sasuserCandidates(picked)
+      setProfileCandidates(found)
+      setDraft((current) =>
+        current
+          ? {
+              ...current,
+              profile: { kind: 'sasUser', path: picked, layers: current.profile.layers },
+            }
+          : current,
+      )
+    } catch (failure) {
+      setError(failure)
+    }
   }
 
   async function deleteProject(id: string) {
@@ -429,10 +487,12 @@ export function App() {
             <Projects
               view={view}
               draft={draft}
+              profileCandidates={profileCandidates}
+              onBrowseProfile={() => void browseProfile()}
               language={language}
               t={t}
               busy={busy}
-              onDraft={setDraft}
+              onDraft={(next) => void openDraft(next)}
               onCreateConfiguration={beginConfigurationTrip}
               onSaveProject={saveProject}
               onDeleteProject={deleteProject}
