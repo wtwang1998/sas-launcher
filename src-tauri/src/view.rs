@@ -37,6 +37,8 @@ pub struct ProjectProfileView {
     /// Catalog files actually present in the snapshot, so the card can say
     /// "4 files" without another round trip.
     pub files: usize,
+    /// Catalog files the declared layers need but the snapshot does not hold.
+    pub missing: usize,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -60,6 +62,17 @@ pub struct ChainView {
     pub locale: Option<String>,
     pub sasuser: PathBuf,
     pub log: Option<PathBuf>,
+    /// Which catalogs seeded `sasuser`, so the page can answer "whose settings
+    /// did this launch get". `None` means a clean environment.
+    pub profile: Option<ProfileSeedView>,
+}
+
+/// The preference layers a launch actually seeded, not the ones it asked for.
+#[derive(Clone, Copy, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileSeedView {
+    pub files: usize,
+    pub layers: Layers,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -217,6 +230,15 @@ fn project_view(app: &App, project: &Project) -> ProjectView {
                     .count(),
                 None => 0,
             },
+            // Catalogs the declared layers need but the snapshot cannot seed.
+            missing: match profile.revision {
+                Some(revision) => crate::profile::unseeded_files(
+                    &app.store.project_profile_dir(project.id, revision),
+                    profile.layers,
+                )
+                .len(),
+                None => 0,
+            },
         }),
     }
 }
@@ -301,6 +323,10 @@ pub fn build_session_view(app: &App, record: &Record) -> SessionView {
         locale: record.locale.clone(),
         sasuser: record.sasuser.clone(),
         log,
+        profile: (!record.profile_files.is_empty()).then(|| ProfileSeedView {
+            files: record.profile_files.len(),
+            layers: crate::profile::layers_of(&record.profile_files),
+        }),
     };
     let hints = diagnostics::self_check(&chain);
     SessionView {
@@ -355,6 +381,7 @@ mod tests {
             argv: vec!["sas.exe".into()],
             sasuser,
             sasuser_writable: false,
+            profile_files: Vec::new(),
             thin_cfg: None,
             factory_cfg: temp.path().join("missing-sasv9.cfg"),
             encoding: Some("utf-8".into()),
@@ -368,6 +395,51 @@ mod tests {
         assert!(codes.contains(&"profileNotWritable"), "{codes:?}");
         let json = serde_json::to_value(&view).unwrap();
         assert_eq!(json["hints"].as_array().map(Vec::len), Some(2));
+    }
+
+    #[test]
+    fn a_session_reports_the_preference_layers_it_was_seeded_with() {
+        let temp = tempfile::tempdir().unwrap();
+        let store = Store::open(temp.path().join("data")).unwrap();
+        let sessions = Sessions::new(store.sessions_dir());
+        let app = App {
+            store,
+            sessions,
+            installation: None,
+            scan_error: None,
+            system_language: "en".into(),
+            autostart: false,
+        };
+        let record = Record {
+            id: Uuid::new_v4(),
+            name: "p".into(),
+            title: "p".into(),
+            purpose: Purpose::Project { id: None },
+            stage: Stage::Started,
+            status: Status::Exited,
+            exit_code: None,
+            started_at: 0,
+            argv: Vec::new(),
+            sasuser: temp.path().join("sasuser"),
+            sasuser_writable: true,
+            thin_cfg: None,
+            factory_cfg: temp.path().join("sasv9.cfg"),
+            encoding: Some("utf-8".into()),
+            locale: Some("zh_CN".into()),
+            failure: None,
+            profile_files: vec!["profile.sas7bcat".into(), "regstry.sas7bitm".into()],
+        };
+
+        let json = serde_json::to_value(build_session_view(&app, &record)).unwrap();
+        assert_eq!(json["chain"]["profile"]["files"], 2);
+        assert_eq!(json["chain"]["profile"]["layers"]["interface"], true);
+        assert_eq!(json["chain"]["profile"]["layers"]["environment"], true);
+        assert_eq!(json["chain"]["profile"]["layers"]["templates"], false);
+
+        let mut bare = record.clone();
+        bare.profile_files.clear();
+        let json = serde_json::to_value(build_session_view(&app, &bare)).unwrap();
+        assert_eq!(json["chain"]["profile"], serde_json::Value::Null);
     }
 
     #[test]

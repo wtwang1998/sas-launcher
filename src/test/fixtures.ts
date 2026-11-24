@@ -59,6 +59,7 @@ export function makeSession(patch: Partial<Session> & { id: string }): Session {
       factoryCfg: 'C:\\SAS\\nls\\u8\\sasv9.cfg',
       encoding: 'UTF-8',
       locale: 'zh_CN',
+      profile: null,
       sasuser: 'C:\\data\\sessions\\s1\\sasuser',
       log: 'C:\\data\\sessions\\s1\\SAS.LOG',
     },

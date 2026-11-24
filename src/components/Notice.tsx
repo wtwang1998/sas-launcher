@@ -13,12 +13,15 @@ export function NoticeBanner({
   language,
   t,
   onDismiss,
+  onRetry,
   className = '',
 }: {
   notice: Notice
   language: Language
   t: Translator
   onDismiss: () => void
+  /** Offered when the action can simply be run again, e.g. after closing SAS. */
+  onRetry?: () => void
   className?: string
 }) {
   const failed = notice.tone === 'error'
@@ -42,6 +45,11 @@ export function NoticeBanner({
         <Check size={18} aria-hidden="true" />
       )}
       <span>{failed ? issueText(language, notice.error) : t(notice.key, notice.values)}</span>
+      {failed && onRetry && (
+        <button type="button" className="button small" onClick={onRetry}>
+          {t('retry')}
+        </button>
+      )}
       <button
         type="button"
         className="icon-button"

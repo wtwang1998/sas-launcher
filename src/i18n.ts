@@ -129,7 +129,11 @@ export const messages = {
     '将继承 {count} 个文件 · 修改于 {when}',
     'Inherits {count} files · last changed {when}',
   ],
-  inheritConfigSnapshotOption: ['继承某个配置的快照', "Use a configuration's snapshot"],
+  inheritUserFolderEmpty: [
+    '这个文件夹里没有 SAS 设置文件',
+    'This folder holds no SAS settings files',
+  ],
+  inheritConfigSnapshotOption: ['继承某个配置保存的设置', 'Use the settings a configuration saved'],
   inheritConfigSnapshotHint: [
     '沿用该配置保存过的会话设置，编码一定一致；需要先在配置管理里保存过一次会话设置',
     'Reuse the settings that configuration saved, so the encoding always matches. Save a session first',
@@ -144,8 +148,8 @@ export const messages = {
     'Start from an empty SASUSER with nothing inherited; the interface you tune here is kept',
   ],
   profileLayersCarryOver: [
-    '窗口布局、功能键与菜单会沿用你现在的设置。',
-    'Your window layout, function keys and menus carry over.',
+    '窗口布局、功能键、菜单与资源管理器视图会沿用你现在的设置。',
+    'Your window layout, function keys, menus and Explorer view carry over.',
   ],
   profileLayersAlso: ['还可以带上：', 'Also bring:'],
   profileLayersEnvironment: [
@@ -199,8 +203,8 @@ export const messages = {
   deleteConfiguration: ['删除配置', 'Delete configuration'],
   deleteConfigurationTitle: ['删除配置', 'Delete configuration'],
   deleteConfigurationDetail: [
-    '删除用户配置「{name}」及其设置快照？',
-    'Delete the user configuration “{name}” and its saved settings?',
+    '删除用户配置「{name}」及它保存的设置？',
+    'Delete the user configuration “{name}” and the settings it saved?',
   ],
   configurationDeleted: ['配置已删除。', 'Configuration deleted.'],
   configurationSaved: ['配置已保存。', 'Configuration saved.'],
@@ -271,7 +275,17 @@ export const messages = {
   chainFactoryCfg: ['基线配置', 'Baseline config'],
   chainEncoding: ['编码', 'Encoding'],
   chainLocale: ['区域', 'Locale'],
+  retry: ['重试', 'Retry'],
+  profileIncomplete: [
+    '还有 {count} 个设置文件没带过来，保存后会补齐',
+    'Missing {count} settings files; saving fills them in',
+  ],
   chainSasuser: ['SASUSER', 'SASUSER'],
+  chainProfile: ['偏好', 'Preference'],
+  layerInterface: ['界面设置', 'Interface settings'],
+  layerEnvironment: ['环境设置', 'Environment settings'],
+  layerTemplates: ['ODS 模板', 'ODS templates'],
+  profileSeedValue: ['{layers} · {count} 个文件', '{layers} · {count} files'],
   chainLog: ['日志副本', 'Log copy'],
   chainNone: ['未使用', 'Not used'],
   statusRunning: ['运行中', 'Running'],

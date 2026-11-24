@@ -5,6 +5,195 @@ import type { BatchResult } from '../api'
 import { builtIn, makeView } from '../test/fixtures'
 import { renderApp } from '../test/harness'
 
+it('an empty user folder says so instead of promising files', async () => {
+  const user = userEvent.setup()
+  const folder = 'C:/Users/wtwang/Desktop'
+  renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [
+      {
+        path: folder,
+        version: 'Desktop',
+        files: 0,
+        present: { interface: 0, environment: 0, templates: 0 },
+        modified: 0,
+      },
+    ],
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+
+  expect(await screen.findByText('这个文件夹里没有 SAS 设置文件')).toBeInTheDocument()
+  expect(screen.queryByText(/将继承 0 个文件/)).not.toBeInTheDocument()
+})
+
+it('a project card says when its snapshot misses a declared layer', async () => {
+  const folder = 'C:/Users/me/Documents/My SAS Files/9.4'
+  renderApp(
+    makeView({
+      projects: [
+        {
+          id: 'p1',
+          name: '项目 A',
+          note: null,
+          config: null,
+          profile: {
+            origin: { kind: 'sasUser', path: folder },
+            layers: { interface: true, environment: true, templates: false },
+            files: 2,
+            missing: 1,
+          },
+        },
+      ],
+    }),
+    { sasuser_candidates: () => [] },
+  )
+
+  expect(await screen.findByText(/还有 1 个设置文件没带过来/)).toBeInTheDocument()
+})
+
+it('a failed save can be retried from the form', async () => {
+  const user = userEvent.setup()
+  const view = makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] })
+  let attempts = 0
+  const { backend } = renderApp(view, {
+    sasuser_candidates: () => [],
+    save_project: () => {
+      attempts += 1
+      if (attempts === 1) throw { code: 'profileLocked', detail: 'profile.sas7bcat: locked' }
+      return view
+    },
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+  await user.type(screen.getByLabelText(/项目名称/), '项目 A')
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+  await user.click(await screen.findByRole('button', { name: '重试' }))
+
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'save_project')).toHaveLength(2),
+  )
+})
+
+it('editing a project shows where its preference comes from', async () => {
+  const user = userEvent.setup()
+  const folder = 'C:/Users/me/Documents/My SAS Files/9.4'
+  renderApp(
+    makeView({
+      configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
+      projects: [
+        {
+          id: 'p1',
+          name: '项目 A',
+          note: null,
+          config: null,
+          profile: {
+            origin: { kind: 'sasUser', path: folder },
+            layers: { interface: true, environment: false, templates: false },
+            files: 2,
+            missing: 0,
+          },
+        },
+      ],
+    }),
+    {
+      sasuser_candidates: () => [
+        {
+          path: folder,
+          version: '9.4',
+          files: 3,
+          present: { interface: 2, environment: 1, templates: 0 },
+          modified: 0,
+        },
+      ],
+    },
+  )
+
+  await user.click(await screen.findByLabelText('编辑 项目 A'))
+
+  expect(await screen.findByLabelText('继承我的 SAS 用户目录')).toHaveDisplayValue(folder)
+  expect(screen.queryByText(/未找到 My SAS Files 下的用户偏好目录/)).not.toBeInTheDocument()
+})
+
+it('editing a project can turn the environment layer on', async () => {
+  const user = userEvent.setup()
+  const folder = 'C:/Users/me/Documents/My SAS Files/9.4'
+  const { backend } = renderApp(
+    makeView({
+      configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
+      projects: [
+        {
+          id: 'p1',
+          name: '项目 A',
+          note: null,
+          config: null,
+          profile: {
+            origin: { kind: 'sasUser', path: folder },
+            layers: { interface: true, environment: false, templates: false },
+            files: 2,
+            missing: 0,
+          },
+        },
+      ],
+    }),
+    { sasuser_candidates: () => [] },
+  )
+
+  await user.click(await screen.findByLabelText('编辑 项目 A'))
+  await user.click(await screen.findByRole('checkbox', { name: /环境（库分配/ }))
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'save_project')).toHaveLength(1),
+  )
+  expect(backend.calls.find((call) => call.cmd === 'save_project')?.args).toMatchObject({
+    id: 'p1',
+    profile: {
+      kind: 'sasUser',
+      path: folder,
+      layers: { interface: true, environment: true, templates: false },
+    },
+  })
+})
+
+it('a failed save while editing the card explains itself there', async () => {
+  const user = userEvent.setup()
+  const folder = 'C:/Users/me/Documents/My SAS Files/9.4'
+  renderApp(
+    makeView({
+      configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
+      projects: [
+        {
+          id: 'p1',
+          name: '项目 A',
+          note: null,
+          config: null,
+          profile: {
+            origin: { kind: 'sasUser', path: folder },
+            layers: { interface: true, environment: false, templates: false },
+            files: 2,
+            missing: 0,
+          },
+        },
+      ],
+    }),
+    {
+      sasuser_candidates: () => [],
+      save_project: () => {
+        throw { code: 'profileLocked', detail: 'profile.sas7bcat: 另一个程序正在使用此文件' }
+      },
+    },
+  )
+
+  await user.click(await screen.findByLabelText('编辑 项目 A'))
+  await user.click(await screen.findByRole('checkbox', { name: /环境（库分配/ }))
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+
+  const alert = await screen.findByRole('alert')
+  expect(alert).toHaveTextContent('请关闭正在使用该目录的 SAS')
+  expect(alert.closest('.inline-project-editor')).not.toBeNull()
+  expect(document.querySelector('.content > .banner')).toBeNull()
+})
+
 it('submitting_default_following_project_sends_null_config', async () => {
   const user = userEvent.setup()
   const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
@@ -23,7 +212,7 @@ it('submitting_default_following_project_sends_null_config', async () => {
     name: '项目 A',
     note: null,
     config: null,
-    profile: { kind: 'fresh', layers: { interface: true, environment: false, templates: false } },
+    profile: { kind: 'fresh', layers: { interface: true, environment: true, templates: false } },
   })
 })
 
@@ -31,7 +220,15 @@ it('a_new_project_inherits_the_detected_user_folder_by_default', async () => {
   const user = userEvent.setup()
   const folder = 'C:\\Users\\me\\Documents\\My SAS Files\\9.4'
   const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
-    sasuser_candidates: () => [{ path: folder, version: '9.4', files: 2, modified: 0 }],
+    sasuser_candidates: () => [
+      {
+        path: folder,
+        version: '9.4',
+        files: 2,
+        present: { interface: 2, environment: 0, templates: 0 },
+        modified: 0,
+      },
+    ],
   })
 
   await user.click(await screen.findByRole('button', { name: '新建项目' }))
@@ -50,7 +247,7 @@ it('a_new_project_inherits_the_detected_user_folder_by_default', async () => {
     profile: {
       kind: 'sasUser',
       path: folder,
-      layers: { interface: true, environment: false, templates: false },
+      layers: { interface: true, environment: true, templates: false },
     },
   })
 })
@@ -77,7 +274,13 @@ it('the_user_folder_group_is_named_without_the_sasuser_suffix', async () => {
   const folder = 'C:\\Users\\me\\Documents\\My SAS Files\\9.4'
   renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
     sasuser_candidates: () => [
-      { path: folder, version: '9.4', files: 4, modified: 1_700_000_000_000 },
+      {
+        path: folder,
+        version: '9.4',
+        files: 4,
+        present: { interface: 2, environment: 1, templates: 1 },
+        modified: 1_700_000_000_000,
+      },
     ],
   })
 
@@ -87,7 +290,12 @@ it('the_user_folder_group_is_named_without_the_sasuser_suffix', async () => {
   expect(screen.queryByText('用户偏好（SASUSER）')).not.toBeInTheDocument()
   expect(screen.getByLabelText('继承我的 SAS 用户目录')).toHaveDisplayValue(folder)
   expect(screen.queryByText(/来自/)).not.toBeInTheDocument()
-  expect(await screen.findByText(/^将继承 4 个文件 · 修改于 /)).toBeInTheDocument()
+  // Four catalogs exist, but the ODS templates stay behind: the count must
+  // promise what the snapshot will really hold, not what the folder holds.
+  expect(
+    await screen.findByText(/^将继承 3 个文件 · 修改于 /),
+    'the copy names the files the chosen layers carry',
+  ).toBeInTheDocument()
 })
 
 it('a_disabled_snapshot_card_says_why_it_cannot_be_used', async () => {
@@ -125,7 +333,13 @@ it('the_layer_choices_belong_to_the_inheriting_card_only', async () => {
   const folder = 'C:\\Users\\me\\Documents\\My SAS Files\\9.4'
   renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
     sasuser_candidates: () => [
-      { path: folder, version: '9.4', files: 4, modified: 1_700_000_000_000 },
+      {
+        path: folder,
+        version: '9.4',
+        files: 4,
+        present: { interface: 2, environment: 1, templates: 1 },
+        modified: 1_700_000_000_000,
+      },
     ],
   })
 
@@ -133,7 +347,9 @@ it('the_layer_choices_belong_to_the_inheriting_card_only', async () => {
 
   // The interface layer cannot be turned off, so it is a sentence, not a tick:
   // exactly the two optional layers have a tick box.
-  expect(await screen.findByText(/窗口布局、功能键与菜单会沿用/)).toBeInTheDocument()
+  expect(
+    await screen.findByText(/窗口布局、功能键、菜单与资源管理器视图会沿用/),
+  ).toBeInTheDocument()
   expect(screen.getByText('还可以带上：')).toBeInTheDocument()
   expect(
     screen.getByRole('checkbox', { name: '环境（库分配、Explorer 选项、打印设置）' }),
@@ -143,7 +359,7 @@ it('the_layer_choices_belong_to_the_inheriting_card_only', async () => {
 
   await user.click(screen.getByRole('radio', { name: /不使用已有偏好/ }))
 
-  expect(screen.queryByText(/窗口布局、功能键与菜单会沿用/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/窗口布局、功能键、菜单与资源管理器视图会沿用/)).not.toBeInTheDocument()
   expect(screen.queryByRole('checkbox', { name: /环境/ })).not.toBeInTheDocument()
   expect(screen.queryByRole('checkbox', { name: 'ODS 模板与样式' })).not.toBeInTheDocument()
 })
@@ -174,7 +390,7 @@ it('name_is_required_and_trimmed', async () => {
     name: '项目 A',
     note: null,
     config: null,
-    profile: { kind: 'fresh', layers: { interface: true, environment: false, templates: false } },
+    profile: { kind: 'fresh', layers: { interface: true, environment: true, templates: false } },
   })
 })
 

@@ -12,6 +12,7 @@ const stored = (overrides: Partial<ProjectProfile> = {}): ProjectProfile => ({
   origin: { kind: 'sasUser', path: 'C:\\Users\\me\\Documents\\My SAS Files\\9.4' },
   layers: DEFAULT_LAYERS,
   files: 2,
+  missing: 0,
   ...overrides,
 })
 
@@ -21,6 +22,14 @@ const project = (profile: ProjectProfile | null): Project => ({
   note: null,
   config: null,
   profile,
+})
+
+it('an untouched preference carries the layer the Explorer options live in', () => {
+  expect(profileDraftFrom(null).layers).toEqual({
+    interface: true,
+    environment: true,
+    templates: false,
+  })
 })
 
 it('an unchanged preference is sent as keep so the snapshot survives a rename', () => {
@@ -40,7 +49,7 @@ it('the same folder written with another case or separator is still unchanged', 
 it('switching a layer replaces the snapshot', () => {
   const current = project(stored())
   const draft = profileDraftFrom(current.profile)
-  const changed = { ...draft, layers: { ...draft.layers, environment: true } }
+  const changed = { ...draft, layers: { ...draft.layers, templates: true } }
   expect(profileChoiceFor(current, changed)).toEqual(changed)
 })
 
@@ -74,7 +83,12 @@ it('a user folder source needs a path, a snapshot source needs a config', () => 
 
 it('an unknown origin falls back to the first card with the stored layers', () => {
   expect(
-    profileDraftFrom({ origin: null, layers: { ...DEFAULT_LAYERS, templates: true }, files: 0 }),
+    profileDraftFrom({
+      origin: null,
+      layers: { ...DEFAULT_LAYERS, templates: true },
+      files: 0,
+      missing: 0,
+    }),
   ).toEqual({
     kind: 'sasUser',
     path: '',

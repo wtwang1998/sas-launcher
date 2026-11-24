@@ -87,7 +87,7 @@ export function SessionRow({
             {session.chain.label ? ` · ${session.chain.label}` : ''}
           </h3>
           <dl className="chain-list">
-            {chainLines(session.chain).map((line) => (
+            {chainLines(session.chain, language, t).map((line) => (
               <div className="chain-row" key={line.key}>
                 <dt>{t(line.key)}</dt>
                 <dd>{line.value ?? t('chainNone')}</dd>

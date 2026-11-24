@@ -126,6 +126,7 @@ export function Projects({
                   language={language}
                   t={t}
                   onDismiss={onDismissNotice}
+                  onRetry={() => void onSaveProject(draft)}
                   className="form-notice"
                 />
               ) : null
@@ -241,6 +242,17 @@ export function Projects({
                 onCreateConfiguration={() => onCreateConfiguration(draft)}
                 onBrowseProfile={onBrowseProfile}
                 onSubmit={(next) => void onSaveProject(next)}
+                notice={
+                  notice?.target === 'form' ? (
+                    <NoticeBanner
+                      notice={notice}
+                      language={language}
+                      t={t}
+                      onDismiss={onDismissNotice}
+                      className="form-notice"
+                    />
+                  ) : null
+                }
               />
             )}
           </ProjectCard>

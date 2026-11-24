@@ -21,6 +21,17 @@ use windows_sys::Win32::{
 /// The folder SAS creates inside Documents.
 pub const FOLDER: &str = "My SAS Files";
 
+/// How many of the whitelisted catalogs a folder holds, per layer: the form
+/// counts what the chosen layers would carry, not what the folder happens to
+/// contain.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LayerCounts {
+    pub interface: usize,
+    pub environment: usize,
+    pub templates: usize,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Candidate {
@@ -29,6 +40,8 @@ pub struct Candidate {
     pub version: String,
     /// How many of the four whitelisted catalogs are present.
     pub files: usize,
+    /// The same four catalogs, counted per layer.
+    pub present: LayerCounts,
     /// Unix milliseconds of the newest catalog file, or 0 when none is dated.
     pub modified: i64,
 }
@@ -140,6 +153,7 @@ fn parse_version(name: &str) -> Option<Vec<u64>> {
 
 fn inspect(directory: PathBuf, version: String) -> Candidate {
     let mut files = 0;
+    let mut present = LayerCounts::default();
     let mut modified = 0;
     for name in FILES {
         let Ok(metadata) = fs::metadata(directory.join(name)) else {
@@ -149,6 +163,13 @@ fn inspect(directory: PathBuf, version: String) -> Candidate {
             continue;
         }
         files += 1;
+        if crate::profile::INTERFACE.contains(name) {
+            present.interface += 1;
+        } else if crate::profile::ENVIRONMENT.contains(name) {
+            present.environment += 1;
+        } else if crate::profile::TEMPLATES.contains(name) {
+            present.templates += 1;
+        }
         if let Ok(time) = metadata.modified()
             && let Ok(since) = time.duration_since(UNIX_EPOCH)
         {
@@ -159,6 +180,7 @@ fn inspect(directory: PathBuf, version: String) -> Candidate {
         path: directory,
         version,
         files,
+        present,
         modified,
     }
 }
@@ -172,6 +194,32 @@ mod tests {
         for name in names {
             fs::write(directory.join(name), b"settings").unwrap();
         }
+    }
+
+    #[test]
+    fn a_candidate_counts_the_catalogs_of_each_layer() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("My SAS Files");
+        write_catalogs(
+            &root.join("9.4"),
+            &[
+                "profile.sas7bcat",
+                "profile2.sas7bcat",
+                "regstry.sas7bitm",
+                "templat.sas7bitm",
+            ],
+        );
+
+        let candidate = candidates_in(&root, None).pop().unwrap();
+        assert_eq!(candidate.files, 4);
+        assert_eq!(
+            candidate.present,
+            LayerCounts {
+                interface: 2,
+                environment: 1,
+                templates: 1,
+            }
+        );
     }
 
     #[test]

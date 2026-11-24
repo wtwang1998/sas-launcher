@@ -191,13 +191,14 @@ describe('ordering and lookups', () => {
 describe('resolution chain', () => {
   it('chain_lists_thin_factory_and_effective_options', () => {
     const session = makeSession({ id: 's1', status: 'running', stage: 'started' })
-    const lines = chainLines(session.chain)
+    const lines = chainLines(session.chain, 'zh-Hans', zh)
     expect(lines.map((line) => line.key)).toEqual([
       'chainThinCfg',
       'chainFactoryCfg',
       'chainEncoding',
       'chainLocale',
       'chainSasuser',
+      'chainProfile',
       'chainLog',
     ])
     expect(lines.map((line) => line.value)).toEqual([
@@ -206,6 +207,7 @@ describe('resolution chain', () => {
       'UTF-8',
       'zh_CN',
       session.chain.sasuser,
+      null,
       session.chain.log,
     ])
     expect(lines[0].value).toBe('C:\\data\\configurations\\cfg-1\\sasv9.cfg')
@@ -215,8 +217,28 @@ describe('resolution chain', () => {
   it('a missing thin config stays a null line for the chainNone copy', () => {
     const session = makeSession({ id: 's2' })
     session.chain = { ...session.chain, thinCfg: null, log: null }
-    expect(chainLines(session.chain)[0].value).toBeNull()
+    expect(chainLines(session.chain, 'zh-Hans', zh)[0].value).toBeNull()
     expect(zh('chainNone')).toBe('未使用')
+  })
+
+  it('the chain names the preference layers this launch was seeded with', () => {
+    const session = makeSession({ id: 's3' })
+    const seeded = chainLines(
+      {
+        ...session.chain,
+        profile: { files: 3, layers: { interface: true, environment: true, templates: false } },
+      },
+      'zh-Hans',
+      zh,
+    )
+    expect(seeded.find((line) => line.key === 'chainProfile')?.value).toBe(
+      '界面设置、环境设置 · 3 个文件',
+    )
+
+    // An untouched, fresh session says so instead of pretending.
+    expect(
+      chainLines(session.chain, 'en', en).find((line) => line.key === 'chainProfile')?.value,
+    ).toBeNull()
   })
 })
 

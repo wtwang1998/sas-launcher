@@ -29,14 +29,15 @@ SAS Launcher gives every project its own configuration and hands each launch a p
 **Configuration, three ways**
 
 - Follow the installation default, pick one of the factory NLS configurations (`zh`, `u8`, `en`, … — one per `nls\<code>\sasv9.cfg`, typically 20 or more), or derive a user configuration from either of them.
-- A user configuration is a three-line thin `sasv9.cfg` — `-CONFIG` pointing at the factory file, plus an encoding and a locale — with an optional snapshot of four SAS catalog files. No factory text is copied, so a SAS upgrade is inherited rather than repaired.
+- A user configuration is a three-line thin `sasv9.cfg` — `-CONFIG` pointing at the factory file, plus an encoding and a locale — with the four SAS settings files it saved, optionally. No factory text is copied, so a SAS upgrade is inherited rather than repaired.
 - Change the encoding and locale from a form, or open a dedicated SAS session to adjust UI preferences and save the catalogs back afterwards.
 
-![The configurations page, with factory rows and a user configuration carrying its snapshot](docs/images/overview-configurations.png)
+![The configurations page, with factory rows and a user configuration carrying its settings files](docs/images/overview-configurations.png)
 
 **One environment per window**
 
 - Every launch gets its own writable `-SASUSER` directory, deleted when the session exits.
+- A project carries your interface and environment settings by default — window layout, function keys, menus, Explorer options and library assignments — and takes back whatever the session changed when it exits, whatever the exit code. ODS templates stay opt-in.
 - Batch-launch the projects you use daily; projects that are already running are skipped.
 
 **Diagnostics you can act on**
