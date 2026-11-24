@@ -158,7 +158,7 @@ it('editing a project can turn the environment layer on', async () => {
 it('a failed save while editing the card explains itself there', async () => {
   const user = userEvent.setup()
   const folder = 'C:/Users/me/Documents/My SAS Files/9.4'
-  renderApp(
+  const { backend } = renderApp(
     makeView({
       configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
       projects: [
@@ -192,6 +192,12 @@ it('a failed save while editing the card explains itself there', async () => {
   expect(alert).toHaveTextContent('请关闭正在使用该目录的 SAS')
   expect(alert.closest('.inline-project-editor')).not.toBeNull()
   expect(document.querySelector('.content > .banner')).toBeNull()
+
+  // The inline editor offers the same retry as the new-project panel.
+  await user.click(within(alert).getByRole('button', { name: '重试' }))
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'save_project')).toHaveLength(2),
+  )
 })
 
 it('submitting_default_following_project_sends_null_config', async () => {

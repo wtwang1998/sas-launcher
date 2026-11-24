@@ -249,6 +249,7 @@ export function Projects({
                       language={language}
                       t={t}
                       onDismiss={onDismissNotice}
+                      onRetry={() => void onSaveProject(draft)}
                       className="form-notice"
                     />
                   ) : null
