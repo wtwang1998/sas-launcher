@@ -5,8 +5,9 @@ use crate::{
     discovery::BuiltIn,
     issue::{FailureNote, Issue},
     language::LanguagePreference,
+    profile::Layers,
     session::{Purpose, Record, Stage, Status},
-    store::{ConfigBase, ConfigRef, Project, UserConfig},
+    store::{ConfigBase, ConfigRef, ProfileOrigin, Project, UserConfig},
     theme::ThemePreference,
 };
 use serde::Serialize;
@@ -29,11 +30,24 @@ pub struct ConfigView {
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ProjectProfileView {
+    /// Where the current snapshot came from. Display only.
+    pub origin: Option<ProfileOrigin>,
+    pub layers: Layers,
+    /// Catalog files actually present in the snapshot, so the card can say
+    /// "4 files" without another round trip.
+    pub files: usize,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProjectView {
     pub id: Uuid,
     pub name: String,
     pub note: Option<String>,
     pub config: Option<ConfigRef>,
+    /// Absent for projects that still follow their configuration.
+    pub profile: Option<ProjectProfileView>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -104,7 +118,12 @@ pub fn build_view(app: &App) -> View {
         configs.push(user_view(app, config));
     }
     let (default_config, default_error) = default_row(app);
-    let projects = app.store.projects().iter().map(project_view).collect();
+    let projects = app
+        .store
+        .projects()
+        .iter()
+        .map(|project| project_view(app, project))
+        .collect();
     let sessions = app
         .sessions
         .cached()
@@ -176,12 +195,28 @@ fn is_regular_file(path: &Path) -> bool {
     std::fs::symlink_metadata(path).is_ok_and(|metadata| metadata.is_file())
 }
 
-fn project_view(project: &Project) -> ProjectView {
+fn project_view(app: &App, project: &Project) -> ProjectView {
     ProjectView {
         id: project.id,
         name: project.name.clone(),
         note: project.note.clone(),
         config: project.config.clone(),
+        profile: project.profile.as_ref().map(|profile| ProjectProfileView {
+            origin: profile.origin.clone(),
+            layers: profile.layers,
+            files: match profile.revision {
+                Some(revision) => crate::profile::FILES
+                    .iter()
+                    .filter(|name| {
+                        app.store
+                            .project_profile_dir(project.id, revision)
+                            .join(name)
+                            .is_file()
+                    })
+                    .count(),
+                None => 0,
+            },
+        }),
     }
 }
 

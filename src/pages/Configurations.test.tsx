@@ -88,7 +88,15 @@ it('referenced_configuration_cannot_be_deleted', async () => {
   renderApp(
     makeView({
       configs: [userConfig('cfg-1', '我的配置', 'EUC-CN', 'zh_CN')],
-      projects: [{ id: 'p1', name: '项目 A', note: null, config: { kind: 'user', id: 'cfg-1' } }],
+      projects: [
+        {
+          id: 'p1',
+          name: '项目 A',
+          note: null,
+          config: { kind: 'user', id: 'cfg-1' },
+          profile: null,
+        },
+      ],
     }),
   )
   await openConfigurations(user)

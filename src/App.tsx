@@ -169,7 +169,7 @@ export function App() {
 
   async function saveProject(next: ProjectDraft) {
     const updated = await mutate(
-      () => api.saveProject(next.id, next.name.trim(), next.note.trim() || null, next.config),
+      () => api.saveProject(next.id, next.name.trim(), next.note.trim() || null, next.config, null),
       'projectSaved',
     )
     if (updated) setDraft(null)

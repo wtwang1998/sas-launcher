@@ -21,7 +21,38 @@ export type Config = {
   hasProfile: boolean
   error: Issue | null
 }
-export type Project = { id: string; name: string; note: string | null; config: ConfigRef | null }
+/** Which layers of the user folder a project snapshot carries. */
+export type ProfileLayers = { interface: boolean; environment: boolean; templates: boolean }
+export type ProfileOrigin =
+  | { kind: 'sasUser'; path: string }
+  | { kind: 'configSnapshot'; config: string }
+  | { kind: 'fresh' }
+/** What a project's snapshot holds now; `files: 0` means nothing captured yet. */
+export type ProjectProfile = {
+  origin: ProfileOrigin | null
+  layers: ProfileLayers
+  files: number
+}
+/** What the form asks the backend to do with a project's snapshot. */
+export type ProfileChoice =
+  | { kind: 'keep' }
+  | { kind: 'sasUser'; path: string; layers: ProfileLayers }
+  | { kind: 'configSnapshot'; config: string; layers: ProfileLayers }
+  | { kind: 'fresh'; layers: ProfileLayers }
+/** A version folder under `Documents\My SAS Files` that holds catalogs. */
+export type SasuserCandidate = {
+  path: string
+  version: string
+  files: number
+  modified: number
+}
+export type Project = {
+  id: string
+  name: string
+  note: string | null
+  config: ConfigRef | null
+  profile: ProjectProfile | null
+}
 export type SessionStage = 'exe' | 'cfg' | 'profile' | 'spawn' | 'started'
 export type SessionStatus = 'running' | 'exited' | 'setup' | 'cleanupPending' | 'unknown'
 export type Chain = {
@@ -89,6 +120,7 @@ export const refKey = (ref: ConfigRef | null | undefined) =>
 
 export const api = {
   snapshot: () => invoke<View>('snapshot'),
+  sasuserCandidates: () => invoke<SasuserCandidate[]>('sasuser_candidates'),
   refresh: () => invoke<View>('refresh_configs'),
   selectInstallation: (path: string) => invoke<View>('select_installation', { path }),
   setLanguage: (preference: Preference) => invoke<View>('set_language', { preference }),
@@ -99,8 +131,13 @@ export const api = {
   setStartMinimized: (enabled: boolean) => invoke<View>('set_start_minimized', { enabled }),
   hideToTray: () => invoke<View>('hide_to_tray'),
   quit: () => invoke<void>('quit'),
-  saveProject: (id: string | null, name: string, note: string | null, config: ConfigRef | null) =>
-    invoke<View>('save_project', { id, name, note, config }),
+  saveProject: (
+    id: string | null,
+    name: string,
+    note: string | null,
+    config: ConfigRef | null,
+    profile: ProfileChoice | null,
+  ) => invoke<View>('save_project', { id, name, note, config, profile }),
   deleteProject: (id: string) => invoke<View>('delete_project', { id }),
   createConfiguration: (base: ConfigBase, name: string | null) =>
     invoke<View>('create_configuration', { base, name }),

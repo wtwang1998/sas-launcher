@@ -8,6 +8,7 @@ mod issue;
 mod language;
 mod process;
 mod profile;
+mod sasuser;
 mod session;
 mod store;
 mod theme;
@@ -16,7 +17,8 @@ mod view;
 use discovery::{BuiltIn, Installation};
 use issue::Issue;
 use language::LanguagePreference;
-use serde::Serialize;
+use profile::Layers;
+use serde::{Deserialize, Serialize};
 use session::{FailureRequest, LaunchRequest, Purpose, Record, Sessions, Stage, Status};
 use std::{
     collections::HashSet,
@@ -25,7 +27,7 @@ use std::{
     sync::Mutex,
     time::Duration,
 };
-use store::{ConfigBase, ConfigRef, Project, Store};
+use store::{ConfigBase, ConfigRef, ProfileOrigin, Project, ProjectProfile, Store};
 use tauri::{
     AppHandle, Emitter, Manager, State, WindowEvent,
     menu::{Menu, MenuItem},
@@ -853,6 +855,17 @@ async fn clear_installation(state: State<'_, AppState>) -> Result<View, Issue> {
     })
 }
 
+/// What the form asked for. `Keep` leaves an existing project's snapshot alone,
+/// which is what an edit that only renames a project sends.
+#[derive(Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+enum ProfileChoice {
+    Keep,
+    SasUser { path: PathBuf, layers: Layers },
+    ConfigSnapshot { config: Uuid, layers: Layers },
+    Fresh { layers: Layers },
+}
+
 #[tauri::command]
 async fn save_project(
     state: State<'_, AppState>,
@@ -860,26 +873,129 @@ async fn save_project(
     name: String,
     note: Option<String>,
     config: Option<ConfigRef>,
+    profile: Option<ProfileChoice>,
 ) -> Result<View, Issue> {
     with_app(&state, |app| {
+        app.save_project(id, name, note, config, profile)?;
+        Ok(app.view())
+    })
+}
+
+impl App {
+    /// Save a project and materialise the preference snapshot it asked for.
+    ///
+    /// The row is written first because the capture commits its revision
+    /// through `projects.json`; a failed capture puts the row back instead of
+    /// leaving a project that claims to inherit settings it never copied.
+    fn save_project(
+        &mut self,
+        id: Option<Uuid>,
+        name: String,
+        note: Option<String>,
+        config: Option<ConfigRef>,
+        choice: Option<ProfileChoice>,
+    ) -> Result<(), Issue> {
         let name = validate_name(&name)?;
         let note = validate_note(note)?;
         let id = match id {
-            Some(id) if app.store.projects().iter().any(|project| project.id == id) => id,
+            Some(id) if self.store.projects().iter().any(|project| project.id == id) => id,
             Some(_) => return Err(Issue::new("projectMissing")),
             None => Uuid::new_v4(),
         };
         if let Some(reference) = config.as_ref() {
-            ensure_reference_exists(app, reference)?;
+            ensure_reference_exists(self, reference)?;
         }
-        app.store.save_project(Project {
+        let previous = self
+            .store
+            .projects()
+            .iter()
+            .find(|project| project.id == id)
+            .cloned();
+        let (profile, source) = match choice {
+            None | Some(ProfileChoice::Keep) => (
+                previous
+                    .as_ref()
+                    .and_then(|project| project.profile.clone()),
+                None,
+            ),
+            Some(ProfileChoice::Fresh { layers }) => (
+                Some(ProjectProfile {
+                    revision: None,
+                    origin: Some(ProfileOrigin::Fresh),
+                    layers,
+                    fresh: true,
+                }),
+                None,
+            ),
+            Some(ProfileChoice::SasUser { path, layers }) => (
+                Some(ProjectProfile {
+                    revision: None,
+                    origin: Some(ProfileOrigin::SasUser { path: path.clone() }),
+                    layers,
+                    fresh: false,
+                }),
+                Some(path),
+            ),
+            Some(ProfileChoice::ConfigSnapshot { config, layers }) => {
+                let reference = ConfigRef::User { id: config };
+                ensure_reference_exists(self, &reference)?;
+                let source = self
+                    .store
+                    .configuration(config)
+                    .and_then(|configuration| self.store.profile_revision_dir(configuration))
+                    .filter(|directory| profile::has_catalog_files(directory))
+                    .ok_or_else(|| Issue::new("profileEmpty"))?;
+                (
+                    Some(ProjectProfile {
+                        revision: None,
+                        origin: Some(ProfileOrigin::ConfigSnapshot { config }),
+                        layers,
+                        fresh: false,
+                    }),
+                    Some(source),
+                )
+            }
+        };
+        let layers = profile
+            .as_ref()
+            .map(|profile| profile.layers)
+            .unwrap_or_default();
+        self.store.save_project(Project {
             id,
             name,
             note,
             config,
-            profile: None,
+            profile,
         })?;
-        Ok(app.view())
+        let Some(source) = source else {
+            return Ok(());
+        };
+        if let Err(error) =
+            crate::store::capture_project_profile(&self.store.data_dir(), id, &source, Some(layers))
+        {
+            match previous {
+                Some(previous) => {
+                    let _ = self.store.save_project(previous);
+                }
+                None => {
+                    let _ = self.store.delete_project(id);
+                }
+            }
+            return Err(error);
+        }
+        self.store.reload()
+    }
+}
+
+/// Version folders under `Documents\My SAS Files` that actually hold catalogs.
+#[tauri::command]
+async fn sasuser_candidates(state: State<'_, AppState>) -> Result<Vec<sasuser::Candidate>, Issue> {
+    with_app(&state, |app| {
+        let preferred = app
+            .installation
+            .as_ref()
+            .and_then(|installation| sasuser::version_from_exe(&installation.exe));
+        Ok(sasuser::candidates(preferred.as_deref()))
     })
 }
 
@@ -1128,6 +1244,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             snapshot,
+            sasuser_candidates,
             refresh_configs,
             select_installation,
             set_language,
@@ -1559,5 +1676,123 @@ mod tests {
         // The messages file itself must stay usable for the frontend.
         assert!(messages.contains_key("sasMissing"));
         assert!(messages.contains_key("configUnavailable"));
+    }
+
+    fn user_folder_with(temp: &Path, names: &[&str]) -> PathBuf {
+        let folder = temp.join("My SAS Files").join("9.4");
+        std::fs::create_dir_all(&folder).unwrap();
+        for name in names {
+            std::fs::write(folder.join(name), b"settings").unwrap();
+        }
+        folder
+    }
+
+    #[test]
+    fn a_new_project_inheriting_a_user_folder_captures_the_interface_layer_only() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut app = App::new(temp.path().join("data")).unwrap();
+        let source = user_folder_with(temp.path(), &["profile.sas7bcat", "regstry.sas7bitm"]);
+
+        app.save_project(
+            None,
+            "P".into(),
+            None,
+            None,
+            Some(ProfileChoice::SasUser {
+                path: source.clone(),
+                layers: Layers::DEFAULT,
+            }),
+        )
+        .unwrap();
+
+        let project = &app.store.projects()[0];
+        let profile = project.profile.as_ref().unwrap();
+        assert!(matches!(
+            profile.origin,
+            Some(ProfileOrigin::SasUser { .. })
+        ));
+        let revision = profile.revision.unwrap();
+        let snapshot = app.store.project_profile_dir(project.id, revision);
+        assert!(snapshot.join("profile.sas7bcat").is_file());
+        assert!(!snapshot.join("regstry.sas7bitm").exists());
+    }
+
+    #[test]
+    fn an_unreadable_source_leaves_no_project_behind() {
+        use std::os::windows::fs::OpenOptionsExt;
+
+        let temp = tempfile::tempdir().unwrap();
+        let mut app = App::new(temp.path().join("data")).unwrap();
+        let source = user_folder_with(temp.path(), &["profile.sas7bcat"]);
+        let locked = std::fs::File::options()
+            .read(true)
+            .share_mode(0)
+            .open(source.join("profile.sas7bcat"))
+            .unwrap();
+
+        let error = app
+            .save_project(
+                None,
+                "P".into(),
+                None,
+                None,
+                Some(ProfileChoice::SasUser {
+                    path: source.clone(),
+                    layers: Layers::DEFAULT,
+                }),
+            )
+            .unwrap_err();
+        assert_eq!(error.code, "profileLocked");
+        assert!(app.store.projects().is_empty());
+        drop(locked);
+    }
+
+    #[test]
+    fn a_failed_capture_restores_the_project_that_was_being_edited() {
+        use std::os::windows::fs::OpenOptionsExt;
+
+        let temp = tempfile::tempdir().unwrap();
+        let mut app = App::new(temp.path().join("data")).unwrap();
+        let first = user_folder_with(temp.path(), &["profile.sas7bcat"]);
+        app.save_project(
+            None,
+            "P".into(),
+            Some("note".into()),
+            None,
+            Some(ProfileChoice::SasUser {
+                path: first.clone(),
+                layers: Layers::DEFAULT,
+            }),
+        )
+        .unwrap();
+        let saved = app.store.projects()[0].clone();
+        let original = saved.profile.clone().unwrap().revision;
+
+        let second = temp.path().join("other").join("9.4");
+        std::fs::create_dir_all(&second).unwrap();
+        std::fs::write(second.join("profile.sas7bcat"), b"other").unwrap();
+        let locked = std::fs::File::options()
+            .read(true)
+            .share_mode(0)
+            .open(second.join("profile.sas7bcat"))
+            .unwrap();
+
+        let error = app
+            .save_project(
+                Some(saved.id),
+                "Renamed".into(),
+                None,
+                None,
+                Some(ProfileChoice::SasUser {
+                    path: second.clone(),
+                    layers: Layers::DEFAULT,
+                }),
+            )
+            .unwrap_err();
+        assert_eq!(error.code, "profileLocked");
+        let stored = &app.store.projects()[0];
+        assert_eq!(stored.name, "P", "the rename is rolled back too");
+        assert_eq!(stored.profile.as_ref().unwrap().revision, original);
+        drop(locked);
     }
 }

@@ -21,6 +21,7 @@ it('submitting_default_following_project_sends_null_config', async () => {
     name: '项目 A',
     note: null,
     config: null,
+    profile: null,
   })
 })
 
@@ -48,6 +49,7 @@ it('name_is_required_and_trimmed', async () => {
     name: '项目 A',
     note: null,
     config: null,
+    profile: null,
   })
 })
 
@@ -56,8 +58,14 @@ it('batch_launch_sends_selected_ids', async () => {
   const view = makeView({
     configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
     projects: [
-      { id: 'p1', name: '项目 A', note: null, config: null },
-      { id: 'p2', name: '项目 B', note: null, config: { kind: 'builtIn', code: 'u8' } },
+      { id: 'p1', name: '项目 A', note: null, config: null, profile: null },
+      {
+        id: 'p2',
+        name: '项目 B',
+        note: null,
+        config: { kind: 'builtIn', code: 'u8' },
+        profile: null,
+      },
     ],
   })
   const { backend } = renderApp(view, { launch_batch: () => [] as BatchResult[] })

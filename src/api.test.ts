@@ -22,6 +22,12 @@ it('commands_match_the_rust_handler_names', async () => {
     args: Record<string, unknown>
   }[] = [
     { name: 'snapshot', run: () => api.snapshot(), cmd: 'snapshot', args: {} },
+    {
+      name: 'sasuserCandidates',
+      run: () => api.sasuserCandidates(),
+      cmd: 'sasuser_candidates',
+      args: {},
+    },
     { name: 'refresh', run: () => api.refresh(), cmd: 'refresh_configs', args: {} },
     {
       name: 'selectInstallation',
@@ -69,15 +75,15 @@ it('commands_match_the_rust_handler_names', async () => {
     { name: 'quit', run: () => api.quit(), cmd: 'quit', args: {} },
     {
       name: 'saveProject',
-      run: () => api.saveProject('p1', '项目 A', '备注', userRef),
+      run: () => api.saveProject('p1', '项目 A', '备注', userRef, { kind: 'keep' }),
       cmd: 'save_project',
-      args: { id: 'p1', name: '项目 A', note: '备注', config: userRef },
+      args: { id: 'p1', name: '项目 A', note: '备注', config: userRef, profile: { kind: 'keep' } },
     },
     {
       name: 'saveProject with defaults',
-      run: () => api.saveProject(null, '项目 B', null, null),
+      run: () => api.saveProject(null, '项目 B', null, null, null),
       cmd: 'save_project',
-      args: { id: null, name: '项目 B', note: null, config: null },
+      args: { id: null, name: '项目 B', note: null, config: null, profile: null },
     },
     {
       name: 'deleteProject',
@@ -145,6 +151,7 @@ it('commands_match_the_rust_handler_names', async () => {
 
   const wrappers = [
     'snapshot',
+    'sasuserCandidates',
     'refresh',
     'selectInstallation',
     'setLanguage',

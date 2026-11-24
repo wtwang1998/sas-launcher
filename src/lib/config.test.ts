@@ -154,9 +154,27 @@ describe('ordering and lookups', () => {
 
   it('usage_count_counts_projects_referencing_the_configuration', () => {
     const projects = [
-      { id: 'p1', name: 'A', note: null, config: { kind: 'user' as const, id: 'cfg-1' } },
-      { id: 'p2', name: 'B', note: null, config: { kind: 'user' as const, id: 'cfg-2' } },
-      { id: 'p3', name: 'C', note: null, config: { kind: 'user' as const, id: 'cfg-1' } },
+      {
+        id: 'p1',
+        name: 'A',
+        note: null,
+        config: { kind: 'user' as const, id: 'cfg-1' },
+        profile: null,
+      },
+      {
+        id: 'p2',
+        name: 'B',
+        note: null,
+        config: { kind: 'user' as const, id: 'cfg-2' },
+        profile: null,
+      },
+      {
+        id: 'p3',
+        name: 'C',
+        note: null,
+        config: { kind: 'user' as const, id: 'cfg-1' },
+        profile: null,
+      },
     ]
     expect(usageCount(projects, { kind: 'user', id: 'cfg-1' })).toBe(2)
     expect(usageCount(projects, { kind: 'builtIn', code: 'u8' })).toBe(0)
