@@ -101,6 +101,7 @@ export type View = {
   systemLanguage: string
   themePreference: ThemePreference
   closeToTray: boolean
+  version: string
   startMinimized: boolean
   autostart: boolean
 }

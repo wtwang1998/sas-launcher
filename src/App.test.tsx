@@ -16,6 +16,15 @@ it('navigation_lists_every_page_and_keeps_settings_out_of_the_sidebar_footer', a
   expect(screen.queryByRole('combobox', { name: '应用语言' })).not.toBeInTheDocument()
 })
 
+it('the_brand_shows_the_launcher_version_and_not_the_sas_one', async () => {
+  renderApp(makeView({ version: '9.9.9' }))
+
+  await screen.findByRole('heading', { name: '项目' })
+
+  expect(screen.getByText('v9.9.9')).toBeInTheDocument()
+  expect(screen.queryByText('Windows · SAS 9.4')).not.toBeInTheDocument()
+})
+
 it('scan_error_shows_a_banner_with_the_exe_picker', async () => {
   renderApp(makeView({ exe: null, scanError: { code: 'sasMissing' } }))
 

@@ -3,7 +3,6 @@ import issues from './issue-messages.json'
 
 export const messages = {
   title: ['SAS 启动管理器', 'SAS Launcher'],
-  subtitle: ['Windows · SAS 9.4', 'Windows · SAS 9.4'],
   navigation: ['主导航', 'Main navigation'],
   projects: ['项目', 'Projects'],
   configurations: ['配置管理', 'Configurations'],

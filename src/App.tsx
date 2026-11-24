@@ -372,7 +372,7 @@ export function App() {
           </span>
           <span>
             {t('title')}
-            <small>{t('subtitle')}</small>
+            {view && <small>v{view.version}</small>}
           </span>
         </div>
         <nav aria-label={t('navigation')}>

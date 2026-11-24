@@ -100,6 +100,8 @@ pub struct View {
     pub system_language: String,
     pub theme_preference: ThemePreference,
     pub close_to_tray: bool,
+    /// This launcher's own version, shown under the app name.
+    pub version: String,
     pub start_minimized: bool,
     /// Registry truth for the login entry.
     pub autostart: bool,
@@ -144,6 +146,7 @@ pub fn build_view(app: &App) -> View {
         system_language: app.system_language.clone(),
         theme_preference: app.store.settings.theme,
         close_to_tray: app.store.settings.close_to_tray,
+        version: env!("CARGO_PKG_VERSION").into(),
         start_minimized: app.store.settings.start_minimized,
         autostart: app.autostart,
     }
@@ -402,6 +405,7 @@ mod tests {
         assert_eq!(json["scanError"]["code"], "sasMissing");
         assert_eq!(json["themePreference"], "system");
         assert_eq!(json["closeToTray"], true);
+        assert_eq!(json["version"], env!("CARGO_PKG_VERSION"));
         assert_eq!(json["startMinimized"], false);
         assert_eq!(json["autostart"], false);
         assert_eq!(json["configs"], serde_json::Value::Array(Vec::new()));
