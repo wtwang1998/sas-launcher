@@ -59,12 +59,6 @@ export const messages = {
     '窗口关闭后程序继续在托盘运行。',
     'The app keeps running in the tray after you close it.',
   ],
-  trayHintTitle: ['已最小化到托盘', 'Minimized to the tray'],
-  trayHintMessage: [
-    '窗口将隐藏到系统托盘，程序继续在后台运行。右键托盘图标可以重新打开窗口或退出。',
-    'The window hides into the system tray and the app keeps running. Right-click the tray icon to reopen it or to quit.',
-  ],
-  trayHintAction: ['最小化到托盘', 'Minimize to tray'],
   quitTitle: ['退出 SAS 启动管理器？', 'Quit SAS Launcher?'],
   quitMessage: [
     '仍有 {count} 个 SAS 会话在运行。退出后它们会继续运行，但不再由本程序管理。',

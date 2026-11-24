@@ -71,7 +71,6 @@ it('commands_match_the_rust_handler_names', async () => {
       cmd: 'set_start_minimized',
       args: { enabled: true },
     },
-    { name: 'hideToTray', run: () => api.hideToTray(), cmd: 'hide_to_tray', args: {} },
     { name: 'quit', run: () => api.quit(), cmd: 'quit', args: {} },
     {
       name: 'saveProject',
@@ -160,7 +159,6 @@ it('commands_match_the_rust_handler_names', async () => {
     'setCloseToTray',
     'setStartup',
     'setStartMinimized',
-    'hideToTray',
     'quit',
     'saveProject',
     'deleteProject',

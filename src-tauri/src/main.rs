@@ -795,20 +795,6 @@ async fn set_close_to_tray(state: State<'_, AppState>, enabled: bool) -> Result<
     })
 }
 
-/// Hide the window in the tray; the first call also retires the tray hint.
-#[tauri::command]
-async fn hide_to_tray(handle: AppHandle, state: State<'_, AppState>) -> Result<View, Issue> {
-    let view = with_app(&state, |app| {
-        app.store
-            .update(|settings| settings.tray_hint_seen = true)?;
-        Ok(app.view())
-    })?;
-    if let Some(window) = handle.get_webview_window("main") {
-        let _ = window.hide();
-    }
-    Ok(view)
-}
-
 #[tauri::command]
 async fn quit(handle: AppHandle) {
     handle.exit(0);
@@ -1160,6 +1146,26 @@ fn running_sessions(app: &App) -> usize {
         .count()
 }
 
+/// What the window's close button should do, decided where the session state
+/// is first-hand rather than in the polled frontend.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum CloseIntent {
+    /// Keep running in the tray.
+    Hide,
+    /// Ask before leaving SAS sessions behind.
+    Ask,
+    /// Close the window and let the app exit.
+    Quit,
+}
+
+fn close_intent(close_to_tray: bool, running: usize) -> CloseIntent {
+    match (close_to_tray, running) {
+        (true, _) => CloseIntent::Hide,
+        (false, 0) => CloseIntent::Quit,
+        (false, _) => CloseIntent::Ask,
+    }
+}
+
 /// Quitting with SAS still running would strand those sessions: ask first.
 fn request_quit(app: &AppHandle) {
     let running =
@@ -1242,16 +1248,22 @@ fn main() {
             let WindowEvent::CloseRequested { api, .. } = event else {
                 return;
             };
-            // Default: hide into the tray instead of shutting the app down.
-            let close_to_tray = with_app(&window.state::<AppState>(), |app| {
-                Ok(app.store.settings.close_to_tray)
+            let (close_to_tray, running) = with_app(&window.state::<AppState>(), |app| {
+                Ok((app.store.settings.close_to_tray, running_sessions(app)))
             })
-            .unwrap_or(true);
-            if !close_to_tray {
-                return;
+            .unwrap_or((true, 0));
+            match close_intent(close_to_tray, running) {
+                CloseIntent::Hide => {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+                CloseIntent::Ask => {
+                    // The window stays up; the confirmation owns the exit.
+                    api.prevent_close();
+                    let _ = window.app_handle().emit("quit-requested", ());
+                }
+                CloseIntent::Quit => {}
             }
-            api.prevent_close();
-            let _ = window.app_handle().emit("close-requested", ());
         })
         .invoke_handler(tauri::generate_handler![
             snapshot,
@@ -1263,7 +1275,6 @@ fn main() {
             set_close_to_tray,
             set_startup,
             set_start_minimized,
-            hide_to_tray,
             quit,
             clear_installation,
             save_project,
@@ -1309,6 +1320,33 @@ mod tests {
         )
         .unwrap();
         exe
+    }
+
+    #[test]
+    fn closing_hides_asks_or_quits_by_setting_and_running_sessions() {
+        assert!(matches!(close_intent(true, 0), CloseIntent::Hide));
+        assert!(matches!(close_intent(true, 3), CloseIntent::Hide));
+        assert!(matches!(close_intent(false, 0), CloseIntent::Quit));
+        assert!(matches!(close_intent(false, 1), CloseIntent::Ask));
+    }
+
+    #[test]
+    fn a_running_setup_session_counts_for_the_close_prompt() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        record_session(
+            &app,
+            Purpose::Setup {
+                config: Uuid::new_v4(),
+            },
+            Status::Running,
+            30,
+        );
+        // The cache is refreshed by the maintenance sweep, as it is at runtime.
+        app.maintenance();
+
+        assert_eq!(running_sessions(&app), 1);
     }
 
     fn app_with_install(root: &Path, exe: &Path) -> App {

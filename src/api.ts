@@ -101,7 +101,6 @@ export type View = {
   systemLanguage: string
   themePreference: ThemePreference
   closeToTray: boolean
-  trayHintSeen: boolean
   startMinimized: boolean
   autostart: boolean
 }
@@ -130,7 +129,6 @@ export const api = {
   setCloseToTray: (enabled: boolean) => invoke<View>('set_close_to_tray', { enabled }),
   setStartup: (enabled: boolean) => invoke<View>('set_startup', { enabled }),
   setStartMinimized: (enabled: boolean) => invoke<View>('set_start_minimized', { enabled }),
-  hideToTray: () => invoke<View>('hide_to_tray'),
   quit: () => invoke<void>('quit'),
   saveProject: (
     id: string | null,

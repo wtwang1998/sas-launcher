@@ -321,41 +321,19 @@ export function App() {
   }
 
   /**
-   * The window close and the tray quit are started by Rust; this side owns the
-   * confirmation dialogs so their copy stays in the dictionary.
+   * Rust decides what a close means; only the "leave SAS running behind" answer
+   * comes back here, so the confirmation copy stays in the dictionary.
    */
-  const hostHandlers = useRef<{ close: () => void; quit: () => void }>({
-    close: () => undefined,
-    quit: () => undefined,
-  })
+  const quitRequested = useRef<() => void>(() => undefined)
   useEffect(() => {
-    hostHandlers.current = {
-      close: () => {
-        if (!view) return
-        if (view.trayHintSeen) {
-          void mutate(() => api.hideToTray())
-          return
-        }
-        confirm(t('trayHintTitle'), t('trayHintMessage'), t('trayHintAction'), async () => {
-          await mutate(() => api.hideToTray())
-        })
-      },
-      quit: () => {
-        const count = view?.sessions.filter((session) => session.status === 'running').length ?? 0
-        confirm(t('quitTitle'), t('quitMessage', { count }), t('quitAction'), async () => {
-          await api.quit()
-        })
-      },
+    quitRequested.current = () => {
+      const count = view?.sessions.filter((session) => session.status === 'running').length ?? 0
+      confirm(t('quitTitle'), t('quitMessage', { count }), t('quitAction'), async () => {
+        await api.quit()
+      })
     }
   })
-  useEffect(() => {
-    const offClose = onHostEvent('close-requested', () => hostHandlers.current.close())
-    const offQuit = onHostEvent('quit-requested', () => hostHandlers.current.quit())
-    return () => {
-      offClose()
-      offQuit()
-    }
-  }, [])
+  useEffect(() => onHostEvent('quit-requested', () => quitRequested.current()), [])
 
   function openLog(id: string) {
     void api.openLog(id).catch((failure) => setError(failure))

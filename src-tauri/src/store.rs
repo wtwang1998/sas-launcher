@@ -109,8 +109,6 @@ pub struct Settings {
     pub theme: ThemePreference,
     /// Closing the window keeps the app alive in the tray.
     pub close_to_tray: bool,
-    /// Set once the tray hint has been shown, so it only ever appears once.
-    pub tray_hint_seen: bool,
     /// Only meaningful while the login entry is registered.
     pub start_minimized: bool,
     pub presets: Vec<Preset>,
@@ -123,7 +121,6 @@ impl Default for Settings {
             language: LanguagePreference::default(),
             theme: ThemePreference::default(),
             close_to_tray: true,
-            tray_hint_seen: false,
             start_minimized: false,
             presets: Vec::new(),
         }
@@ -712,7 +709,6 @@ mod tests {
         assert_eq!(store.settings.theme, ThemePreference::System);
         // A missing close-to-tray key must default to "keep running in the tray".
         assert!(store.settings.close_to_tray);
-        assert!(!store.settings.tray_hint_seen);
         assert!(!store.settings.start_minimized);
 
         store
@@ -733,6 +729,15 @@ mod tests {
             .unwrap();
         store.reload().unwrap();
         assert!(store.settings.start_minimized);
+
+        // Keys this build retired are ignored, not rejected.
+        fs::write(
+            store.data_dir().join("settings.json"),
+            br#"{"close_to_tray":false,"tray_hint_seen":true}"#,
+        )
+        .unwrap();
+        store.reload().unwrap();
+        assert!(!store.settings.close_to_tray);
     }
 
     #[test]
