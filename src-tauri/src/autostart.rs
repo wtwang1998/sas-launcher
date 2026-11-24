@@ -43,14 +43,16 @@ pub fn set(exe: &Path, enabled: bool, minimized: bool) -> Result<(), Issue> {
 }
 
 fn clear() -> Result<(), Issue> {
-    let Ok(key) = windows_registry::CURRENT_USER.open(RUN_KEY) else {
-        return Ok(());
-    };
-    // Deleting a value that is not there is success, not an error.
-    if key.get_string(VALUE).is_err() {
+    // Two opens on purpose: `write()` alone cannot read the value back, and the
+    // read-only handle below is what tells "nothing to delete" from a failure.
+    if !enabled() {
         return Ok(());
     }
-    key.remove_value(VALUE)
+    windows_registry::CURRENT_USER
+        .options()
+        .write()
+        .open(RUN_KEY)
+        .and_then(|key| key.remove_value(VALUE))
         .map_err(|error| Issue::with_detail("autostartWrite", error))
 }
 

@@ -861,7 +861,7 @@ details[open] .disclosure {
   max-height: calc(100vh - 32px);
   padding: 0;
   color: var(--text);
-  background: white;
+  background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 12px;
   box-shadow: 0 20px 64px var(--shadow-dialog);

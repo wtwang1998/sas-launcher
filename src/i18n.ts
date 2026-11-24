@@ -26,7 +26,10 @@ export const messages = {
   languageEnglish: ['English', 'English'],
   system: ['跟随系统', 'Follow Windows'],
   settings: ['设置', 'Settings'],
-  settingsHelp: ['应用语言与 SAS 程序路径。', 'App language and the SAS executable path.'],
+  settingsHelp: [
+    '主题、语言、SAS 程序路径与窗口行为。',
+    'Theme, language, the SAS executable path and window behaviour.',
+  ],
   interfaceGroup: ['界面', 'Interface'],
   theme: ['主题', 'Theme'],
   themeDark: ['深色', 'Dark'],
