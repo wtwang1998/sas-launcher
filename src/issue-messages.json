@@ -56,6 +56,14 @@
     "这个目录里没有可保存的 SAS 个人设置。请先打开 SAS 调整设置。",
     "This folder contains no SAS personal settings. Adjust settings in SAS first."
   ],
+  "profileSourceEmpty": [
+    "这个文件夹里没有 SAS 设置文件。换一个文件夹，或选择「不使用已有偏好」。",
+    "This folder holds no SAS settings files. Pick another folder, or start without preferences."
+  ],
+  "profileSnapshotEmpty": [
+    "这个配置还没有保存过设置。先在配置管理里打开 SAS 调整设置并保存一次。",
+    "This configuration has no saved settings yet. Open SAS to adjust settings from the configurations page and save once."
+  ],
   "profileInterfaceMissing": [
     "这个文件夹里没有 SAS 的界面设置文件（窗口布局、功能键、菜单）。换一个文件夹。",
     "This folder holds no SAS interface settings (window layout, function keys, menus). Pick another folder."

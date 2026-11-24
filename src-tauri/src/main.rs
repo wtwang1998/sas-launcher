@@ -722,7 +722,7 @@ fn failure_stage(code: &str) -> Stage {
 fn ensure_source_seeds(source: &Path, layers: Layers) -> Result<(), Issue> {
     // An empty folder is not "a missing layer": say the plain thing first.
     if !profile::has_catalog_files(source) {
-        return Err(Issue::new("profileEmpty"));
+        return Err(Issue::new("profileSourceEmpty"));
     }
     match profile::first_unseeded(source, layers) {
         None => Ok(()),
@@ -998,7 +998,7 @@ impl App {
                     .configuration(config)
                     .and_then(|configuration| self.store.profile_revision_dir(configuration))
                     .filter(|directory| profile::has_catalog_files(directory))
-                    .ok_or_else(|| Issue::new("profileEmpty"))?;
+                    .ok_or_else(|| Issue::new("profileSnapshotEmpty"))?;
                 ensure_source_seeds(&source, layers)?;
                 (
                     Some(ProjectProfile {
@@ -1901,8 +1901,37 @@ mod tests {
             .unwrap_err();
 
         assert_eq!(
-            error.code, "profileEmpty",
+            error.code, "profileSourceEmpty",
             "a folder with no SAS settings at all is not a missing layer"
+        );
+        assert!(app.store.projects().is_empty());
+    }
+
+    #[test]
+    fn inheriting_a_configuration_that_saved_nothing_is_named_as_such() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let config = app
+            .create_configuration(&ConfigBase::BuiltIn { code: "en".into() }, None)
+            .unwrap();
+
+        let error = app
+            .save_project(
+                None,
+                "P".into(),
+                None,
+                None,
+                Some(ProfileChoice::ConfigSnapshot {
+                    config,
+                    layers: Layers::DEFAULT,
+                }),
+            )
+            .unwrap_err();
+
+        assert_eq!(
+            error.code, "profileSnapshotEmpty",
+            "the configuration flow keeps its own remedy, not the folder one"
         );
         assert!(app.store.projects().is_empty());
     }
