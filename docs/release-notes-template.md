@@ -17,13 +17,17 @@ before publishing.
    every line with `` - `<hash>` ``.
 5. Keep the release as a draft, and a pre-release while the version is still
    below 1.0, until the real-machine check passes.
+6. Open the published page in a real browser and click both switchers: the top
+   `English` and the bottom `简体中文`. Each must land on its own heading, and
+   the address bar must read `#english` / `#zh` — a `#user-content-` fragment
+   means the link was written in the fallback form.
 
 ## Skeleton
 
 ````markdown
 **简体中文** | [English](#english)
 
-## 简体中文
+## <a id="zh"></a>简体中文
 
 > [!WARNING]
 > **<一句话说明破坏性变更；没有就删掉整块>**
@@ -51,7 +55,7 @@ before publishing.
 
 完整提交列表见文末。
 
-## English
+## <a id="english"></a>English
 
 > [!WARNING]
 > **<the same breaking change in one sentence; drop the whole block when there is none>**
@@ -79,7 +83,7 @@ Rolling back: <how to go back, and how the data is recovered>
 
 The full commit list is at the end.
 
-[简体中文](#简体中文) | **English**
+[简体中文](#zh) | **English**
 
 ---
 
@@ -98,9 +102,14 @@ The full commit list is at the end.
 - Two complete halves, not an interleaved translation. A reader who picked one
   language should never have to read the other.
 - The switcher is the first line: bold the half that comes first, link the other
-  one with its heading anchor (`#english`, `#简体中文`). Do not hand-write
-  `<a id="...">`; GitHub rewrites custom ids to `user-content-*`, so the link
-  stops matching.
+  one with `#english` or `#zh`.
+- Release bodies ship no heading anchors: the rendered `## English` is a bare
+  `<h2>`. Each half's heading therefore carries its own anchor inline,
+  `## <a id="english"></a>English`. GitHub rewrites that id to
+  `user-content-english`, and a bare fragment still resolves because the page
+  maps it. Write `#english`, never `#user-content-english`.
+- A shared deep link (`...#english`) opens at the top of the page. That is
+  GitHub, not the notes; do not work around it.
 - Inside a half, sections are `###` and the half itself is `##`. Never use `#`:
   the release page already prints the version as its title.
 - Wrap flags, paths, issue codes and file names in backticks. No emoji, no
