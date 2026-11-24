@@ -53,7 +53,7 @@ SAS Launcher 给每个项目一份自己的配置，并为每次启动准备一�
 
 - Windows 10 或 11，x64
 - SAS Foundation 9.4（已在 TS1M7 验证）
-- WebView2 运行时——Windows 11 自带；Windows 10 可能需安装 Evergreen Runtime
+- WebView2 运行时——Windows 11 自带；Windows 10 可能需安装 Evergreen Runtime。原生悬浮滚动条需要 125 或更新版本，旧版会退回经典滚动条
 
 ## 安装
 

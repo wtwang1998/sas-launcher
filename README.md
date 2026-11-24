@@ -53,7 +53,7 @@ SAS Launcher gives every project its own configuration and hands each launch a p
 
 - Windows 10 or 11, x64
 - SAS Foundation 9.4 (verified with TS1M7)
-- WebView2 Runtime — included in Windows 11; Windows 10 may need the Evergreen Runtime
+- WebView2 Runtime — included in Windows 11; Windows 10 may need the Evergreen Runtime. Version 125 or newer is required for the native overlay scrollbars; older runtimes fall back to the classic ones
 
 ## Install
 
