@@ -1254,6 +1254,9 @@ details[open] .disclosure {
 .profile-also {
   margin-top: 2px;
 }
+.profile-browse {
+  margin-top: 8px;
+}
 .profile-layer input,
 .profile-option input {
   flex: none;

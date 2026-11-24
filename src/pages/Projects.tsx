@@ -2,7 +2,7 @@ import { CircleAlert, FolderPlus, Play, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import type { BatchResult, Language, Project, SasuserCandidate, View } from '../api'
 import { ProjectCard } from '../components/ProjectCard'
-import { emptyProjectDraft, type ProjectDraft, ProjectForm } from '../components/ProjectForm'
+import { type ProjectDraft, ProjectForm } from '../components/ProjectForm'
 import { issueText, type Translator } from '../i18n'
 import { configsByRef } from '../lib/config'
 import { profileDraftFrom } from '../lib/profile'
@@ -16,6 +16,7 @@ export type ProjectsProps = {
   t: Translator
   busy: boolean
   onDraft: (draft: ProjectDraft | null) => void
+  onNewProject: () => void
   onCreateConfiguration: (draft: ProjectDraft) => void
   onSaveProject: (draft: ProjectDraft) => Promise<void>
   onDeleteProject: (id: string) => Promise<void>
@@ -32,6 +33,7 @@ export function Projects({
   t,
   busy,
   onDraft,
+  onNewProject,
   onCreateConfiguration,
   onSaveProject,
   onDeleteProject,
@@ -77,7 +79,7 @@ export function Projects({
           type="button"
           className="button primary"
           disabled={busy || newProjectOpen}
-          onClick={() => onDraft({ ...emptyProjectDraft })}
+          onClick={() => onNewProject()}
         >
           <Plus size={17} aria-hidden="true" />
           {t('newProject')}
@@ -162,12 +164,7 @@ export function Projects({
           </span>
           <h2>{t('noProjects')}</h2>
           <p>{t('noProjectsHelp')}</p>
-          <button
-            type="button"
-            className="button"
-            disabled={busy}
-            onClick={() => onDraft({ ...emptyProjectDraft })}
-          >
+          <button type="button" className="button" disabled={busy} onClick={() => onNewProject()}>
             <FolderPlus size={17} aria-hidden="true" />
             {t('firstProject')}
           </button>

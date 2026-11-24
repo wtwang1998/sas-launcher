@@ -138,10 +138,10 @@ export const messages = {
     '没有已保存过会话设置的配置',
     'No configuration has saved session settings yet',
   ],
-  cleanEnvironmentOption: ['干净环境', 'Clean environment'],
-  cleanEnvironmentHint: [
-    '启动一个全新的 SASUSER，不继承任何设置',
-    'Start with a brand new SASUSER and inherit nothing',
+  noPreferenceOption: ['不使用已有偏好', 'Start without preferences'],
+  noPreferenceHint: [
+    '从空的 SASUSER 开始，不继承任何偏好；之后在这个项目里调好的界面会留给下次',
+    'Start from an empty SASUSER with nothing inherited; the interface you tune here is kept',
   ],
   profileLayersCarryOver: [
     '窗口布局、功能键与菜单会沿用你现在的设置。',

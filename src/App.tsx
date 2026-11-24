@@ -26,7 +26,7 @@ import {
   type View,
 } from './api'
 import { useConfirmation } from './components/confirmation'
-import type { ProjectDraft } from './components/ProjectForm'
+import { emptyProjectDraft, type ProjectDraft } from './components/ProjectForm'
 import { browserLanguage, issueText, type MessageKey, translate } from './i18n'
 import { onHostEvent } from './lib/host'
 import { profileChoiceFor } from './lib/profile'
@@ -187,12 +187,13 @@ export function App() {
   }
 
   /**
-   * Open the form, and for a new project load the folders SAS wrote before, so
-   * the first card can already point at the layout the user tuned.
+   * Open an empty form and load the folders SAS wrote before, so the first card
+   * can already point at the layout the user tuned. Editing a draft afterwards
+   * must not re-run this: it would reload the list on every keystroke and undo a
+   * choice the user just made.
    */
-  async function openDraft(next: ProjectDraft | null) {
-    setDraft(next)
-    if (!next || next.id !== null) return
+  async function startNewProject() {
+    setDraft({ ...emptyProjectDraft })
     let found: SasuserCandidate[] = []
     try {
       found = await api.sasuserCandidates(null)
@@ -201,6 +202,7 @@ export function App() {
     }
     setProfileCandidates(found)
     setDraft((current) => {
+      // Only fill a draft that is still the untouched empty selection.
       if (!current || current.id !== null) return current
       if (current.profile.kind !== 'sasUser' || current.profile.path) return current
       const first = found[0]
@@ -470,7 +472,8 @@ export function App() {
               language={language}
               t={t}
               busy={busy}
-              onDraft={(next) => void openDraft(next)}
+              onNewProject={() => void startNewProject()}
+              onDraft={setDraft}
               onCreateConfiguration={beginConfigurationTrip}
               onSaveProject={saveProject}
               onDeleteProject={deleteProject}

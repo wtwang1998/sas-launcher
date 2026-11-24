@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, it } from 'vitest'
 import type { BatchResult } from '../api'
@@ -101,6 +101,25 @@ it('a_disabled_snapshot_card_says_why_it_cannot_be_used', async () => {
   expect(await screen.findByText('没有已保存过会话设置的配置')).toBeInTheDocument()
 })
 
+it('a_user_folder_card_without_candidates_offers_browsing_inside_the_card', async () => {
+  const user = userEvent.setup()
+  renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [],
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+
+  // With nothing detected the card stays selectable, because browsing can still
+  // supply the folder; the link then lives inside the card that owns the path.
+  const card = await screen.findByRole('radio', { name: /继承我的 SAS 用户目录/ })
+  expect(card).not.toHaveAttribute('aria-disabled', 'true')
+
+  await user.click(card)
+
+  expect(within(card).getByText('未找到 My SAS Files 下的用户偏好目录')).toBeInTheDocument()
+  expect(within(card).getByRole('button', { name: '浏览其他文件夹…' })).toBeInTheDocument()
+})
+
 it('the_layer_choices_belong_to_the_inheriting_card_only', async () => {
   const user = userEvent.setup()
   const folder = 'C:\\Users\\me\\Documents\\My SAS Files\\9.4'
@@ -122,7 +141,7 @@ it('the_layer_choices_belong_to_the_inheriting_card_only', async () => {
   expect(screen.getByRole('checkbox', { name: 'ODS 模板与样式' })).toBeInTheDocument()
   expect(screen.getAllByRole('checkbox')).toHaveLength(2)
 
-  await user.click(screen.getByRole('radio', { name: /干净环境/ }))
+  await user.click(screen.getByRole('radio', { name: /不使用已有偏好/ }))
 
   expect(screen.queryByText(/窗口布局、功能键与菜单会沿用/)).not.toBeInTheDocument()
   expect(screen.queryByRole('checkbox', { name: /环境/ })).not.toBeInTheDocument()

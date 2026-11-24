@@ -48,7 +48,7 @@ export function UserFolderChoice({
       kind: 'sasUser',
       label: t('inheritUserFolderOption'),
       hint: t('inheritUserFolderHint'),
-      ready: candidates.length > 0 || draftPath !== '',
+      ready: candidates.length > 0 || draftPath !== '' || !!onBrowse,
     },
     {
       kind: 'configSnapshot',
@@ -58,8 +58,8 @@ export function UserFolderChoice({
     },
     {
       kind: 'fresh',
-      label: t('cleanEnvironmentOption'),
-      hint: t('cleanEnvironmentHint'),
+      label: t('noPreferenceOption'),
+      hint: t('noPreferenceHint'),
       ready: true,
     },
   ]
@@ -154,6 +154,18 @@ export function UserFolderChoice({
                   ) : (
                     <p className="radio-hint">{t('inheritUserFolderMissing')}</p>
                   )}
+                  {onBrowse && (
+                    <div className="profile-browse">
+                      <button
+                        type="button"
+                        className="link-button"
+                        disabled={busy}
+                        onClick={onBrowse}
+                      >
+                        {t('browseFolder')}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
               {checked && card.kind === 'sasUser' && chosen && (
@@ -230,13 +242,6 @@ export function UserFolderChoice({
           )
         })}
       </div>
-      {kind === 'sasUser' && onBrowse && (
-        <div className="radio-extra">
-          <button type="button" className="link-button" disabled={busy} onClick={onBrowse}>
-            {t('browseFolder')}
-          </button>
-        </div>
-      )}
     </>
   )
 }
