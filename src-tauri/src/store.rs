@@ -2,7 +2,7 @@ use crate::{
     configuration,
     issue::Issue,
     language::LanguagePreference,
-    profile::{copy_profile, regular_directory},
+    profile::{Layers, copy_profile, copy_profile_layers, has_catalog_files, regular_directory},
     theme::ThemePreference,
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -39,6 +39,32 @@ pub enum ConfigBase {
     User { id: Uuid },
 }
 
+/// Where a project's snapshot came from. Only ever displayed: it never decides
+/// what gets seeded, so a stale origin cannot change a launch.
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum ProfileOrigin {
+    SasUser { path: PathBuf },
+    ConfigSnapshot { config: Uuid },
+    Fresh,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ProjectProfile {
+    /// Snapshot revision under `projects/<id>/profile/`. Absent only for a
+    /// project that picked a clean environment and has not run yet.
+    #[serde(default)]
+    pub revision: Option<Uuid>,
+    #[serde(default)]
+    pub origin: Option<ProfileOrigin>,
+    #[serde(default)]
+    pub layers: Layers,
+    /// The user asked for a clean environment, so the configuration's own
+    /// snapshot must never be used as a stand-in.
+    #[serde(default)]
+    pub fresh: bool,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Project {
     pub id: Uuid,
@@ -47,6 +73,10 @@ pub struct Project {
     pub note: Option<String>,
     #[serde(default)]
     pub config: Option<ConfigRef>,
+    /// Absent on projects created before project-level preferences existed;
+    /// those keep seeding from the configuration they point at.
+    #[serde(default)]
+    pub profile: Option<ProjectProfile>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -288,6 +318,31 @@ impl Store {
             .map(|revision| self.profile_dir(config.id, revision))
     }
 
+    pub fn projects_dir(&self) -> PathBuf {
+        self.data_dir().join("projects")
+    }
+
+    pub fn project_dir(&self, id: Uuid) -> PathBuf {
+        self.projects_dir().join(id.to_string())
+    }
+
+    pub fn project_profile_root(&self, id: Uuid) -> PathBuf {
+        self.project_dir(id).join("profile")
+    }
+
+    pub fn project_profile_dir(&self, id: Uuid, revision: Uuid) -> PathBuf {
+        self.project_profile_root(id).join(revision.to_string())
+    }
+
+    /// The snapshot directory that should seed this project's next session.
+    /// A project-level choice always wins: an empty answer means "seed
+    /// nothing", never "fall back to the configuration".
+    pub fn project_profile_source(&self, project: &Project) -> Option<PathBuf> {
+        let revision = project.profile.as_ref()?.revision?;
+        let directory = self.project_profile_dir(project.id, revision);
+        has_catalog_files(&directory).then_some(directory)
+    }
+
     pub fn configurations(&self) -> &[UserConfig] {
         &self.configurations
     }
@@ -346,6 +401,9 @@ impl Store {
         write_json(&self.projects_path(), &next)
             .map_err(|error| Issue::with_detail("settingsWrite", error))?;
         self.projects = next;
+        // Best effort: the metadata is already gone, and a leftover snapshot
+        // only wastes disk space.
+        let _ = fs::remove_dir_all(self.project_dir(id));
         Ok(())
     }
 
@@ -509,6 +567,123 @@ pub fn set_profile_revision_on_disk(
     write_json(&path, &configurations).map_err(|error| Issue::with_detail("settingsWrite", error))
 }
 
+/// How many project snapshots are kept: the current one plus what it replaced.
+const KEEP_PROJECT_PROFILES: usize = 2;
+
+fn read_projects(data_dir: &Path) -> Result<Vec<Project>, Issue> {
+    let path = data_dir.join("projects.json");
+    match read_json(&path) {
+        Ok(projects) => Ok(projects),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(Vec::new()),
+        Err(error) => Err(Issue::with_detail("settingsRead", error)),
+    }
+}
+
+fn project_profile_root(data_dir: &Path, id: Uuid) -> PathBuf {
+    data_dir
+        .join("projects")
+        .join(id.to_string())
+        .join("profile")
+}
+
+/// The layers a project currently asks for, read straight from disk so the
+/// session layer can honour them without holding a `Store`. `None` means the
+/// project predates project-level preferences and still follows its
+/// configuration.
+pub fn project_layers(data_dir: &Path, id: Uuid) -> Option<Layers> {
+    read_projects(data_dir).ok().and_then(|projects| {
+        projects
+            .into_iter()
+            .find(|project| project.id == id)
+            .and_then(|project| project.profile)
+            .map(|profile| profile.layers)
+    })
+}
+
+/// Copy `source` into a fresh revision under `projects/<id>/profile/`, then
+/// commit the revision and the effective layers to `projects.json`.
+///
+/// A failed copy leaves the previous revision and the metadata untouched; the
+/// caller keeps the source folder so the next sweep can retry.
+pub fn capture_project_profile(
+    data_dir: &Path,
+    project_id: Uuid,
+    source: &Path,
+    layers: Option<Layers>,
+) -> Result<Uuid, Issue> {
+    let layers = layers
+        .or_else(|| project_layers(data_dir, project_id))
+        .unwrap_or(Layers::DEFAULT);
+    let root = project_profile_root(data_dir, project_id);
+    fs::create_dir_all(&root).map_err(|error| Issue::with_detail("profileCreate", error))?;
+    if !regular_directory(&root) {
+        return Err(Issue::new("dataReparse"));
+    }
+    let revision = Uuid::new_v4();
+    let staging = root.join(format!("tmp-{revision}"));
+    fs::create_dir(&staging).map_err(|error| Issue::with_detail("profileCreate", error))?;
+    if let Err(error) = copy_profile_layers(source, &staging, layers) {
+        let _ = fs::remove_dir_all(&staging);
+        return Err(error);
+    }
+    let target = root.join(revision.to_string());
+    if let Err(error) = fs::rename(&staging, &target) {
+        let _ = fs::remove_dir_all(&staging);
+        return Err(Issue::with_detail("profileCopy", error));
+    }
+    if let Err(error) = commit_project_profile(data_dir, project_id, revision, layers) {
+        let _ = fs::remove_dir_all(&target);
+        return Err(error);
+    }
+    prune_project_profiles(&root);
+    Ok(revision)
+}
+
+fn commit_project_profile(
+    data_dir: &Path,
+    project_id: Uuid,
+    revision: Uuid,
+    layers: Layers,
+) -> Result<(), Issue> {
+    let path = data_dir.join("projects.json");
+    let mut projects = read_projects(data_dir)?;
+    let entry = projects
+        .iter_mut()
+        .find(|project| project.id == project_id)
+        .ok_or_else(|| Issue::new("projectMissing"))?;
+    let origin = entry.profile.take().and_then(|profile| profile.origin);
+    entry.profile = Some(ProjectProfile {
+        revision: Some(revision),
+        origin,
+        layers,
+        fresh: false,
+    });
+    write_json(&path, &projects).map_err(|error| Issue::with_detail("settingsWrite", error))
+}
+
+/// Drop all but the newest [`KEEP_PROJECT_PROFILES`] revisions. Staging folders
+/// are left alone: deleting one mid-copy would lose the only copy.
+fn prune_project_profiles(root: &Path) {
+    let Ok(entries) = fs::read_dir(root) else {
+        return;
+    };
+    let mut revisions: Vec<(SystemTime, PathBuf)> = entries
+        .flatten()
+        .filter(|entry| Uuid::parse_str(&entry.file_name().to_string_lossy()).is_ok())
+        .filter_map(|entry| {
+            let modified = entry.metadata().ok()?.modified().ok()?;
+            Some((modified, entry.path()))
+        })
+        .collect();
+    if revisions.len() <= KEEP_PROJECT_PROFILES {
+        return;
+    }
+    revisions.sort_by_key(|entry| std::cmp::Reverse(entry.0));
+    for (_, path) in revisions.into_iter().skip(KEEP_PROJECT_PROFILES) {
+        let _ = fs::remove_dir_all(path);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -646,5 +821,120 @@ mod tests {
         let contents =
             String::from_utf8_lossy(&fs::read(store.thin_cfg_path(rotated)).unwrap()).into_owned();
         assert!(contents.contains("-ENCODING utf-8"));
+    }
+
+    fn seeded_project(data: &Path, id: Uuid) {
+        write_json(
+            &data.join("projects.json"),
+            &vec![Project {
+                id,
+                name: "Project".into(),
+                note: None,
+                config: None,
+                profile: Some(ProjectProfile {
+                    revision: None,
+                    origin: Some(ProfileOrigin::SasUser {
+                        path: PathBuf::from(r"C:\Users\me\Documents\My SAS Files\9.4"),
+                    }),
+                    layers: Layers::DEFAULT,
+                    fresh: false,
+                }),
+            }],
+        )
+        .unwrap();
+    }
+
+    fn source_with_every_catalog(temp: &Path) -> PathBuf {
+        let source = temp.join("sasuser");
+        fs::create_dir(&source).unwrap();
+        for name in crate::profile::FILES {
+            fs::write(source.join(name), name.as_bytes()).unwrap();
+        }
+        source
+    }
+
+    fn revision_names(root: &Path) -> Vec<String> {
+        let mut names: Vec<String> = fs::read_dir(root)
+            .unwrap()
+            .flatten()
+            .map(|entry| entry.file_name().to_string_lossy().into_owned())
+            .collect();
+        names.sort();
+        names
+    }
+
+    #[test]
+    fn capturing_a_project_profile_commits_layers_and_keeps_two_revisions() {
+        let temp = tempfile::tempdir().unwrap();
+        let data = temp.path().join("v4");
+        fs::create_dir_all(&data).unwrap();
+        let id = Uuid::new_v4();
+        seeded_project(&data, id);
+        let source = source_with_every_catalog(temp.path());
+
+        let first = capture_project_profile(&data, id, &source, None).unwrap();
+        let stored: Vec<Project> = read_json(&data.join("projects.json")).unwrap();
+        let profile = stored[0].profile.as_ref().unwrap();
+        assert_eq!(profile.revision, Some(first));
+        assert_eq!(profile.layers, Layers::DEFAULT);
+        assert!(
+            matches!(profile.origin, Some(ProfileOrigin::SasUser { .. })),
+            "the origin survives a capture"
+        );
+        let snapshot = project_profile_root(&data, id).join(first.to_string());
+        assert!(snapshot.join("profile.sas7bcat").is_file());
+        assert!(
+            !snapshot.join("regstry.sas7bitm").exists(),
+            "the environment layer stays out by default"
+        );
+
+        let second = capture_project_profile(&data, id, &source, Some(Layers::ALL)).unwrap();
+        let third = capture_project_profile(&data, id, &source, Some(Layers::ALL)).unwrap();
+        let kept = revision_names(&project_profile_root(&data, id));
+        assert_eq!(kept.len(), KEEP_PROJECT_PROFILES);
+        assert!(kept.contains(&third.to_string()));
+        assert!(kept.contains(&second.to_string()));
+        assert!(!kept.contains(&first.to_string()));
+        assert!(
+            project_profile_root(&data, id)
+                .join(third.to_string())
+                .join("templat.sas7bitm")
+                .is_file(),
+            "an explicit layer selection is honoured"
+        );
+    }
+
+    #[test]
+    fn a_failed_capture_keeps_the_previous_revision_and_its_metadata() {
+        use std::os::windows::fs::OpenOptionsExt;
+
+        let temp = tempfile::tempdir().unwrap();
+        let data = temp.path().join("v4");
+        fs::create_dir_all(&data).unwrap();
+        let id = Uuid::new_v4();
+        seeded_project(&data, id);
+        let source = source_with_every_catalog(temp.path());
+        let first = capture_project_profile(&data, id, &source, None).unwrap();
+
+        let locked = File::options()
+            .read(true)
+            .share_mode(0)
+            .open(source.join("profile.sas7bcat"))
+            .unwrap();
+        let error = capture_project_profile(&data, id, &source, None).unwrap_err();
+        assert_eq!(error.code, "profileLocked");
+
+        let stored: Vec<Project> = read_json(&data.join("projects.json")).unwrap();
+        assert_eq!(stored[0].profile.as_ref().unwrap().revision, Some(first));
+        assert_eq!(revision_names(&project_profile_root(&data, id)).len(), 1);
+        drop(locked);
+    }
+
+    #[test]
+    fn a_project_without_project_level_preferences_reports_no_layers() {
+        let temp = tempfile::tempdir().unwrap();
+        let data = temp.path().join("v4");
+        fs::create_dir_all(&data).unwrap();
+        assert_eq!(project_layers(&data, Uuid::new_v4()), None);
     }
 }

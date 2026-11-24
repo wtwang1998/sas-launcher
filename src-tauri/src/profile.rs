@@ -1,4 +1,5 @@
 use crate::issue::Issue;
+use serde::{Deserialize, Serialize};
 use std::{
     fs::{self, File, OpenOptions},
     io,
@@ -6,13 +7,64 @@ use std::{
     path::Path,
 };
 
-/// The four catalog files SAS writes into its user folder.
+/// Window geometry, function keys, menus and the per-printer fonts: what a user
+/// means by "my layout".
+pub const INTERFACE: &[&str] = &["profile.sas7bcat", "profile2.sas7bcat"];
+/// Library assignments, Explorer options and print setup.
+pub const ENVIRONMENT: &[&str] = &["regstry.sas7bitm"];
+/// Compiled ODS templates and styles. This is user content, not a preference.
+pub const TEMPLATES: &[&str] = &["templat.sas7bitm"];
+
+/// The four catalog files SAS writes into its user folder, in layer order.
+///
+/// Deliberately excluded, so nobody "completes" the list by accident:
+/// `profbak.sas7bcat` is SAS's own fallback copy, `folder.sas7bcat` and
+/// `gng.sas7bcat` hold ASSIST and Graph-N-Go resources, and `parms.sas7bcat`
+/// holds ASSIST parameters (written by a different machine on this host).
 pub const FILES: &[&str] = &[
     "profile.sas7bcat",
     "profile2.sas7bcat",
     "regstry.sas7bitm",
     "templat.sas7bitm",
 ];
+
+/// Which layers of a user folder a snapshot should carry.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct Layers {
+    pub interface: bool,
+    pub environment: bool,
+    pub templates: bool,
+}
+
+impl Layers {
+    pub const ALL: Self = Self {
+        interface: true,
+        environment: true,
+        templates: true,
+    };
+
+    /// The default carries the interface layer only: the other two drag in
+    /// machine-bound paths and user content.
+    pub const DEFAULT: Self = Self {
+        interface: true,
+        environment: false,
+        templates: false,
+    };
+
+    pub fn includes(self, name: &str) -> bool {
+        (self.interface && INTERFACE.contains(&name))
+            || (self.environment && ENVIRONMENT.contains(&name))
+            || (self.templates && TEMPLATES.contains(&name))
+    }
+
+    pub fn selected(self) -> impl Iterator<Item = &'static str> {
+        FILES
+            .iter()
+            .copied()
+            .filter(move |name| self.includes(name))
+    }
+}
 const REPARSE_POINT: u32 = 0x400;
 const FILE_SHARE_READ: u32 = 1;
 
@@ -26,8 +78,12 @@ pub fn has_catalog_files(directory: &Path) -> bool {
 }
 
 pub fn copy_profile(source: &Path, destination: &Path) -> Result<(), Issue> {
+    copy_profile_layers(source, destination, Layers::ALL)
+}
+
+pub fn copy_profile_layers(source: &Path, destination: &Path, layers: Layers) -> Result<(), Issue> {
     let mut inputs = Vec::new();
-    for name in FILES {
+    for name in layers.selected() {
         let path = source.join(name);
         match fs::symlink_metadata(&path) {
             Ok(metadata)
@@ -84,6 +140,56 @@ mod tests {
         ] {
             assert!(FILES.contains(&name), "{name}");
         }
+    }
+
+    #[test]
+    fn the_layers_partition_the_whitelist() {
+        let mut union: Vec<&str> = INTERFACE
+            .iter()
+            .chain(ENVIRONMENT)
+            .chain(TEMPLATES)
+            .copied()
+            .collect();
+        union.sort_unstable();
+        let mut sorted = FILES.to_vec();
+        sorted.sort_unstable();
+        assert_eq!(union, sorted, "every whitelisted file belongs to one layer");
+        assert_eq!(Layers::ALL.selected().count(), FILES.len());
+        assert_eq!(Layers::DEFAULT.selected().count(), INTERFACE.len());
+        assert!(!Layers::DEFAULT.includes("regstry.sas7bitm"));
+        assert!(Layers::ALL.includes("templat.sas7bitm"));
+    }
+
+    #[test]
+    fn copying_only_the_interface_layer_leaves_environment_and_content_behind() {
+        let temp = tempfile::tempdir().unwrap();
+        let source = temp.path().join("source");
+        fs::create_dir(&source).unwrap();
+        for name in FILES {
+            fs::write(source.join(name), name.as_bytes()).unwrap();
+        }
+        let destination = temp.path().join("destination");
+        fs::create_dir(&destination).unwrap();
+        copy_profile_layers(&source, &destination, Layers::DEFAULT).unwrap();
+
+        assert!(destination.join("profile.sas7bcat").is_file());
+        assert!(destination.join("profile2.sas7bcat").is_file());
+        assert!(!destination.join("regstry.sas7bitm").exists());
+        assert!(!destination.join("templat.sas7bitm").exists());
+    }
+
+    #[test]
+    fn a_layer_without_files_is_an_empty_profile() {
+        let temp = tempfile::tempdir().unwrap();
+        let source = temp.path().join("source");
+        fs::create_dir(&source).unwrap();
+        fs::write(source.join("regstry.sas7bitm"), b"registry").unwrap();
+        let destination = temp.path().join("destination");
+        fs::create_dir(&destination).unwrap();
+
+        let error = copy_profile_layers(&source, &destination, Layers::DEFAULT).unwrap_err();
+        assert_eq!(error.code, "profileEmpty");
+        assert_eq!(fs::read_dir(&destination).unwrap().count(), 0);
     }
 
     #[test]

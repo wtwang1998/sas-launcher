@@ -134,7 +134,11 @@ impl App {
     /// Update statuses and persist launch outcomes of the sessions. Called by
     /// the 3-second background thread and by every command that reads state.
     fn maintenance(&mut self) {
-        self.sessions.sweep();
+        // A project snapshot is committed by the session layer, so the cached
+        // project metadata has to be re-read before the next launch uses it.
+        if self.sessions.sweep() {
+            let _ = self.store.reload();
+        }
         let failures = self.sessions.take_failures();
         if failures.is_empty() {
             return;
@@ -463,7 +467,7 @@ impl App {
         if project_running(&self.sessions.records(), project.id) {
             return Err(Issue::new("projectRunning"));
         }
-        let resolved = match self.resolve(project.config.as_ref()) {
+        let mut resolved = match self.resolve(project.config.as_ref()) {
             Ok(resolved) => resolved,
             Err(error) => {
                 let error = self.record_launch_failure(
@@ -477,6 +481,12 @@ impl App {
                 return Err(error);
             }
         };
+        // A project-level choice owns the preference: either its own snapshot or
+        // nothing at all. Only projects that predate the field keep following
+        // their configuration.
+        if project.profile.is_some() {
+            resolved.profile = self.store.project_profile_source(&project);
+        }
         self.launch(
             resolved,
             project.name.clone(),
@@ -867,6 +877,7 @@ async fn save_project(
             name,
             note,
             config,
+            profile: None,
         })?;
         Ok(app.view())
     })
@@ -1225,6 +1236,7 @@ mod tests {
                 name: name.into(),
                 note: None,
                 config: None,
+                profile: None,
             })
             .unwrap();
         app.store
@@ -1363,6 +1375,7 @@ mod tests {
                 name: "Bound".into(),
                 note: None,
                 config: Some(ConfigRef::User { id }),
+                profile: None,
             })
             .unwrap();
 
@@ -1376,6 +1389,7 @@ mod tests {
                 name: "Bound".into(),
                 note: None,
                 config: None,
+                profile: None,
             })
             .unwrap();
         app.delete_configuration(id).unwrap();
@@ -1478,6 +1492,7 @@ mod tests {
                 config: Some(ConfigRef::BuiltIn {
                     code: "missing".into(),
                 }),
+                profile: None,
             })
             .unwrap();
         let id = app.store.projects()[0].id;

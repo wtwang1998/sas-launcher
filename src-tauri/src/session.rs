@@ -142,6 +142,14 @@ fn is_exited(status: Status) -> bool {
     )
 }
 
+/// The project a session belongs to, if it is a project launch at all.
+fn project_of(record: &Record) -> Option<Uuid> {
+    match &record.purpose {
+        Purpose::Project { id } => *id,
+        Purpose::Setup { .. } => None,
+    }
+}
+
 impl Sessions {
     pub fn new(root: PathBuf) -> Self {
         Self {
@@ -398,12 +406,15 @@ impl Sessions {
         self.cache.iter().find(|record| record.id == id)
     }
 
-    pub fn sweep(&mut self) {
+    /// Reap finished sessions. Returns true when a project snapshot was
+    /// committed, so the caller knows it must reload its metadata from disk.
+    pub fn sweep(&mut self) -> bool {
         if !regular_directory(&self.root) {
-            return;
+            return false;
         }
         self.refresh();
         let cached = self.cache.clone();
+        let mut captured = false;
         for record in cached {
             if !is_exited(record.status) {
                 continue;
@@ -420,6 +431,33 @@ impl Sessions {
                 }
                 continue;
             }
+            let mut keep_folder = false;
+            if let Some(project) = project_of(&record)
+                && record.exit_code == Some(0)
+                && let Some(layers) = crate::store::project_layers(&self.data_dir(), project)
+                && layers.selected().next().is_some()
+            {
+                match crate::store::capture_project_profile(
+                    &self.data_dir(),
+                    project,
+                    &record.sasuser,
+                    Some(layers),
+                ) {
+                    Ok(_) => captured = true,
+                    Err(_) => {
+                        // Keep the folder so the next sweep retries: it holds
+                        // the only copy of the settings this session produced.
+                        if let Some(mut manifest) = self.read_manifest(record.id) {
+                            manifest.record.status = Status::CleanupPending;
+                            let _ = self.write_manifest(&manifest);
+                        }
+                        keep_folder = true;
+                    }
+                }
+            }
+            if keep_folder {
+                continue;
+            }
             if fs::remove_dir_all(&record.sasuser).is_err()
                 && let Some(mut manifest) = self.read_manifest(record.id)
             {
@@ -429,6 +467,7 @@ impl Sessions {
         }
         self.prune();
         self.refresh();
+        captured
     }
 
     /// Keep the newest `KEEP_EXITED` exited records; running and settings
@@ -842,5 +881,149 @@ mod tests {
             assert!(remaining.contains(id), "running sessions are never pruned");
         }
         assert!(remaining.contains(&setup_id));
+    }
+
+    fn seeded_project(data: &Path, id: Uuid, profile: Option<crate::store::ProjectProfile>) {
+        write_json(
+            &data.join("projects.json"),
+            &vec![crate::store::Project {
+                id,
+                name: "Project".into(),
+                note: None,
+                config: None,
+                profile,
+            }],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn an_exited_project_session_captures_its_profile_before_cleanup() {
+        let temp = tempfile::tempdir().unwrap();
+        let data = temp.path().join("v4");
+        let root = data.join("sessions");
+        fs::create_dir_all(&root).unwrap();
+        let project = Uuid::new_v4();
+        seeded_project(
+            &data,
+            project,
+            Some(crate::store::ProjectProfile {
+                revision: None,
+                origin: None,
+                layers: crate::profile::Layers::DEFAULT,
+                fresh: true,
+            }),
+        );
+        let id = Uuid::new_v4();
+        let manifest = test_manifest(
+            &root,
+            id,
+            Purpose::Project { id: Some(project) },
+            Status::Exited,
+            5,
+        );
+        let sasuser = manifest.record.sasuser.clone();
+        fs::create_dir_all(&sasuser).unwrap();
+        fs::write(sasuser.join("profile.sas7bcat"), b"settings").unwrap();
+
+        let mut sessions = Sessions::new(root);
+        assert!(sessions.sweep(), "sweep reports the committed snapshot");
+        assert!(!sasuser.exists(), "the folder is reaped after the capture");
+
+        let stored: Vec<crate::store::Project> = read_json(&data.join("projects.json")).unwrap();
+        let revision = stored[0]
+            .profile
+            .as_ref()
+            .and_then(|profile| profile.revision)
+            .unwrap();
+        let snapshot = data
+            .join("projects")
+            .join(project.to_string())
+            .join("profile")
+            .join(revision.to_string());
+        assert_eq!(
+            fs::read(snapshot.join("profile.sas7bcat")).unwrap(),
+            b"settings"
+        );
+        assert!(!snapshot.join("regstry.sas7bitm").exists());
+    }
+
+    #[test]
+    fn a_project_without_project_level_preferences_is_cleaned_up_untouched() {
+        let temp = tempfile::tempdir().unwrap();
+        let data = temp.path().join("v4");
+        let root = data.join("sessions");
+        fs::create_dir_all(&root).unwrap();
+        let project = Uuid::new_v4();
+        seeded_project(&data, project, None);
+        let id = Uuid::new_v4();
+        let manifest = test_manifest(
+            &root,
+            id,
+            Purpose::Project { id: Some(project) },
+            Status::Exited,
+            5,
+        );
+        let sasuser = manifest.record.sasuser.clone();
+        fs::create_dir_all(&sasuser).unwrap();
+        fs::write(sasuser.join("profile.sas7bcat"), b"settings").unwrap();
+
+        let mut sessions = Sessions::new(root);
+        assert!(!sessions.sweep());
+        assert!(!sasuser.exists());
+        let stored: Vec<crate::store::Project> = read_json(&data.join("projects.json")).unwrap();
+        assert!(
+            stored[0].profile.is_none(),
+            "legacy projects are not upgraded"
+        );
+        assert!(!data.join("projects").join(project.to_string()).exists());
+    }
+
+    #[test]
+    fn a_failed_capture_keeps_the_folder_for_the_next_sweep() {
+        let temp = tempfile::tempdir().unwrap();
+        let data = temp.path().join("v4");
+        let root = data.join("sessions");
+        fs::create_dir_all(&root).unwrap();
+        let project = Uuid::new_v4();
+        seeded_project(
+            &data,
+            project,
+            Some(crate::store::ProjectProfile {
+                revision: None,
+                origin: None,
+                layers: crate::profile::Layers::DEFAULT,
+                fresh: true,
+            }),
+        );
+        let id = Uuid::new_v4();
+        let manifest = test_manifest(
+            &root,
+            id,
+            Purpose::Project { id: Some(project) },
+            Status::Exited,
+            5,
+        );
+        let sasuser = manifest.record.sasuser.clone();
+        fs::create_dir_all(&sasuser).unwrap();
+        fs::write(sasuser.join("profile.sas7bcat"), b"settings").unwrap();
+        let locked = std::fs::File::options()
+            .read(true)
+            .share_mode(0)
+            .open(sasuser.join("profile.sas7bcat"))
+            .unwrap();
+
+        let mut sessions = Sessions::new(root.clone());
+        assert!(!sessions.sweep());
+        assert!(sasuser.exists(), "the only copy of the settings survives");
+        let stored: Vec<crate::store::Project> = read_json(&data.join("projects.json")).unwrap();
+        assert!(stored[0].profile.as_ref().unwrap().revision.is_none());
+        let manifest: Manifest =
+            read_json(&root.join(id.to_string()).join("manifest.json")).unwrap();
+        assert_eq!(manifest.record.status, Status::CleanupPending);
+
+        drop(locked);
+        assert!(sessions.sweep(), "the retry commits the snapshot");
+        assert!(!sasuser.exists());
     }
 }
