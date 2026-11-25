@@ -689,8 +689,18 @@ fn with_app<T>(
     state: &AppState,
     action: impl FnOnce(&mut App) -> Result<T, Issue>,
 ) -> Result<T, Issue> {
-    let mut app = state.lock().map_err(|_| Issue::new("stateUnavailable"))?;
+    let mut app = lock_app(state);
     action(app.as_mut().map_err(|error| error.clone())?)
+}
+
+/// A command that panicked poisons the shared mutex. Everything it guards is a
+/// cache over files written atomically, so recovering keeps the app usable
+/// instead of failing every later command; the panic still reaches stderr.
+fn lock_app(state: &AppState) -> std::sync::MutexGuard<'_, Result<App, Issue>> {
+    state.lock().unwrap_or_else(|poisoned| {
+        eprintln!("recovering the app state after a panic in a command");
+        poisoned.into_inner()
+    })
 }
 
 fn validate_name(name: &str) -> Result<String, Issue> {
@@ -2094,6 +2104,24 @@ mod tests {
         assert_eq!(error.code, "startupMigrateUnsupported");
         assert_eq!(std::fs::read_to_string(&setup).unwrap(), original);
         assert!(!temp.path().join("setup.sas.bak").exists());
+    }
+
+    #[test]
+    fn a_panicked_command_does_not_disable_later_ones() {
+        let state: AppState = Mutex::new(Err(Issue::new("internal")));
+        let poisoned = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = state.lock().unwrap();
+            panic!("a command panicked while holding the lock");
+        }));
+        assert!(poisoned.is_err());
+        assert!(state.lock().is_err(), "the lock is poisoned");
+
+        // Recovering answers instead of failing every command from then on.
+        let guard = lock_app(&state);
+        assert_eq!(
+            guard.as_ref().err().map(|issue| issue.code),
+            Some("internal")
+        );
     }
 
     #[test]

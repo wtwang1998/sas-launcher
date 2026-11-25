@@ -120,8 +120,8 @@
     "The selected SAS configuration is unavailable. Refresh and choose a configuration."
   ],
   "stateUnavailable": [
-    "启动器状态不可用，请重新打开。",
-    "The launcher is unavailable. Reopen the app."
+    "启动器内部出错，重开即可；项目与启动脚本不受影响。",
+    "The launcher hit an internal error. Reopening it is enough; your projects and startup scripts are untouched."
   ],
   "invalidName": [
     "请输入 1 到 100 个字符的项目名称。",
