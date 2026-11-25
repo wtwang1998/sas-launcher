@@ -16,8 +16,8 @@ npm run format            # biome format --write + cargo fmt
 npm run lint              # biome lint + knip
 npm run lint:rust         # clippy --all-targets -- -D warnings
 npm run typecheck         # tsc --noEmit
-npm run test              # vitest，88 个，约 5 秒
-npm run test:rust         # cargo test，64 个，约 1 秒（增量已编译）
+npm run test              # vitest，约 5 秒
+npm run test:rust         # cargo test，约 1 秒（增量已编译）
 npm run build             # tsc --noEmit + vite build
 npm run version:check -- v0.2.0   # 发布前自查：tag 与三处版本是否一致
 ```
