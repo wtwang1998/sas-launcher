@@ -77,6 +77,8 @@ export type Session = {
   name: string
   kind: 'project' | 'setup'
   configId: string | null
+  /** The project this session belongs to; null for a settings session. */
+  projectId: string | null
   status: SessionStatus
   exitCode: number | null
   startedAt: number

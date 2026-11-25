@@ -53,6 +53,15 @@ export function Projects({
     .map((project) => project.id)
   const allSelected = view.projects.length > 0 && selected.length === view.projects.length
   const editing = (project: Project) => draft?.id === project.id
+  // Mirrors the backend guard (`project_running`): a running session for this
+  // project already owns its sasuser folder and its log, so a second launch is
+  // refused. Saying so on the row beats an error banner after the click.
+  const running = new Set(
+    view.sessions
+      .filter((session) => session.status === 'running')
+      .map((session) => session.projectId)
+      .filter((id): id is string => id !== null),
+  )
 
   function toggle(id: string) {
     setChecked((current) => {
@@ -212,6 +221,7 @@ export function Projects({
             language={language}
             t={t}
             busy={busy}
+            running={running.has(project.id)}
             checked={checked.has(project.id)}
             editing={editing(project)}
             onCheck={() => toggle(project.id)}

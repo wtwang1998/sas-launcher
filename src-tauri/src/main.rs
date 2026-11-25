@@ -1534,6 +1534,46 @@ mod tests {
     }
 
     #[test]
+    fn a_session_view_names_the_project_it_belongs_to() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let project = save_project(&mut app, "Live");
+        let session = record_session(
+            &app,
+            Purpose::Project { id: Some(project) },
+            Status::Running,
+            20,
+        );
+        let setup = record_session(
+            &app,
+            Purpose::Setup {
+                config: Uuid::new_v4(),
+            },
+            Status::Running,
+            21,
+        );
+
+        let view = app.view();
+        let running = view
+            .sessions
+            .iter()
+            .find(|row| row.id == session)
+            .expect("the project session is in the view");
+        assert_eq!(
+            running.project_id,
+            Some(project),
+            "the page matches a row to its session by project id, not by name"
+        );
+        let setup_row = view
+            .sessions
+            .iter()
+            .find(|row| row.id == setup)
+            .expect("the settings session is in the view");
+        assert_eq!(setup_row.project_id, None);
+    }
+
+    #[test]
     fn deriving_from_user_config_copies_options_and_profile() {
         let temp = tempfile::tempdir().unwrap();
         let exe = install_fixture(

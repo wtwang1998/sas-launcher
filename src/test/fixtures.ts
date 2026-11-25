@@ -48,6 +48,7 @@ export function makeSession(patch: Partial<Session> & { id: string }): Session {
     name: '会话 A',
     kind: 'project',
     configId: null,
+    projectId: null,
     status: 'running',
     exitCode: null,
     startedAt: Date.UTC(2026, 10, 23, 4, 0),

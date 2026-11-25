@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, it, vi } from 'vitest'
 import type { BatchResult } from '../api'
-import { builtIn, makeView } from '../test/fixtures'
+import { builtIn, makeSession, makeView } from '../test/fixtures'
 import { renderApp } from '../test/harness'
 
 it('an empty user folder says so instead of promising files', async () => {
@@ -427,6 +427,39 @@ it('batch_launch_sends_selected_ids', async () => {
   expect(backend.calls.find((call) => call.cmd === 'launch_batch')?.args).toEqual({
     ids: ['p1', 'p2'],
   })
+})
+
+it('a_running_project_is_marked_and_cannot_be_launched_again', async () => {
+  const user = userEvent.setup()
+  const view = makeView({
+    projects: [{ id: 'p1', name: '项目 A', note: null, config: null, profile: null }],
+    sessions: [makeSession({ id: 's1', name: '项目 A', projectId: 'p1', status: 'running' })],
+  })
+  const { backend } = renderApp(view)
+
+  const launch = await screen.findByRole('button', { name: '运行中' })
+  expect(launch).toBeDisabled()
+  await user.click(launch)
+  expect(backend.calls.filter((call) => call.cmd === 'launch_project')).toHaveLength(0)
+  // Batch selection still includes it: the backend skips it and says why.
+  expect(screen.getByRole('checkbox', { name: '选择项目 项目 A' })).toBeEnabled()
+})
+
+it('an_idle_project_still_launches_from_its_row', async () => {
+  const user = userEvent.setup()
+  const view = makeView({
+    projects: [{ id: 'p1', name: '项目 A', note: null, config: null, profile: null }],
+  })
+  const { backend } = renderApp(view, {
+    launch_project: () => makeSession({ id: 's1', projectId: 'p1' }),
+  })
+
+  await user.click(await screen.findByRole('button', { name: '启动' }))
+
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'launch_project')).toHaveLength(1),
+  )
+  expect(backend.calls.find((call) => call.cmd === 'launch_project')?.args).toEqual({ id: 'p1' })
 })
 
 it('a_failed_save_explains_itself_next_to_the_buttons', async () => {

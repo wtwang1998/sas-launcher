@@ -11,6 +11,7 @@ export function ProjectCard({
   language,
   t,
   busy,
+  running,
   checked,
   editing,
   onCheck,
@@ -24,6 +25,8 @@ export function ProjectCard({
   language: Language
   t: Translator
   busy: boolean
+  /** A session for this project is still running, so it cannot start again. */
+  running: boolean
   checked: boolean
   editing: boolean
   onCheck: () => void
@@ -85,9 +88,14 @@ export function ProjectCard({
           >
             <Trash2 size={16} aria-hidden="true" />
           </button>
-          <button type="button" className="button small launch" disabled={busy} onClick={onLaunch}>
+          <button
+            type="button"
+            className="button small launch"
+            disabled={busy || running}
+            onClick={onLaunch}
+          >
             <Play size={14} aria-hidden="true" />
-            {t('launch')}
+            {t(running ? 'statusRunning' : 'launch')}
           </button>
         </div>
       </div>

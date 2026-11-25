@@ -82,6 +82,8 @@ pub struct SessionView {
     pub name: String,
     pub kind: &'static str,
     pub config_id: Option<Uuid>,
+    /// The project this session belongs to; `None` for a settings session.
+    pub project_id: Option<Uuid>,
     pub status: Status,
     pub exit_code: Option<u32>,
     pub started_at: i64,
@@ -310,9 +312,9 @@ pub fn build_session_view(app: &App, record: &Record) -> SessionView {
         Some(path) => diagnostics::scan_log(path),
         None => (0, 0),
     };
-    let (kind, config_id) = match record.purpose {
-        Purpose::Project { .. } => ("project", None),
-        Purpose::Setup { config } => ("setup", Some(config)),
+    let (kind, config_id, project_id) = match record.purpose {
+        Purpose::Project { id } => ("project", None, id),
+        Purpose::Setup { config } => ("setup", Some(config), None),
     };
     let chain = ChainView {
         label: record.name.clone(),
@@ -334,6 +336,7 @@ pub fn build_session_view(app: &App, record: &Record) -> SessionView {
         name: record.name.clone(),
         kind,
         config_id,
+        project_id,
         status: record.status,
         exit_code: record.exit_code,
         started_at: record.started_at,
