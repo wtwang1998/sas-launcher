@@ -94,6 +94,15 @@ export const messages = {
   pickStartupFile: ['选择启动代码文件', 'Select the startup code file'],
   sasProgram: ['SAS 程序', 'SAS program'],
   startupExposesPath: ['向会话提供启动文件路径', 'Tell the session where the startup file is'],
+  migrateStartup: ['迁移启动文件', 'Migrate the startup script'],
+  startupMigrated: [
+    '启动文件已迁移，原文件保留为 .bak',
+    'Startup script migrated; the original is kept as .bak',
+  ],
+  startupNeedsMigrationHint: [
+    '这个脚本还在读 SAS_EXECFILEPATH，自动执行时拿不到值。',
+    'This script still reads SAS_EXECFILEPATH, which is empty when it runs at startup.',
+  ],
   startupExposesPathHint: [
     '打开后脚本里可以用 &SASLAUNCHER_STARTUP_FILE 拿到本文件的路径；靠自身位置推导项目路径时需要，路径写死的不用。',
     'When on, the script can read &SASLAUNCHER_STARTUP_FILE; turn it on when the script derives paths from its own location. Hard-coded paths need neither.',

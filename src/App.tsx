@@ -133,7 +133,7 @@ export function App() {
     }
   }
 
-  async function launch(action: () => Promise<Session>, success: MessageKey) {
+  async function launch(action: () => Promise<Session>, success: MessageKey, projectId?: string) {
     if (saving.current) return
     saving.current = true
     revision.current += 1
@@ -145,7 +145,20 @@ export function App() {
       const next = await api.snapshot()
       if (next) setView(next)
     } catch (failure) {
-      setNotice({ tone: 'error', target: 'page', error: failure })
+      const code =
+        typeof failure === 'object' && failure !== null && 'code' in failure
+          ? (failure as { code?: unknown }).code
+          : undefined
+      setNotice({
+        tone: 'error',
+        target: 'page',
+        error: failure,
+        // A script that cannot find itself has a repair the launcher can apply.
+        action:
+          projectId && code === 'startupNeedsMacro'
+            ? { kind: 'migrateStartup', projectId }
+            : undefined,
+      })
     } finally {
       saving.current = false
       setBusy(false)
@@ -293,7 +306,13 @@ export function App() {
   }
 
   async function launchProject(id: string) {
-    await launch(() => api.launchProject(id), 'launched')
+    await launch(() => api.launchProject(id), 'launched', id)
+  }
+
+  /** Rewrite the script, then try the launch the user originally asked for. */
+  async function migrateStartup(projectId: string) {
+    const updated = await mutate(() => api.migrateStartupFile(projectId), 'startupMigrated', 'page')
+    if (updated) await launchProject(projectId)
   }
 
   async function launchBatch(ids: string[]): Promise<BatchResult[]> {
@@ -511,6 +530,7 @@ export function App() {
               onDismissNotice={dismissNotice}
               onBrowseProfile={() => void browseProfile()}
               onBrowseStartupFile={() => void browseStartupFile()}
+              onMigrateStartup={(projectId) => void migrateStartup(projectId)}
               language={language}
               t={t}
               busy={busy}

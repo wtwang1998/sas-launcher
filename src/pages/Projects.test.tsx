@@ -34,6 +34,7 @@ it('a project card says when its snapshot misses a declared layer', async () => 
         {
           startupFile: null,
           startupExposesPath: false,
+          startupNeedsMigration: false,
           id: 'p1',
           name: '项目 A',
           note: null,
@@ -86,6 +87,7 @@ it('editing a project shows where its preference comes from', async () => {
         {
           startupFile: null,
           startupExposesPath: false,
+          startupNeedsMigration: false,
           id: 'p1',
           name: '项目 A',
           note: null,
@@ -128,6 +130,7 @@ it('editing a project can turn the environment layer on', async () => {
         {
           startupFile: null,
           startupExposesPath: false,
+          startupNeedsMigration: false,
           id: 'p1',
           name: '项目 A',
           note: null,
@@ -171,6 +174,7 @@ it('a failed save while editing the card explains itself there', async () => {
         {
           startupFile: null,
           startupExposesPath: false,
+          startupNeedsMigration: false,
           id: 'p1',
           name: '项目 A',
           note: null,
@@ -298,6 +302,7 @@ it('a_launch_refused_because_the_file_locates_itself_says_what_to_change', async
           profile: null,
           startupFile: 'D:/项目/setup.sas',
           startupExposesPath: false,
+          startupNeedsMigration: false,
         },
       ],
     }),
@@ -312,6 +317,41 @@ it('a_launch_refused_because_the_file_locates_itself_says_what_to_change', async
 
   const alert = await screen.findByRole('alert')
   expect(alert).toHaveTextContent('SASLAUNCHER_STARTUP_FILE')
+})
+
+it('a_refused_launch_offers_to_migrate_the_startup_script', async () => {
+  const user = userEvent.setup()
+  const view = makeView({
+    projects: [
+      {
+        id: 'p1',
+        name: '项目 A',
+        note: null,
+        config: null,
+        profile: null,
+        startupFile: 'D:/项目/setup.sas',
+        startupExposesPath: false,
+        startupNeedsMigration: true,
+      },
+    ],
+  })
+  const { backend } = renderApp(view, {
+    launch_project: () => {
+      throw { code: 'startupNeedsMacro', detail: 'D:/项目/setup.sas' }
+    },
+    migrate_startup_file: () => view,
+  })
+
+  await user.click(await screen.findByRole('button', { name: '启动' }))
+  const alert = await screen.findByRole('alert')
+  await user.click(within(alert).getByRole('button', { name: '迁移启动文件' }))
+
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'migrate_startup_file')).toHaveLength(1),
+  )
+  expect(backend.calls.find((call) => call.cmd === 'migrate_startup_file')?.args).toEqual({
+    id: 'p1',
+  })
 })
 
 it('a_new_project_inherits_the_detected_user_folder_by_default', async () => {
@@ -509,10 +549,12 @@ it('batch_launch_sends_selected_ids', async () => {
         profile: null,
         startupFile: null,
         startupExposesPath: false,
+        startupNeedsMigration: false,
       },
       {
         startupFile: null,
         startupExposesPath: false,
+        startupNeedsMigration: false,
         id: 'p2',
         name: '项目 B',
         note: null,
@@ -547,6 +589,7 @@ it('a_running_project_is_marked_and_cannot_be_launched_again', async () => {
         profile: null,
         startupFile: null,
         startupExposesPath: false,
+        startupNeedsMigration: false,
       },
     ],
     sessions: [makeSession({ id: 's1', name: '项目 A', projectId: 'p1', status: 'running' })],
@@ -573,6 +616,7 @@ it('an_idle_project_still_launches_from_its_row', async () => {
         profile: null,
         startupFile: null,
         startupExposesPath: false,
+        startupNeedsMigration: false,
       },
     ],
   })
@@ -618,6 +662,7 @@ it('a_failed_launch_explains_itself_in_the_project_list', async () => {
     profile: null,
     startupFile: null,
     startupExposesPath: false,
+    startupNeedsMigration: false,
   }
   renderApp(makeView({ projects: [project] }), {
     launch_project: () => {
@@ -642,6 +687,7 @@ it('a_failed_delete_keeps_the_confirmation_open_and_says_why', async () => {
     profile: null,
     startupFile: null,
     startupExposesPath: false,
+    startupNeedsMigration: false,
   }
   renderApp(makeView({ projects: [project] }), {
     delete_project: () => {

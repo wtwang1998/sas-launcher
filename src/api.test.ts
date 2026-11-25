@@ -116,6 +116,12 @@ it('commands_match_the_rust_handler_names', async () => {
       args: { id: 'p1' },
     },
     {
+      name: 'migrateStartupFile',
+      run: () => api.migrateStartupFile('p1'),
+      cmd: 'migrate_startup_file',
+      args: { id: 'p1' },
+    },
+    {
       name: 'createConfiguration',
       run: () => api.createConfiguration({ kind: 'builtIn', code: 'u8' }, null),
       cmd: 'create_configuration',
@@ -187,6 +193,7 @@ it('commands_match_the_rust_handler_names', async () => {
     'quit',
     'saveProject',
     'deleteProject',
+    'migrateStartupFile',
     'createConfiguration',
     'updateConfiguration',
     'deleteConfiguration',

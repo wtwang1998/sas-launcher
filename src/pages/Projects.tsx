@@ -24,6 +24,7 @@ export type ProjectsProps = {
   onNewProject: () => void
   onCreateConfiguration: (draft: ProjectDraft) => void
   onSaveProject: (draft: ProjectDraft) => Promise<void>
+  onMigrateStartup: (projectId: string) => void
   onDeleteProject: (id: string) => Promise<void>
   onLaunchProject: (id: string) => Promise<void>
   onLaunchBatch: (ids: string[]) => Promise<BatchResult[]>
@@ -44,6 +45,7 @@ export function Projects({
   onNewProject,
   onCreateConfiguration,
   onSaveProject,
+  onMigrateStartup,
   onDeleteProject,
   onLaunchProject,
   onLaunchBatch,
@@ -109,6 +111,7 @@ export function Projects({
           language={language}
           t={t}
           onDismiss={onDismissNotice}
+          onMigrateStartup={onMigrateStartup}
           className="page-notice"
         />
       )}
@@ -139,6 +142,7 @@ export function Projects({
                   t={t}
                   onDismiss={onDismissNotice}
                   onRetry={() => void onSaveProject(draft)}
+                  onMigrateStartup={onMigrateStartup}
                   className="form-notice"
                 />
               ) : null
@@ -257,6 +261,11 @@ export function Projects({
                 onCreateConfiguration={() => onCreateConfiguration(draft)}
                 onBrowseProfile={onBrowseProfile}
                 onBrowseStartupFile={onBrowseStartupFile}
+                startupNeedsMigration={
+                  view.projects.find((project) => project.id === draft.id)?.startupNeedsMigration ??
+                  false
+                }
+                onMigrateStartup={() => onMigrateStartup(draft.id ?? '')}
                 onSubmit={(next) => void onSaveProject(next)}
                 notice={
                   notice?.target === 'form' ? (
@@ -266,6 +275,7 @@ export function Projects({
                       t={t}
                       onDismiss={onDismissNotice}
                       onRetry={() => void onSaveProject(draft)}
+                      onMigrateStartup={onMigrateStartup}
                       className="form-notice"
                     />
                   ) : null

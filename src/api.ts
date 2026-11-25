@@ -61,6 +61,8 @@ export type Project = {
   startupFile: string | null
   /** Whether the launch also tells the session where that file is. */
   startupExposesPath: boolean
+  /** Whether the script still reads the variable the session cannot fill. */
+  startupNeedsMigration: boolean
 }
 export type SessionStage = 'exe' | 'cfg' | 'profile' | 'spawn' | 'started'
 export type SessionStatus = 'running' | 'exited' | 'setup' | 'cleanupPending' | 'unknown'
@@ -164,6 +166,7 @@ export const api = {
       startupExposesPath,
     }),
   deleteProject: (id: string) => invoke<View>('delete_project', { id }),
+  migrateStartupFile: (id: string) => invoke<View>('migrate_startup_file', { id }),
   createConfiguration: (base: ConfigBase, name: string | null) =>
     invoke<View>('create_configuration', { base, name }),
   updateConfiguration: (id: string, encoding: string, locale: string) =>

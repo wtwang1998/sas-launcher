@@ -50,6 +50,8 @@ export function ProjectForm({
   onCreateConfiguration,
   onBrowseProfile,
   onBrowseStartupFile,
+  startupNeedsMigration = false,
+  onMigrateStartup,
   notice,
 }: {
   draft: ProjectDraft
@@ -66,6 +68,9 @@ export function ProjectForm({
   onCreateConfiguration?: () => void
   onBrowseProfile?: () => void
   onBrowseStartupFile?: () => void
+  /** The stored script still reads the variable the session cannot fill. */
+  startupNeedsMigration?: boolean
+  onMigrateStartup?: () => void
   /** The last save's outcome, shown next to the buttons it belongs to. */
   notice?: ReactNode
 }) {
@@ -186,6 +191,16 @@ export function ProjectForm({
             onChange={(next) => onChange({ ...draft, startupExposesPath: next })}
           />
         </div>
+        {startupNeedsMigration && (
+          <div className="field-switch">
+            <span className="field-hint">{t('startupNeedsMigrationHint')}</span>
+            {onMigrateStartup && (
+              <button type="button" className="button small" onClick={onMigrateStartup}>
+                {t('migrateStartup')}
+              </button>
+            )}
+          </div>
+        )}
       </div>
       <div className="field">
         <label htmlFor={noteId}>

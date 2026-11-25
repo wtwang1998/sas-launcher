@@ -54,6 +54,8 @@ pub struct ProjectView {
     pub startup_file: Option<PathBuf>,
     /// Whether the launch tells the session where that file is.
     pub startup_exposes_path: bool,
+    /// Whether the script still reads the variable the session cannot fill.
+    pub startup_needs_migration: bool,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -223,6 +225,11 @@ fn project_view(app: &App, project: &Project) -> ProjectView {
         config: project.config.clone(),
         startup_file: project.startup_file.clone(),
         startup_exposes_path: project.startup_exposes_path,
+        startup_needs_migration: project
+            .startup_file
+            .as_ref()
+            .and_then(|path| std::fs::read(path).ok())
+            .is_some_and(|bytes| crate::startup::needs_migration(&String::from_utf8_lossy(&bytes))),
         profile: project.profile.as_ref().map(|profile| ProjectProfileView {
             origin: profile.origin.clone(),
             layers: profile.layers,

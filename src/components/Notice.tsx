@@ -14,6 +14,7 @@ export function NoticeBanner({
   t,
   onDismiss,
   onRetry,
+  onMigrateStartup,
   className = '',
 }: {
   notice: Notice
@@ -22,9 +23,12 @@ export function NoticeBanner({
   onDismiss: () => void
   /** Offered when the action can simply be run again, e.g. after closing SAS. */
   onRetry?: () => void
+  /** Offered when the failure has a repair the launcher can run itself. */
+  onMigrateStartup?: (projectId: string) => void
   className?: string
 }) {
   const failed = notice.tone === 'error'
+  const migrate = notice.tone === 'error' ? notice.action : undefined
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     // A long form can leave the message below the fold; every new result
@@ -48,6 +52,15 @@ export function NoticeBanner({
       {failed && onRetry && (
         <button type="button" className="button small" onClick={onRetry}>
           {t('retry')}
+        </button>
+      )}
+      {onMigrateStartup && migrate?.kind === 'migrateStartup' && (
+        <button
+          type="button"
+          className="button small"
+          onClick={() => onMigrateStartup(migrate.projectId)}
+        >
+          {t('migrateStartup')}
         </button>
       )}
       <button

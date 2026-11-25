@@ -50,6 +50,22 @@
     "自动执行时读不到 SAS_EXECFILEPATH（SAS 在窗口启动阶段会重置它）。请让脚本优先读 SASLAUNCHER_STARTUP_FILE，或写死路径。",
     "SAS_EXECFILEPATH is empty when the script runs as an autoexec file, because SAS resets it during a windowed start. Make the script read SASLAUNCHER_STARTUP_FILE first, or hard-code the path."
   ],
+  "startupAlreadyMigrated": [
+    "这个启动文件已经改好了，不需要再次迁移。",
+    "This startup script is already migrated."
+  ],
+  "startupMigrateUnsupported": [
+    "这个启动文件在迁移能处理的位置之外还引用了 SAS_EXECFILEPATH，未做任何改动。请手工改成读 SASLAUNCHER_STARTUP_FILE。",
+    "This startup script reads SAS_EXECFILEPATH somewhere the migration does not rewrite, so nothing was changed. Edit it by hand to read SASLAUNCHER_STARTUP_FILE."
+  ],
+  "startupNotUtf8": [
+    "这个启动文件不是 UTF-8 编码，未做任何改动。请转成 UTF-8 后再迁移，或手工修改。",
+    "This startup script is not UTF-8, so nothing was changed. Convert it to UTF-8 and try again, or edit it by hand."
+  ],
+  "startupWrite": [
+    "无法写入启动文件，未做任何改动。请检查该文件是否只读或被占用。",
+    "Could not write the startup script, so nothing was changed. Check whether the file is read-only or open elsewhere."
+  ],
   "configurationSetupActive": [
     "请先关闭 SAS 设置会话并保存或丢弃本次设置。",
     "Close the SAS settings session and save or discard its changes first."

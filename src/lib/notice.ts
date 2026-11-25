@@ -7,8 +7,11 @@ import type { MessageKey } from '../i18n'
  */
 export type NoticeTarget = 'form' | 'page' | 'dialog' | 'interface' | 'sas' | 'window'
 
+/** A repair the user can run straight from the message that reported the problem. */
+export type NoticeAction = { kind: 'migrateStartup'; projectId: string }
+
 export type Notice =
-  | { tone: 'error'; target: NoticeTarget; error: unknown }
+  | { tone: 'error'; target: NoticeTarget; error: unknown; action?: NoticeAction }
   | {
       tone: 'success'
       target: NoticeTarget

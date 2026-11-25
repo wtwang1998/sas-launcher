@@ -162,6 +162,7 @@ describe('ordering and lookups', () => {
         profile: null,
         startupFile: null,
         startupExposesPath: false,
+        startupNeedsMigration: false,
       },
       {
         id: 'p2',
@@ -171,6 +172,7 @@ describe('ordering and lookups', () => {
         profile: null,
         startupFile: null,
         startupExposesPath: false,
+        startupNeedsMigration: false,
       },
       {
         id: 'p3',
@@ -180,6 +182,7 @@ describe('ordering and lookups', () => {
         profile: null,
         startupFile: null,
         startupExposesPath: false,
+        startupNeedsMigration: false,
       },
     ]
     expect(usageCount(projects, { kind: 'user', id: 'cfg-1' })).toBe(2)

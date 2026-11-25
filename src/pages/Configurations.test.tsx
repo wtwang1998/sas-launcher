@@ -97,6 +97,7 @@ it('referenced_configuration_cannot_be_deleted', async () => {
           profile: null,
           startupFile: null,
           startupExposesPath: false,
+          startupNeedsMigration: false,
         },
       ],
     }),

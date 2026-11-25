@@ -10,6 +10,7 @@ mod process;
 mod profile;
 mod sasuser;
 mod session;
+mod startup;
 mod store;
 mod theme;
 mod view;
@@ -1158,6 +1159,61 @@ async fn delete_project(state: State<'_, AppState>, id: Uuid) -> Result<View, Is
     })
 }
 
+/// Rewrite a project's startup script so it reads the macro variable the session
+/// provides. The original stays next to it as `<name>.bak`.
+#[tauri::command]
+async fn migrate_startup_file(state: State<'_, AppState>, id: Uuid) -> Result<View, Issue> {
+    with_app(&state, |app| {
+        app.migrate_startup_file(id)?;
+        Ok(app.view())
+    })
+}
+
+impl App {
+    /// Rewrite the project's startup script in place, keeping the original as
+    /// `<name>.bak`. The project is marked as exposing the path because the
+    /// migrated script reads the variable the session only provides then.
+    fn migrate_startup_file(&mut self, id: Uuid) -> Result<(), Issue> {
+        self.refresh();
+        let project = self
+            .store
+            .projects()
+            .iter()
+            .find(|project| project.id == id)
+            .cloned()
+            .ok_or_else(|| Issue::new("projectMissing"))?;
+        let path = project
+            .startup_file
+            .clone()
+            .ok_or_else(|| Issue::new("startupFileMissing"))?;
+        let bytes = std::fs::read(&path)
+            .map_err(|error| Issue::with_detail("startupFileMissing", error))?;
+        let source = String::from_utf8(bytes)
+            .map_err(|_| Issue::with_detail("startupNotUtf8", path.display().to_string()))?;
+        let migrated = crate::startup::migrate(&source).map_err(|error| match error {
+            crate::startup::MigrateError::NothingToDo => {
+                Issue::with_detail("startupAlreadyMigrated", path.display().to_string())
+            }
+            crate::startup::MigrateError::Unsupported => {
+                Issue::with_detail("startupMigrateUnsupported", path.display().to_string())
+            }
+        })?;
+        let backup = path.with_file_name(format!(
+            "{}.bak",
+            path.file_name().unwrap_or_default().to_string_lossy()
+        ));
+        if !backup.exists() {
+            std::fs::copy(&path, &backup)
+                .map_err(|error| Issue::with_detail("startupWrite", error))?;
+        }
+        std::fs::write(&path, migrated)
+            .map_err(|error| Issue::with_detail("startupWrite", error))?;
+        let mut updated = project;
+        updated.startup_exposes_path = true;
+        self.store.save_project(updated)
+    }
+}
+
 #[tauri::command]
 async fn create_configuration(
     state: State<'_, AppState>,
@@ -1433,6 +1489,7 @@ fn main() {
             clear_installation,
             save_project,
             delete_project,
+            migrate_startup_file,
             create_configuration,
             update_configuration,
             delete_configuration,
@@ -1944,6 +2001,99 @@ mod tests {
         let error = app.launch_project(id).unwrap_err();
         assert_eq!(error.code, "startupNeedsMacro");
         assert!(app.sessions.cached()[0].argv.is_empty());
+    }
+
+    #[test]
+    fn migrating_a_startup_script_keeps_the_original_and_lets_the_launch_through() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let setup = temp.path().join("setup.sas");
+        let original = "%let DIR_CURRENT = %sysget(SAS_EXECFILEPATH);\n%put &DIR_CURRENT;\n";
+        std::fs::write(&setup, original).unwrap();
+        app.save_project(
+            None,
+            "P".into(),
+            None,
+            None,
+            None,
+            Some(setup.clone()),
+            false,
+        )
+        .unwrap();
+        let id = app.store.projects()[0].id;
+
+        app.migrate_startup_file(id).unwrap();
+
+        let migrated = std::fs::read_to_string(&setup).unwrap();
+        assert!(
+            migrated.contains("%if %symexist(SASLAUNCHER_STARTUP_FILE) %then %do;"),
+            "{migrated}"
+        );
+        assert!(
+            migrated.contains("%let DIR_CURRENT = &SASLAUNCHER_STARTUP_FILE;"),
+            "{migrated}"
+        );
+        assert!(migrated.ends_with("%put &DIR_CURRENT;\n"), "{migrated}");
+        let backup = temp.path().join("setup.sas.bak");
+        assert_eq!(std::fs::read_to_string(&backup).unwrap(), original);
+        assert!(app.store.projects()[0].startup_exposes_path);
+
+        // The migrated script no longer trips the guard.
+        let later = app.launch_project(id).unwrap_err();
+        assert_ne!(later.code, "startupNeedsMacro");
+    }
+
+    #[test]
+    fn migrating_an_already_migrated_script_changes_nothing() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let setup = temp.path().join("setup.sas");
+        let migrated = crate::startup::migrate("%let DIR = %sysget(SAS_EXECFILEPATH);\n").unwrap();
+        std::fs::write(&setup, &migrated).unwrap();
+        app.save_project(
+            None,
+            "P".into(),
+            None,
+            None,
+            None,
+            Some(setup.clone()),
+            true,
+        )
+        .unwrap();
+        let id = app.store.projects()[0].id;
+
+        let error = app.migrate_startup_file(id).unwrap_err();
+        assert_eq!(error.code, "startupAlreadyMigrated");
+        assert_eq!(std::fs::read_to_string(&setup).unwrap(), migrated);
+        assert!(!temp.path().join("setup.sas.bak").exists());
+    }
+
+    #[test]
+    fn migrating_a_script_with_an_unsupported_shape_changes_nothing() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let setup = temp.path().join("setup.sas");
+        let original = "%let dir = %substr(%sysget(SAS_EXECFILEPATH), 1, 3);\n";
+        std::fs::write(&setup, original).unwrap();
+        app.save_project(
+            None,
+            "P".into(),
+            None,
+            None,
+            None,
+            Some(setup.clone()),
+            true,
+        )
+        .unwrap();
+        let id = app.store.projects()[0].id;
+
+        let error = app.migrate_startup_file(id).unwrap_err();
+        assert_eq!(error.code, "startupMigrateUnsupported");
+        assert_eq!(std::fs::read_to_string(&setup).unwrap(), original);
+        assert!(!temp.path().join("setup.sas.bak").exists());
     }
 
     #[test]
