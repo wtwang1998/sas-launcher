@@ -52,28 +52,30 @@ export function NoticeBanner({
         <Check size={18} aria-hidden="true" />
       )}
       <span>{failed ? issueText(language, notice.error) : t(notice.key, notice.values)}</span>
-      {failed && onRetry && (
-        <button type="button" className="button small" onClick={onRetry}>
-          {t('retry')}
-        </button>
-      )}
-      {onMigrateStartup && migrate?.kind === 'migrateStartup' && (
+      <div className="notice-actions">
+        {failed && onRetry && (
+          <button type="button" className="button small" onClick={onRetry}>
+            {t('retry')}
+          </button>
+        )}
+        {onMigrateStartup && migrate?.kind === 'migrateStartup' && (
+          <button
+            type="button"
+            className="button small"
+            onClick={() => onMigrateStartup(migrate.projectId)}
+          >
+            {t('migrateStartup')}
+          </button>
+        )}
         <button
           type="button"
-          className="button small"
-          onClick={() => onMigrateStartup(migrate.projectId)}
+          className="icon-button"
+          aria-label={t(failed ? 'closeError' : 'closeMessage')}
+          onClick={onDismiss}
         >
-          {t('migrateStartup')}
+          <X size={16} />
         </button>
-      )}
-      <button
-        type="button"
-        className="icon-button"
-        aria-label={t(failed ? 'closeError' : 'closeMessage')}
-        onClick={onDismiss}
-      >
-        <X size={16} />
-      </button>
+      </div>
     </div>
   )
 }

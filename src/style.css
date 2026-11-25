@@ -516,8 +516,18 @@ input::placeholder {
   flex-shrink: 0;
 }
 .banner > span {
-  flex: 1;
+  /* `flex: 1` shrinks the text to one character wide, so a long path never
+     wraps: it stacks instead. Grow from the content instead. */
+  flex: 1 1 auto;
+  min-inline-size: 12ch;
   overflow-wrap: anywhere;
+}
+.notice-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  margin-inline-start: auto;
 }
 .banner.error {
   background: var(--danger-bg);
@@ -613,9 +623,6 @@ details[open] .disclosure {
 }
 .page-notice {
   margin: 0 0 14px;
-}
-.form-notice {
-  margin: 12px 0 0;
 }
 .section-notice {
   margin: 10px 0 6px;
@@ -1185,6 +1192,54 @@ details[open] .disclosure {
 }
 .notice-compact span {
   line-height: 1.45;
+}
+
+/* In a card the notice is a band across it: the card already draws the border
+   and the corner, so a second closed box reads as a box inside a box. */
+.project-card > .card-notice {
+  margin: 0;
+  padding: 9px 15px;
+  border-width: 1px 0;
+  border-radius: 0;
+  align-items: flex-start;
+}
+.project-card > .card-notice > svg {
+  margin-top: 1px;
+}
+.project-card > .card-notice > .notice-actions {
+  align-items: center;
+}
+/* Collapsed editor: the band is the card's last child, so its bottom corners
+   follow the card's own radius (12px minus the 1px border). */
+.project-card > .card-notice:last-child {
+  border-radius: 0 0 11px 11px;
+  border-bottom-width: 0;
+}
+.project-card > .card-notice.error {
+  border-color: var(--danger-hover-border);
+}
+.project-card > .card-notice.success {
+  border-color: var(--ok-border);
+}
+
+/* The form notice sits inside the editor, on the third level of the same card:
+   a full band there would add a third horizontal rule, so it is a left rule. */
+.form-notice {
+  margin: 12px 0 0;
+  padding: 2px 0 2px 11px;
+  align-items: flex-start;
+}
+.form-notice.error {
+  border: 0;
+  border-left: 3px solid var(--danger-text);
+  border-radius: 0;
+  background: transparent;
+}
+.form-notice.success {
+  border: 0;
+  border-left: 3px solid var(--ok-text);
+  border-radius: 0;
+  background: transparent;
 }
 .option-warning {
   margin: 0;
