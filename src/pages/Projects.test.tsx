@@ -652,7 +652,7 @@ it('a_failed_save_explains_itself_next_to_the_buttons', async () => {
   expect(document.querySelector('.content > .banner')).toBeNull()
 })
 
-it('a_failed_launch_explains_itself_in_the_project_list', async () => {
+it('a_failed_launch_explains_itself_on_the_project_row', async () => {
   const user = userEvent.setup()
   const project = {
     id: 'p1',
@@ -674,7 +674,103 @@ it('a_failed_launch_explains_itself_in_the_project_list', async () => {
 
   const alert = await screen.findByRole('alert')
   expect(alert).toHaveTextContent('exe missing')
-  expect(alert.classList.contains('page-notice')).toBe(true)
+  // The failure belongs to that row, not to the top of the page.
+  expect(alert.classList.contains('card-notice')).toBe(true)
+  expect(alert.closest('.project-card')).not.toBeNull()
+})
+
+it('a_failed_batch_marks_each_row_and_leaves_the_page_clear', async () => {
+  const user = userEvent.setup()
+  const view = makeView({
+    projects: [
+      {
+        id: 'p1',
+        name: '项目 A',
+        note: null,
+        config: null,
+        profile: null,
+        startupFile: null,
+        startupExposesPath: false,
+        startupNeedsMigration: false,
+      },
+      {
+        id: 'p2',
+        name: '项目 B',
+        note: null,
+        config: null,
+        profile: null,
+        startupFile: null,
+        startupExposesPath: false,
+        startupNeedsMigration: false,
+      },
+    ],
+  })
+  const { backend } = renderApp(view, {
+    launch_batch: () =>
+      [
+        { id: 'p1', name: '项目 A', status: 'failed', reason: { code: 'projectRunning' } },
+        { id: 'p2', name: '项目 B', status: 'started', reason: null },
+      ] as BatchResult[],
+  })
+
+  await user.click(await screen.findByRole('checkbox', { name: '选择项目 项目 A' }))
+  await user.click(screen.getByRole('checkbox', { name: '选择项目 项目 B' }))
+  await user.click(screen.getByRole('button', { name: /启动所选/ }))
+
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'launch_batch')).toHaveLength(1),
+  )
+  const failedRow = (await screen.findByText('项目 A')).closest('.project-card') as HTMLElement
+  expect(within(failedRow).getByRole('alert')).toHaveTextContent('仍在运行')
+  const cleanRow = (await screen.findByText('项目 B')).closest('.project-card') as HTMLElement
+  expect(within(cleanRow).queryByRole('alert')).toBeNull()
+})
+
+it('another_projects_success_keeps_a_rows_error', async () => {
+  const user = userEvent.setup()
+  const view = makeView({
+    projects: [
+      {
+        id: 'p1',
+        name: '项目 A',
+        note: null,
+        config: null,
+        profile: null,
+        startupFile: null,
+        startupExposesPath: false,
+        startupNeedsMigration: false,
+      },
+      {
+        id: 'p2',
+        name: '项目 B',
+        note: null,
+        config: null,
+        profile: null,
+        startupFile: null,
+        startupExposesPath: false,
+        startupNeedsMigration: false,
+      },
+    ],
+  })
+  let calls = 0
+  renderApp(view, {
+    launch_project: (args) => {
+      calls += 1
+      if (args?.id === 'p1') throw { code: 'unexpected', detail: 'exe missing' }
+      return makeSession({ id: 's2', projectId: 'p2' })
+    },
+  })
+
+  const rowA = (await screen.findByText('项目 A')).closest('.project-card') as HTMLElement
+  await user.click(within(rowA).getByRole('button', { name: '启动' }))
+  expect(await within(rowA).findByRole('alert')).toHaveTextContent('exe missing')
+
+  const rowB = (await screen.findByText('项目 B')).closest('.project-card') as HTMLElement
+  await user.click(within(rowB).getByRole('button', { name: '启动' }))
+
+  await waitFor(() => expect(calls).toBe(2))
+  // Launching B must not wipe the message that belongs to A.
+  expect(within(rowA).getByRole('alert')).toHaveTextContent('exe missing')
 })
 
 it('a_failed_delete_keeps_the_confirmation_open_and_says_why', async () => {

@@ -15,6 +15,7 @@ export function NoticeBanner({
   onDismiss,
   onRetry,
   onMigrateStartup,
+  compact = false,
   className = '',
 }: {
   notice: Notice
@@ -25,6 +26,8 @@ export function NoticeBanner({
   onRetry?: () => void
   /** Offered when the failure has a repair the launcher can run itself. */
   onMigrateStartup?: (projectId: string) => void
+  /** Denser layout for a message that sits inside a row. */
+  compact?: boolean
   className?: string
 }) {
   const failed = notice.tone === 'error'
@@ -40,7 +43,7 @@ export function NoticeBanner({
   return (
     <div
       ref={ref}
-      className={`banner ${failed ? 'error' : 'success'} notice-block ${className}`.trim()}
+      className={`banner ${failed ? 'error' : 'success'} notice-block ${compact ? 'notice-compact' : ''} ${className}`.trim()}
       role={failed ? 'alert' : 'status'}
     >
       {failed ? (

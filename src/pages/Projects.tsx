@@ -1,10 +1,10 @@
-import { CircleAlert, FolderPlus, Play, Plus, X } from 'lucide-react'
+import { FolderPlus, Play, Plus } from 'lucide-react'
 import { useState } from 'react'
-import type { BatchResult, Language, Project, SasuserCandidate, View } from '../api'
+import type { Language, Project, SasuserCandidate, View } from '../api'
 import { NoticeBanner } from '../components/Notice'
 import { ProjectCard } from '../components/ProjectCard'
 import { type ProjectDraft, ProjectForm } from '../components/ProjectForm'
-import { issueText, type Translator } from '../i18n'
+import type { Translator } from '../i18n'
 import { configsByRef } from '../lib/config'
 import type { Notice } from '../lib/notice'
 import { profileDraftFrom } from '../lib/profile'
@@ -27,7 +27,10 @@ export type ProjectsProps = {
   onMigrateStartup: (projectId: string) => void
   onDeleteProject: (id: string) => Promise<void>
   onLaunchProject: (id: string) => Promise<void>
-  onLaunchBatch: (ids: string[]) => Promise<BatchResult[]>
+  onLaunchBatch: (ids: string[]) => Promise<void>
+  /** Failures that belong to one project, rendered by that project's row. */
+  projectNotices: Record<string, Notice>
+  onDismissProjectNotice: (projectId: string) => void
 }
 
 export function Projects({
@@ -49,9 +52,10 @@ export function Projects({
   onDeleteProject,
   onLaunchProject,
   onLaunchBatch,
+  projectNotices,
+  onDismissProjectNotice,
 }: ProjectsProps) {
   const [checked, setChecked] = useState<ReadonlySet<string>>(() => new Set())
-  const [failures, setFailures] = useState<BatchResult[]>([])
   const selected = view.projects
     .filter((project) => checked.has(project.id))
     .map((project) => project.id)
@@ -81,8 +85,7 @@ export function Projects({
   }
 
   async function launchSelected() {
-    const results = await onLaunchBatch(selected)
-    setFailures(results.filter((result) => result.status === 'failed'))
+    await onLaunchBatch(selected)
   }
 
   const newProjectOpen = draft !== null && draft.id === null
@@ -177,30 +180,6 @@ export function Projects({
         </div>
       )}
 
-      {failures.length > 0 && (
-        <div className="banner error batch-failures" role="alert">
-          <CircleAlert size={18} aria-hidden="true" />
-          <div>
-            <strong>{t('batchFailures')}</strong>
-            <ul>
-              {failures.map((result) => (
-                <li key={result.id}>
-                  {result.name ?? t('unavailableProject')} · {issueText(language, result.reason)}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={t('closeError')}
-            onClick={() => setFailures([])}
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
-
       {view.projects.length === 0 && !draft && (
         <div className="empty panel">
           <span className="empty-icon">
@@ -245,6 +224,19 @@ export function Projects({
             }
             onDelete={() => void onDeleteProject(project.id)}
             onLaunch={() => void onLaunchProject(project.id)}
+            notice={
+              projectNotices[project.id] ? (
+                <NoticeBanner
+                  notice={projectNotices[project.id]}
+                  language={language}
+                  t={t}
+                  compact
+                  onDismiss={() => onDismissProjectNotice(project.id)}
+                  onMigrateStartup={onMigrateStartup}
+                  className="card-notice"
+                />
+              ) : null
+            }
           >
             {editing(project) && draft && (
               <ProjectForm

@@ -14,7 +14,6 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import {
   api,
-  type BatchResult,
   type ConfigBase,
   type Language,
   refKey,
@@ -54,6 +53,11 @@ export function App() {
   const [pendingDraft, setPendingDraft] = useState<ProjectDraft | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
+  /**
+   * Results about one project, keyed by that project, so a failure stays on its
+   * own row instead of at the top of the page. A batch can fail several at once.
+   */
+  const [projectNotices, setProjectNotices] = useState<Record<string, Notice>>({})
   const [fallbackLanguage] = useState<Language>(browserLanguage)
   const saving = useRef(false)
   const revision = useRef(0)
@@ -133,6 +137,33 @@ export function App() {
     }
   }
 
+  /** A failure that belongs to one project, with the repair it may offer. */
+  function reportProjectFailure(projectId: string, failure: unknown) {
+    const code =
+      typeof failure === 'object' && failure !== null && 'code' in failure
+        ? (failure as { code?: unknown }).code
+        : undefined
+    setProjectNotices((current) => ({
+      ...current,
+      [projectId]: {
+        tone: 'error',
+        target: 'project',
+        projectId,
+        error: failure,
+        action: code === 'startupNeedsMacro' ? { kind: 'migrateStartup', projectId } : undefined,
+      },
+    }))
+  }
+
+  function clearProjectFailure(projectId: string) {
+    setProjectNotices((current) => {
+      if (!(projectId in current)) return current
+      const next = { ...current }
+      delete next[projectId]
+      return next
+    })
+  }
+
   async function launch(action: () => Promise<Session>, success: MessageKey, projectId?: string) {
     if (saving.current) return
     saving.current = true
@@ -141,24 +172,16 @@ export function App() {
     setNotice(null)
     try {
       const session = await action()
+      if (projectId) clearProjectFailure(projectId)
       setNotice({ tone: 'success', target: 'page', key: success, values: { name: session.name } })
       const next = await api.snapshot()
       if (next) setView(next)
     } catch (failure) {
-      const code =
-        typeof failure === 'object' && failure !== null && 'code' in failure
-          ? (failure as { code?: unknown }).code
-          : undefined
-      setNotice({
-        tone: 'error',
-        target: 'page',
-        error: failure,
-        // A script that cannot find itself has a repair the launcher can apply.
-        action:
-          projectId && code === 'startupNeedsMacro'
-            ? { kind: 'migrateStartup', projectId }
-            : undefined,
-      })
+      if (projectId) {
+        reportProjectFailure(projectId, failure)
+      } else {
+        setNotice({ tone: 'error', target: 'page', error: failure })
+      }
     } finally {
       saving.current = false
       setBusy(false)
@@ -315,20 +338,23 @@ export function App() {
     if (updated) await launchProject(projectId)
   }
 
-  async function launchBatch(ids: string[]): Promise<BatchResult[]> {
-    if (saving.current) return []
+  async function launchBatch(ids: string[]): Promise<void> {
+    if (saving.current) return
     saving.current = true
     revision.current += 1
     setBusy(true)
     setNotice(null)
     try {
       const results = await api.launchBatch(ids)
+      // A batch reports on each project where the user was looking: its row.
+      for (const result of results) {
+        if (result.status === 'started') clearProjectFailure(result.id)
+        else if (result.reason) reportProjectFailure(result.id, result.reason)
+      }
       const next = await api.snapshot()
       if (next) setView(next)
-      return results
     } catch (failure) {
       setNotice({ tone: 'error', target: 'page', error: failure })
-      return []
     } finally {
       saving.current = false
       setBusy(false)
@@ -541,6 +567,8 @@ export function App() {
               onDeleteProject={deleteProject}
               onLaunchProject={launchProject}
               onLaunchBatch={launchBatch}
+              projectNotices={projectNotices}
+              onDismissProjectNotice={(projectId) => clearProjectFailure(projectId)}
             />
           )}
 

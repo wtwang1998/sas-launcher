@@ -18,6 +18,7 @@ export function ProjectCard({
   onEdit,
   onDelete,
   onLaunch,
+  notice,
   children,
 }: {
   project: Project
@@ -33,6 +34,8 @@ export function ProjectCard({
   onEdit: () => void
   onDelete: () => void
   onLaunch: () => void
+  /** A result about this project, shown under its summary either way. */
+  notice?: ReactNode
   children?: ReactNode
 }) {
   return (
@@ -99,6 +102,7 @@ export function ProjectCard({
           </button>
         </div>
       </div>
+      {notice}
       {editing && <div className="inline-project-editor">{children}</div>}
     </article>
   )

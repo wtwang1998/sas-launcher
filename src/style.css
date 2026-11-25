@@ -1177,8 +1177,14 @@ details[open] .disclosure {
   gap: 7px;
   font-size: 13px;
 }
-.field-switch-label {
-  font-weight: 650;
+/* A message that sits inside a card is part of that row, not a page banner. */
+.notice-compact {
+  margin: 0 0 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+.notice-compact span {
+  line-height: 1.45;
 }
 .option-warning {
   margin: 0;
