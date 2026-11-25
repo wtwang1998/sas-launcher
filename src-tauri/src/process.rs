@@ -37,9 +37,10 @@ pub const STARTUP_PATH_VAR: &str = "SASLAUNCHER_STARTUP_FILE";
 /// ASCII-only bootstrap that runs before the project's file: it includes the
 /// UTF-8 path file. The bootstrap must stay ASCII because SAS reads an autoexec
 /// file in the session encoding, and the session encoding is not known here.
+/// The fileref is six characters: SAS logical names stop at eight.
 pub fn startup_prelude(path_file: &Path) -> String {
     format!(
-        "filename _sasl_startup \"{}\" encoding=\"utf-8\";\r\n%include _sasl_startup;\r\n",
+        "filename saslst \"{}\" encoding=\"utf-8\";\r\n%include saslst;\r\n",
         path_file.display()
     )
 }
@@ -272,6 +273,8 @@ mod tests {
             text.contains("C:/data/sessions/s1/startup-path.sas"),
             "{text}"
         );
+        // SAS rejects a fileref the way it rejected the longer first draft.
+        assert!(text.contains("filename saslst \""), "{text}");
     }
 
     #[test]
