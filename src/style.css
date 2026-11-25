@@ -267,6 +267,12 @@ h2 {
   background: var(--accent-wash);
   border-color: var(--accent-border);
 }
+/* 项目行的启动按钮定宽：启动 65px、运行中 77px、Launch 84px、Running 92px，
+   宽度由文案撑开时，右边距一固定，多出来的宽度就向左挤，把前面的铅笔与垃圾桶推走。
+   写 96px 是因为 Running 实测就到了 92px；再窄这条规则对英文那行不生效。 */
+.project-summary .button.launch {
+  min-width: 96px;
+}
 .icon-button {
   height: 32px;
   width: 32px;
