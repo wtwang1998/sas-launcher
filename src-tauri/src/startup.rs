@@ -28,7 +28,9 @@ pub fn needs_migration(contents: &str) -> bool {
 /// `%let <name> = %sysget(SAS_EXECFILEPATH);` in any spacing or case.
 fn assignment_name(line: &str) -> Option<&str> {
     let trimmed = line.trim();
-    if trimmed.len() < 4 || !trimmed[..4].eq_ignore_ascii_case("%let") {
+    // Step by characters, not bytes: a Chinese comment can put byte 4 inside a
+    // multi-byte character and `&trimmed[..4]` would panic on it.
+    if !trimmed.get(..4)?.eq_ignore_ascii_case("%let") {
         return None;
     }
     let (name, value) = trimmed[4..].split_once('=')?;
@@ -158,6 +160,28 @@ mod tests {
             migrated.matches("\r\n").count(),
             source.matches("\r\n").count() + 5
         );
+    }
+
+    #[test]
+    fn migrates_a_file_whose_comments_are_chinese() {
+        // A comment can put the fourth byte inside a multi-byte character; the
+        // scan must step back instead of slicing it.
+        let source = "/*设置常用文件夹路径*/\r\n%let DIR_CURRENT = %sysget(SAS_EXECFILEPATH);\r\n";
+        let migrated = migrate(source).expect("migrates");
+        assert!(migrated.starts_with("/*设置常用文件夹路径*/"), "{migrated}");
+        assert!(
+            migrated.contains("%let DIR_CURRENT = &SASLAUNCHER_STARTUP_FILE;"),
+            "{migrated}"
+        );
+    }
+
+    #[test]
+    fn scans_lines_that_start_inside_a_multi_byte_character() {
+        // These prefixes are one, two and three bytes wide, so byte index four
+        // lands inside the following character.
+        for prefix in ["/*设", "/*设置", "/* 设"] {
+            assert_eq!(migrate(prefix), Err(MigrateError::NothingToDo), "{prefix}");
+        }
     }
 
     #[test]
