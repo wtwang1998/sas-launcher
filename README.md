@@ -44,7 +44,7 @@ SAS Launcher gives every project its own configuration and hands each launch a p
 
 - Point a project at its own autoexec file and SAS runs it on every launch, before any code you type: reset globals, set the raw, analysis and TFL folders and load the macro library once instead of in every session.
 - It is added to the site's autoexec chain with `-APPEND AUTOEXEC`, so an installation or company `autoexec.sas` still runs first. A missing file refuses the launch instead of opening a session with half its paths undefined.
-- Scripts that locate themselves with `%sysget(SAS_EXECFILEPATH)` need **Tell the session where the startup file is**: SAS only fills that variable for programs the Enhanced Editor submits, so the launcher passes it with `-SET`. SAS overwrites it as usual the first time a program is submitted. With the option off, such a script is refused at launch rather than started with empty paths.
+- Scripts that locate themselves with `%sysget(SAS_EXECFILEPATH)` need **Tell the session where the startup file is**: SAS resets that variable while a windowed session starts, so the launcher first runs a one-line prelude inside the session that sets it, then the project's own file. With the option off, such a script is refused at launch rather than started with empty paths.
 
 **Diagnostics you can act on**
 

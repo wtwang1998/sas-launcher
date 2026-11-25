@@ -208,13 +208,22 @@ impl Sessions {
         fs::create_dir(&directory).map_err(|error| Issue::with_detail("sessionCreate", error))?;
         let sasuser = directory.join(SASUSER);
         let title = window_title(&request.name, Some(&request.encoding));
+        let prelude = match (&request.startup, request.expose_startup_path) {
+            (Some(_), true) => {
+                let path = directory.join(process::STARTUP_PRELUDE);
+                fs::write(&path, process::startup_prelude())
+                    .map_err(|error| Issue::with_detail("sessionCreate", error))?;
+                Some(path)
+            }
+            _ => None,
+        };
         let arguments = process::arguments(
             &request.cfg,
             &sasuser,
             &title,
             &directory,
             request.startup.as_deref(),
-            request.expose_startup_path,
+            prelude.as_deref(),
         );
         let mut writable = false;
         let mut record = Record {

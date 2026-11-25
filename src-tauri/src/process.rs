@@ -28,20 +28,32 @@ pub enum Status {
     Unknown,
 }
 
+/// The session-scoped file that runs just before the project's startup file.
+pub const STARTUP_PRELUDE: &str = "startup-prelude.sas";
+
+/// SAS resets `SAS_EXECFILEPATH` while a windowed session starts, so a value
+/// passed on the command line never reaches the autoexec files (measured: the
+/// variable is empty again inside the session). An `OPTIONS SET=` issued inside
+/// the session does survive. The prelude stays pure ASCII and reads the path
+/// from an environment variable, because the file is read in the session's
+/// encoding while the path itself may hold characters that encoding mangles.
+pub fn startup_prelude() -> &'static str {
+    "options set=SAS_EXECFILEPATH \"%sysget(SASLAUNCHER_STARTUP_FILE)\";\r\n"
+}
+
 /// The launch command line, in the order documented in the redesign spec.
 /// `-ENCODING`/`-LOCALE` are intentionally absent: they live in the cfg the
 /// `-CONFIG` argument points at. A project's own autoexec file is appended with
 /// `-APPEND AUTOEXEC`: on Windows that adds it to the autoexec chain the factory
 /// cfg already declares instead of replacing the site's file. Projects whose
-/// script locates itself also get `-SET SAS_EXECFILEPATH`, because SAS only
-/// fills that variable for programs the Enhanced Editor submits.
+/// script locates itself also get the prelude and its environment variable.
 pub fn arguments(
     cfg: &Path,
     sasuser: &Path,
     title: &str,
     altlog_dir: &Path,
     startup: Option<&Path>,
-    expose_startup_path: bool,
+    prelude: Option<&Path>,
 ) -> Vec<OsString> {
     let mut arguments: Vec<OsString> = vec![
         "-CONFIG".into(),
@@ -57,10 +69,13 @@ pub fn arguments(
         "WRITE=IMMEDIATE".into(),
     ];
     if let Some(startup) = startup {
-        if expose_startup_path {
+        if let Some(prelude) = prelude {
             arguments.push("-SET".into());
-            arguments.push("SAS_EXECFILEPATH".into());
+            arguments.push("SASLAUNCHER_STARTUP_FILE".into());
             arguments.push(startup.as_os_str().into());
+            arguments.push("-APPEND".into());
+            arguments.push("AUTOEXEC".into());
+            arguments.push(prelude.as_os_str().into());
         }
         arguments.push("-APPEND".into());
         arguments.push("AUTOEXEC".into());
@@ -145,7 +160,7 @@ mod tests {
             "项目一 · UTF-8",
             Path::new(r"C:\用户设置\会话"),
             None,
-            false,
+            None,
         );
         assert_eq!(
             arguments,
@@ -179,8 +194,8 @@ mod tests {
         let altlog = Path::new("C:/用户设置/会话");
         let startup = Path::new("C:/程序/setup.sas");
 
-        let plain = arguments(cfg, sasuser, "项目一", altlog, None, false);
-        let appended = arguments(cfg, sasuser, "项目一", altlog, Some(startup), false);
+        let plain = arguments(cfg, sasuser, "项目一", altlog, None, None);
+        let appended = arguments(cfg, sasuser, "项目一", altlog, Some(startup), None);
 
         let tail: Vec<String> = appended[plain.len()..]
             .iter()
@@ -199,42 +214,57 @@ mod tests {
     }
 
     #[test]
-    fn arguments_expose_the_startup_path_only_when_the_project_asks() {
+    fn arguments_bridge_the_startup_path_through_the_session_prelude() {
         let cfg = Path::new("C:/配置/sasv9.cfg");
         let sasuser = Path::new("C:/会话/sasuser");
         let altlog = Path::new("C:/会话");
         let startup = Path::new("C:/程序/setup.sas");
+        let prelude = Path::new("C:/会话/startup-prelude.sas");
 
-        let hidden = arguments(cfg, sasuser, "项目一", altlog, Some(startup), false);
-        let exposed = arguments(cfg, sasuser, "项目一", altlog, Some(startup), true);
+        let hidden = arguments(cfg, sasuser, "项目一", altlog, Some(startup), None);
+        let bridged = arguments(cfg, sasuser, "项目一", altlog, Some(startup), Some(prelude));
 
-        let tail: Vec<String> = hidden[hidden.len() - 3..]
-            .iter()
-            .map(|argument| argument.to_string_lossy().into_owned())
-            .collect();
-        // Without the switch the session never learns where the file is.
-        assert_eq!(
-            tail,
-            ["-APPEND", "AUTOEXEC", "C:/程序/setup.sas"].map(str::to_owned)
-        );
-        assert!(!hidden.iter().any(|argument| argument == "-SET"));
-        assert_eq!(
-            exposed[hidden.len() - 3..]
+        let tail = |arguments: &[OsString], from: usize| -> Vec<String> {
+            arguments[from..]
                 .iter()
                 .map(|argument| argument.to_string_lossy().into_owned())
-                .collect::<Vec<String>>(),
+                .collect()
+        };
+        assert_eq!(
+            tail(&hidden, hidden.len() - 3),
+            ["-APPEND", "AUTOEXEC", "C:/程序/setup.sas"].map(str::to_owned)
+        );
+        // The environment variable SAS keeps, the prelude that copies it into
+        // SAS_EXECFILEPATH, then the project's own file.
+        assert_eq!(
+            tail(&bridged, hidden.len() - 3),
             [
                 "-SET",
-                "SAS_EXECFILEPATH",
+                "SASLAUNCHER_STARTUP_FILE",
                 "C:/程序/setup.sas",
+                "-APPEND",
+                "AUTOEXEC",
+                "C:/会话/startup-prelude.sas",
                 "-APPEND",
                 "AUTOEXEC",
                 "C:/程序/setup.sas",
             ]
             .map(str::to_owned)
         );
-        // The exposure only adds a prefix pair; the log copy is untouched.
-        assert_eq!(&exposed[..hidden.len() - 3], &hidden[..hidden.len() - 3]);
+        // A command-line SAS_EXECFILEPATH never survives a windowed start.
+        assert!(
+            !bridged
+                .iter()
+                .any(|argument| argument == "SAS_EXECFILEPATH")
+        );
+    }
+
+    #[test]
+    fn the_prelude_is_ascii_and_reads_the_path_from_the_environment() {
+        let text = startup_prelude();
+        assert!(text.is_ascii(), "{text}");
+        assert!(text.contains("options set=SAS_EXECFILEPATH"), "{text}");
+        assert!(text.contains("%sysget(SASLAUNCHER_STARTUP_FILE)"), "{text}");
     }
 
     #[test]
