@@ -1,26 +1,34 @@
 # Release notes template
 
-The draft release body is written by hand from this template. `gh release create
---generate-notes` lists pull requests, and this repository commits straight to
-`main`, so the generated body comes back empty. Paste a filled template over it
-before publishing.
+The draft body is a committed file: `docs/release-notes/v<version>.md`. The
+`Release` workflow publishes it when it exists and falls back to
+`--generate-notes` otherwise, because that flag only lists pull requests and
+`main` receives none.
 
 ## How to use
 
-1. Copy the skeleton below into a file, fill it in, then apply it with
-   `gh release edit v<version> --notes-file <file>`.
-2. Replace every `<...>`: version, installer name, size, SHA-256, bullets.
-3. Read the checksum from the file that is actually uploaded:
-   `sha256sum release-assets/SAS-Launcher-<version>-x64-Setup.exe`.
+1. Copy the skeleton below into `docs/release-notes/v<version>.md` and commit it
+   with the version bump. The file name must match the tag exactly.
+2. Replace every `<...>`: version, previous tag, bullets and the commit list.
+3. Do not write the installer size or its SHA-256. The release page prints both
+   next to the asset, and a copied hash goes stale the moment the installer is
+   rebuilt.
 4. Build the collapsed commit list with
-   `git log --reverse --format=%h%x09%s v<previous>..v<version>`, then prefix
-   every line with `` - `<hash>` ``.
+   `git log --reverse --format=%h%x09%s v<previous>..HEAD`, then prefix every
+   line with `` - `<hash>` ``; the count is the number of lines.
 5. Keep the release as a draft, and a pre-release while the version is still
    below 1.0, until the real-machine check passes.
 6. Open the published page in a real browser and click both switchers: the top
    `English` and the bottom `简体中文`. Each must land on its own heading, and
    the address bar must read `#english` / `#zh` — a `#user-content-` fragment
    means the link was written in the fallback form.
+
+The unsigned-installer block belongs to the skeleton while the build is
+unsigned. The workflow appends it only when the body is missing it, so a body
+that drops it still ships the warning — just not where the reader is looking.
+Remove it from this template on the day the installer is signed.
+
+`docs/release-notes/v0.3.0.md` is the worked example.
 
 ## Skeleton
 
@@ -32,7 +40,7 @@ before publishing.
 > [!WARNING]
 > **<一句话说明破坏性变更；没有就删掉整块>**
 
-安装包：`SAS-Launcher-<version>-x64-Setup.exe`（<size> MB）· SHA-256 `<sha256>`
+安装包：`SAS-Launcher-<version>-x64-Setup.exe`
 
 ### 安装
 
@@ -60,7 +68,7 @@ before publishing.
 > [!WARNING]
 > **<the same breaking change in one sentence; drop the whole block when there is none>**
 
-Installer: `SAS-Launcher-<version>-x64-Setup.exe` (<size> MB) · SHA-256 `<sha256>`
+Installer: `SAS-Launcher-<version>-x64-Setup.exe`
 
 ### Install
 
@@ -122,5 +130,3 @@ The full commit list is at the end.
   changes, limitations, unsigned note.
 - Delete a block instead of leaving `<...>` behind: an unfilled placeholder ships
   as a broken note.
-
-The published v0.2.0 release is the reference example.

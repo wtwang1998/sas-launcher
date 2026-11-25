@@ -80,9 +80,9 @@ npm run check        # 格式、lint、clippy、类型、两套测试
 仅维护者。一次发布从一个 tag 开始：
 
 1. 在 `main` 上用一次提交同时改 `package.json`、`src-tauri/Cargo.toml`、`src-tauri/tauri.conf.json` 的版本号。
-2. 给那个提交打 `v<version>` tag 并推送。
-3. `Release` workflow 会先校验 tag 与三个文件一致，不符就不构建；通过后把安装包传到一个 **draft** release。
-4. 按 `docs/release-notes-template.md` 填写 draft 正文。`--generate-notes` 只列 PR，而 `main` 不收 PR，自动生成的正文是空的。
+2. 按 `docs/release-notes-template.md` 写 `docs/release-notes/v<version>.md`，和版本号一起提交；workflow 直接把这份正文用作 draft 内容，文件名必须与 tag 一致。
+3. 给那个提交打 `v<version>` tag 并推送。
+4. `Release` workflow 会先校验 tag 与三个文件一致，不符就不构建；通过后把安装包传到 **draft** release。没有留下正文文件的 tag 仍会构建，退回 `--generate-notes`，而它只列 PR、`main` 不收 PR，所以正文是空的。
 5. 在一台干净的 Windows 机器上安装这个 draft，检查从上一版本的升级路径，再手动发布。
 
 安装包没有代码签名，运行前 SmartScreen 会警告，release 说明里已经写明。

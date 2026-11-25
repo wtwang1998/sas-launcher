@@ -98,12 +98,14 @@ Maintainers only. A release starts with a tag:
 
 1. Bump the version in `package.json`, `src-tauri/Cargo.toml` and
    `src-tauri/tauri.conf.json` in one commit on `main`.
-2. Tag that commit `v<version>` and push the tag.
-3. The `Release` workflow refuses to build unless the tag matches all three
-   files, then uploads the installer to a **draft** release.
-4. Fill the draft body from `docs/release-notes-template.md`. `--generate-notes`
-   only lists pull requests, and `main` receives none, so the generated body is
-   empty.
+2. Write `docs/release-notes/v<version>.md` from
+   `docs/release-notes-template.md` and commit it with the bump. The workflow
+   publishes that body as the draft, and the file name must match the tag.
+3. Tag that commit `v<version>` and push the tag.
+4. The `Release` workflow refuses to build unless the tag matches all three
+   files, then uploads the installer to a **draft** release. A tag without a
+   notes file still builds: it falls back to `--generate-notes`, which lists
+   pull requests, and `main` receives none, so that body is empty.
 5. Install the draft on a clean Windows machine, check the upgrade from the
    previous version, then publish.
 

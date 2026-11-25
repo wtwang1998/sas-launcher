@@ -63,22 +63,38 @@ jobs:
             exit 0
           fi
           version="$(node -p "require('./src-tauri/tauri.conf.json').version")"
-          gh release create "$tag" \
-            --draft \
-            --title "SAS Launcher ${version}" \
-            --generate-notes
-      # The generated notes come first, then the warning that users of an
-      # unsigned installer actually need to read.
-      - name: append the unsigned installer note
+          notes="docs/release-notes/v${version}.md"
+          if [ -f "$notes" ]; then
+            gh release create "$tag" \
+              --draft \
+              --title "SAS Launcher ${version}" \
+              --notes-file "$notes"
+          else
+            # A forgotten file must not fail the release; --generate-notes only
+            # lists pull requests, and main receives none.
+            echo "::warning::$notes is missing, falling back to generated notes"
+            gh release create "$tag" \
+              --draft \
+              --title "SAS Launcher ${version}" \
+              --generate-notes
+          fi
+      # The committed body already ends with the warning a user of an unsigned
+      # installer needs; a generated body does not carry it.
+      - name: ensure the unsigned installer note
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           tag="${{ github.ref_name }}"
+          body="$(gh release view "$tag" --json body --jq .body)"
+          if printf '%s' "$body" | grep -qF '[!IMPORTANT]'; then
+            echo "the release body already carries its note"
+            exit 0
+          fi
           {
-            gh release view "$tag" --json body --jq .body
-            printf '\n\n> [!IMPORTANT]\n'
+            printf '%s\n\n' "$body"
+            printf '> [!IMPORTANT]\n'
             printf '> This installer is unsigned. Windows SmartScreen will warn when you run it:\n'
             printf '> choose "More info" and then "Run anyway" only if you trust this build.\n'
           } > release-notes.md
