@@ -28,17 +28,29 @@ pub enum Status {
     Unknown,
 }
 
-/// The session-scoped file that runs just before the project's startup file.
+/// The two session files that hand the startup path to the script.
 pub const STARTUP_PRELUDE: &str = "startup-prelude.sas";
+pub const STARTUP_PATH: &str = "startup-path.sas";
+/// The global macro variable a self-locating script reads.
+pub const STARTUP_PATH_VAR: &str = "SASLAUNCHER_STARTUP_FILE";
 
-/// SAS resets `SAS_EXECFILEPATH` while a windowed session starts, so a value
-/// passed on the command line never reaches the autoexec files (measured: the
-/// variable is empty again inside the session). An `OPTIONS SET=` issued inside
-/// the session does survive. The prelude stays pure ASCII and reads the path
-/// from an environment variable, because the file is read in the session's
-/// encoding while the path itself may hold characters that encoding mangles.
-pub fn startup_prelude() -> &'static str {
-    "options set=SAS_EXECFILEPATH \"%sysget(SASLAUNCHER_STARTUP_FILE)\";\r\n"
+/// ASCII-only bootstrap that runs before the project's file: it includes the
+/// UTF-8 path file. The bootstrap must stay ASCII because SAS reads an autoexec
+/// file in the session encoding, and the session encoding is not known here.
+pub fn startup_prelude(path_file: &Path) -> String {
+    format!(
+        "filename _sasl_startup \"{}\" encoding=\"utf-8\";\r\n%include _sasl_startup;\r\n",
+        path_file.display()
+    )
+}
+
+/// The UTF-8 file the bootstrap includes. `%nrstr` keeps a `%` or `&` in a
+/// folder name from being read as a macro trigger.
+pub fn startup_path_file(startup: &Path) -> String {
+    format!(
+        "%let {STARTUP_PATH_VAR} = %nrstr({});\r\n",
+        startup.display()
+    )
 }
 
 /// The launch command line, in the order documented in the redesign spec.
@@ -46,7 +58,7 @@ pub fn startup_prelude() -> &'static str {
 /// `-CONFIG` argument points at. A project's own autoexec file is appended with
 /// `-APPEND AUTOEXEC`: on Windows that adds it to the autoexec chain the factory
 /// cfg already declares instead of replacing the site's file. Projects whose
-/// script locates itself also get the prelude and its environment variable.
+/// script locates itself get the prelude in front of that file.
 pub fn arguments(
     cfg: &Path,
     sasuser: &Path,
@@ -70,9 +82,6 @@ pub fn arguments(
     ];
     if let Some(startup) = startup {
         if let Some(prelude) = prelude {
-            arguments.push("-SET".into());
-            arguments.push("SASLAUNCHER_STARTUP_FILE".into());
-            arguments.push(startup.as_os_str().into());
             arguments.push("-APPEND".into());
             arguments.push("AUTOEXEC".into());
             arguments.push(prelude.as_os_str().into());
@@ -234,14 +243,10 @@ mod tests {
             tail(&hidden, hidden.len() - 3),
             ["-APPEND", "AUTOEXEC", "C:/程序/setup.sas"].map(str::to_owned)
         );
-        // The environment variable SAS keeps, the prelude that copies it into
-        // SAS_EXECFILEPATH, then the project's own file.
+        // The prelude that defines the macro variable, then the project's file.
         assert_eq!(
             tail(&bridged, hidden.len() - 3),
             [
-                "-SET",
-                "SASLAUNCHER_STARTUP_FILE",
-                "C:/程序/setup.sas",
                 "-APPEND",
                 "AUTOEXEC",
                 "C:/会话/startup-prelude.sas",
@@ -251,20 +256,33 @@ mod tests {
             ]
             .map(str::to_owned)
         );
-        // A command-line SAS_EXECFILEPATH never survives a windowed start.
+        // SAS resets the environment variable, so nothing travels that way.
+        assert!(!bridged.iter().any(|argument| argument == "-SET"));
+    }
+
+    #[test]
+    fn the_prelude_is_ascii_and_includes_the_path_file_as_utf8() {
+        // The session folder must be ASCII for this to hold; that is why the
+        // comments above keep the bootstrap free of the path itself.
+        let path_file = Path::new("C:/data/sessions/s1/startup-path.sas");
+        let text = startup_prelude(path_file);
+        assert!(text.is_ascii(), "{text}");
+        assert!(text.contains("encoding=\"utf-8\""), "{text}");
         assert!(
-            !bridged
-                .iter()
-                .any(|argument| argument == "SAS_EXECFILEPATH")
+            text.contains("C:/data/sessions/s1/startup-path.sas"),
+            "{text}"
         );
     }
 
     #[test]
-    fn the_prelude_is_ascii_and_reads_the_path_from_the_environment() {
-        let text = startup_prelude();
-        assert!(text.is_ascii(), "{text}");
-        assert!(text.contains("options set=SAS_EXECFILEPATH"), "{text}");
-        assert!(text.contains("%sysget(SASLAUNCHER_STARTUP_FILE)"), "{text}");
+    fn the_path_file_carries_a_chinese_path_for_utf8_reading() {
+        let startup = Path::new("E:/统计部/项目/05 磐升瑞祥/setup.sas");
+        let text = startup_path_file(startup);
+        assert!(text.contains(STARTUP_PATH_VAR), "{text}");
+        assert!(
+            text.contains("%nrstr(E:/统计部/项目/05 磐升瑞祥/setup.sas)"),
+            "{text}"
+        );
     }
 
     #[test]

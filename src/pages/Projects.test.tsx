@@ -303,7 +303,7 @@ it('a_launch_refused_because_the_file_locates_itself_says_what_to_change', async
     }),
     {
       launch_project: () => {
-        throw { code: 'startupNeedsPath', detail: 'D:/项目/setup.sas' }
+        throw { code: 'startupNeedsMacro', detail: 'D:/项目/setup.sas' }
       },
     },
   )
@@ -311,7 +311,7 @@ it('a_launch_refused_because_the_file_locates_itself_says_what_to_change', async
   await user.click(await screen.findByRole('button', { name: '启动' }))
 
   const alert = await screen.findByRole('alert')
-  expect(alert).toHaveTextContent('SAS_EXECFILEPATH')
+  expect(alert).toHaveTextContent('SASLAUNCHER_STARTUP_FILE')
 })
 
 it('a_new_project_inherits_the_detected_user_folder_by_default', async () => {

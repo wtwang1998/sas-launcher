@@ -481,7 +481,7 @@ impl App {
             resolved.profile = self.store.project_profile_source(project);
         }
         resolved.startup = validate_startup_file(project.startup_file.clone())?;
-        ensure_startup_self_location(resolved.startup.as_deref(), project.startup_exposes_path)?;
+        ensure_startup_path_available(resolved.startup.as_deref(), project.startup_exposes_path)?;
         resolved.startup_exposes_path = project.startup_exposes_path;
         Ok(resolved)
     }
@@ -745,19 +745,24 @@ fn validate_startup_file(path: Option<PathBuf>) -> Result<Option<PathBuf>, Issue
 /// so a startup file that reads it gets an empty value unless the launch also
 /// passes `-SET`. Refuse the launch rather than open a session whose paths are
 /// silently wrong.
-fn ensure_startup_self_location(startup: Option<&Path>, exposed: bool) -> Result<(), Issue> {
+fn ensure_startup_path_available(startup: Option<&Path>, exposed: bool) -> Result<(), Issue> {
     let Some(startup) = startup else {
         return Ok(());
     };
-    if exposed {
-        return Ok(());
-    }
     let bytes =
         std::fs::read(startup).map_err(|error| Issue::with_detail("startupFileMissing", error))?;
-    let text = String::from_utf8_lossy(&bytes);
-    if text.to_ascii_uppercase().contains("SAS_EXECFILEPATH") {
+    let text = String::from_utf8_lossy(&bytes).to_ascii_uppercase();
+    let uses_macro = text.contains(crate::process::STARTUP_PATH_VAR);
+    let uses_env = text.contains("SAS_EXECFILEPATH");
+    if uses_macro && !exposed {
         return Err(Issue::with_detail(
             "startupNeedsPath",
+            startup.display().to_string(),
+        ));
+    }
+    if uses_env && !uses_macro {
+        return Err(Issue::with_detail(
+            "startupNeedsMacro",
             startup.display().to_string(),
         ));
     }
@@ -1897,7 +1902,7 @@ mod tests {
         let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
         let mut app = app_with_install(temp.path(), &exe);
         let setup = temp.path().join("setup.sas");
-        std::fs::write(&setup, b"%let DIR = %sysget(SAS_EXECFILEPATH);\n").unwrap();
+        std::fs::write(&setup, b"%let DIR = &SASLAUNCHER_STARTUP_FILE;\n").unwrap();
         app.save_project(
             None,
             "P".into(),
@@ -1921,6 +1926,24 @@ mod tests {
             .unwrap();
         let later = app.launch_project(id).unwrap_err();
         assert_ne!(later.code, "startupNeedsPath");
+    }
+
+    #[test]
+    fn a_startup_file_that_still_reads_the_environment_variable_is_refused() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let setup = temp.path().join("setup.sas");
+        // SAS resets that variable during a windowed start, so instructing the
+        // project to expose the path cannot make this script work.
+        std::fs::write(&setup, b"%let DIR = %sysget(SAS_EXECFILEPATH);\n").unwrap();
+        app.save_project(None, "P".into(), None, None, None, Some(setup), true)
+            .unwrap();
+        let id = app.store.projects()[0].id;
+
+        let error = app.launch_project(id).unwrap_err();
+        assert_eq!(error.code, "startupNeedsMacro");
+        assert!(app.sessions.cached()[0].argv.is_empty());
     }
 
     #[test]

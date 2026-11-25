@@ -43,8 +43,12 @@
     "The startup code file needs an absolute path."
   ],
   "startupNeedsPath": [
-    "该启动文件读取 SAS_EXECFILEPATH，请勾选「向会话提供启动文件路径」，或在脚本里改掉这个用法。",
-    "The startup file reads SAS_EXECFILEPATH. Turn on \"tell the session where the startup file is\", or stop relying on that variable in the script."
+    "该启动脚本读取 SASLAUNCHER_STARTUP_FILE，请勾选「向会话提供启动文件路径」，或改成写死路径。",
+    "The startup script reads SASLAUNCHER_STARTUP_FILE. Turn on \"tell the session where the startup file is\", or hard-code the path instead."
+  ],
+  "startupNeedsMacro": [
+    "自动执行时读不到 SAS_EXECFILEPATH（SAS 在窗口启动阶段会重置它）。请让脚本优先读 SASLAUNCHER_STARTUP_FILE，或写死路径。",
+    "SAS_EXECFILEPATH is empty when the script runs as an autoexec file, because SAS resets it during a windowed start. Make the script read SASLAUNCHER_STARTUP_FILE first, or hard-code the path."
   ],
   "configurationSetupActive": [
     "请先关闭 SAS 设置会话并保存或丢弃本次设置。",

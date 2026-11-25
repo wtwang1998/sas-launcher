@@ -209,11 +209,14 @@ impl Sessions {
         let sasuser = directory.join(SASUSER);
         let title = window_title(&request.name, Some(&request.encoding));
         let prelude = match (&request.startup, request.expose_startup_path) {
-            (Some(_), true) => {
-                let path = directory.join(process::STARTUP_PRELUDE);
-                fs::write(&path, process::startup_prelude())
+            (Some(startup), true) => {
+                let path_file = directory.join(process::STARTUP_PATH);
+                fs::write(&path_file, process::startup_path_file(startup))
                     .map_err(|error| Issue::with_detail("sessionCreate", error))?;
-                Some(path)
+                let prelude = directory.join(process::STARTUP_PRELUDE);
+                fs::write(&prelude, process::startup_prelude(&path_file))
+                    .map_err(|error| Issue::with_detail("sessionCreate", error))?;
+                Some(prelude)
             }
             _ => None,
         };

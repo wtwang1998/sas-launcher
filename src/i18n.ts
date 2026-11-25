@@ -95,8 +95,8 @@ export const messages = {
   sasProgram: ['SAS 程序', 'SAS program'],
   startupExposesPath: ['向会话提供启动文件路径', 'Tell the session where the startup file is'],
   startupExposesPathHint: [
-    '脚本用 %sysget(SAS_EXECFILEPATH) 推导项目路径时需要打开；路径写死、只设 libname 或 options 的不需要。',
-    'Turn it on when the script derives project paths from %sysget(SAS_EXECFILEPATH); leave it off when paths are hard-coded.',
+    '打开后脚本里可以用 &SASLAUNCHER_STARTUP_FILE 拿到本文件的路径；靠自身位置推导项目路径时需要，路径写死的不用。',
+    'When on, the script can read &SASLAUNCHER_STARTUP_FILE; turn it on when the script derives paths from its own location. Hard-coded paths need neither.',
   ],
   cancel: ['取消', 'Cancel'],
   save: ['保存', 'Save'],
