@@ -65,6 +65,7 @@ docs/images/            README 截图（真机拍摄）
 
 - 五条缝：纯函数（表驱动）/ 页面（RTL + `mockIPC`，只断言看见什么、提交什么）/ IPC 契约（`api.test.ts`）/ Rust（`#[cfg(test)] mod tests`）/ 发布 guard（`scripts/*.test.mjs`）。
 - 新行为先写失败测试再实现。**不要**为测试引入 trait 或 mock 文件系统：现有测试直接建 `tempfile::tempdir()`，用真实文件与真实 `powershell.exe` 子进程。
+- 能走到 `launch` 的测试必须用 `app_with_install(temp, &exe)` 钉住 exe：没钉时 `App::new` 会回退到 `discovery::find_installed()`，在真机上启动真正的 SAS。helper 里的断言会在路径跑出临时目录时当场 panic。
 - 样式、纯配置、文档改动不写测试。
 - 真实 SAS 启动、安装包、视觉：**命令全绿不等于完成**，必须在真机手工走一遍，并在答复里说明跑了什么、结果如何。
 - 不要假定 clippy 警告或测试失败是既有的；先确认再下结论。

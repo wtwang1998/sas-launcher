@@ -1419,6 +1419,15 @@ mod tests {
     }
 
     fn app_with_install(root: &Path, exe: &Path) -> App {
+        // `App::new` falls back to `discovery::find_installed` when settings pin
+        // no executable, so an unpinned launch test starts the machine's real
+        // SAS. A launch test therefore has to point at a fixture install that
+        // lives under its own root.
+        assert!(
+            exe.starts_with(root),
+            "launch tests must pin a fixture install, not {}",
+            exe.display()
+        );
         let mut app = App::new(root.join("data")).unwrap();
         app.store
             .update(|settings| settings.exe = Some(exe.to_path_buf()))
@@ -1531,6 +1540,15 @@ mod tests {
 
         let error = app.launch_project(other).unwrap_err();
         assert_ne!(error.code, "projectRunning");
+    }
+
+    #[test]
+    #[should_panic(expected = "launch tests must pin a fixture install")]
+    fn a_launch_fixture_refuses_an_install_outside_its_data_root() {
+        let temp = tempfile::tempdir().unwrap();
+        let elsewhere = tempfile::tempdir().unwrap();
+        let exe = install_fixture(elsewhere.path(), &[("en", "wlatin1", "en_US")], "en");
+        let _ = app_with_install(temp.path(), &exe);
     }
 
     #[test]
