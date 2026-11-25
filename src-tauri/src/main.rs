@@ -67,6 +67,8 @@ struct Resolved {
     profile: Option<PathBuf>,
     /// A project's own autoexec file; only `resolved_for` ever fills it in.
     startup: Option<PathBuf>,
+    /// Whether the launch tells the session where that file is.
+    startup_exposes_path: bool,
 }
 
 #[derive(Serialize)]
@@ -219,6 +221,7 @@ impl App {
                         .profile_revision_dir(config)
                         .filter(|directory| profile::has_catalog_files(directory)),
                     startup: None,
+                    startup_exposes_path: false,
                 })
             }
         }
@@ -241,6 +244,7 @@ impl App {
             thin,
             profile,
             startup: None,
+            startup_exposes_path: false,
         })
     }
 
@@ -269,6 +273,7 @@ impl App {
             locale: resolved.locale.clone(),
             profile: resolved.profile,
             startup: resolved.startup,
+            expose_startup_path: resolved.startup_exposes_path,
             exe,
         });
         if let Some(locale) = resolved.locale.as_deref() {
@@ -454,6 +459,7 @@ impl App {
             // A settings session builds a clean snapshot: the project's own
             // autoexec file must never run here.
             startup: None,
+            startup_exposes_path: false,
         };
         self.launch(resolved, config.name.clone(), Purpose::Setup { config: id })?;
         Ok(())
@@ -475,6 +481,8 @@ impl App {
             resolved.profile = self.store.project_profile_source(project);
         }
         resolved.startup = validate_startup_file(project.startup_file.clone())?;
+        ensure_startup_self_location(resolved.startup.as_deref(), project.startup_exposes_path)?;
+        resolved.startup_exposes_path = project.startup_exposes_path;
         Ok(resolved)
     }
 
@@ -733,6 +741,29 @@ fn validate_startup_file(path: Option<PathBuf>) -> Result<Option<PathBuf>, Issue
     Ok(Some(path))
 }
 
+/// SAS fills `SAS_EXECFILEPATH` only for programs the Enhanced Editor submits,
+/// so a startup file that reads it gets an empty value unless the launch also
+/// passes `-SET`. Refuse the launch rather than open a session whose paths are
+/// silently wrong.
+fn ensure_startup_self_location(startup: Option<&Path>, exposed: bool) -> Result<(), Issue> {
+    let Some(startup) = startup else {
+        return Ok(());
+    };
+    if exposed {
+        return Ok(());
+    }
+    let bytes =
+        std::fs::read(startup).map_err(|error| Issue::with_detail("startupFileMissing", error))?;
+    let text = String::from_utf8_lossy(&bytes);
+    if text.to_ascii_uppercase().contains("SAS_EXECFILEPATH") {
+        return Err(Issue::with_detail(
+            "startupNeedsPath",
+            startup.display().to_string(),
+        ));
+    }
+    Ok(())
+}
+
 fn failure_stage(code: &str) -> Stage {
     match code {
         "sasMissing" | "invalidExe" | "exeAccess" | "dataPath" => Stage::Exe,
@@ -901,6 +932,9 @@ enum ProfileChoice {
 }
 
 #[tauri::command]
+// The arguments are the project form's fields, one per input; grouping them
+// into a struct would only move the same list behind a name.
+#[allow(clippy::too_many_arguments)]
 async fn save_project(
     state: State<'_, AppState>,
     id: Option<Uuid>,
@@ -909,9 +943,18 @@ async fn save_project(
     config: Option<ConfigRef>,
     profile: Option<ProfileChoice>,
     startup_file: Option<PathBuf>,
+    startup_exposes_path: bool,
 ) -> Result<View, Issue> {
     with_app(&state, |app| {
-        app.save_project(id, name, note, config, profile, startup_file)?;
+        app.save_project(
+            id,
+            name,
+            note,
+            config,
+            profile,
+            startup_file,
+            startup_exposes_path,
+        )?;
         Ok(app.view())
     })
 }
@@ -947,6 +990,8 @@ impl App {
         }
     }
 
+    /// See `save_project`'s command wrapper for why this signature is long.
+    #[allow(clippy::too_many_arguments)]
     fn save_project(
         &mut self,
         id: Option<Uuid>,
@@ -955,6 +1000,7 @@ impl App {
         config: Option<ConfigRef>,
         choice: Option<ProfileChoice>,
         startup_file: Option<PathBuf>,
+        startup_exposes_path: bool,
     ) -> Result<(), Issue> {
         let name = validate_name(&name)?;
         let note = validate_note(note)?;
@@ -1054,6 +1100,7 @@ impl App {
             config,
             profile,
             startup_file,
+            startup_exposes_path,
         })?;
         let Some(source) = source else {
             return Ok(());
@@ -1516,6 +1563,7 @@ mod tests {
                 config: None,
                 profile: None,
                 startup_file: None,
+                startup_exposes_path: false,
             })
             .unwrap();
         app.store
@@ -1705,6 +1753,7 @@ mod tests {
                 config: Some(ConfigRef::User { id }),
                 profile: None,
                 startup_file: None,
+                startup_exposes_path: false,
             })
             .unwrap();
 
@@ -1720,6 +1769,7 @@ mod tests {
                 config: None,
                 profile: None,
                 startup_file: None,
+                startup_exposes_path: false,
             })
             .unwrap();
         app.delete_configuration(id).unwrap();
@@ -1824,6 +1874,7 @@ mod tests {
                 }),
                 profile: None,
                 startup_file: None,
+                startup_exposes_path: false,
             })
             .unwrap();
         let id = app.store.projects()[0].id;
@@ -1841,6 +1892,38 @@ mod tests {
     }
 
     #[test]
+    fn a_startup_file_that_locates_itself_is_refused_until_the_project_allows_it() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let setup = temp.path().join("setup.sas");
+        std::fs::write(&setup, b"%let DIR = %sysget(SAS_EXECFILEPATH);\n").unwrap();
+        app.save_project(
+            None,
+            "P".into(),
+            None,
+            None,
+            None,
+            Some(setup.clone()),
+            false,
+        )
+        .unwrap();
+        let id = app.store.projects()[0].id;
+
+        let error = app.launch_project(id).unwrap_err();
+        assert_eq!(error.code, "startupNeedsPath");
+        let records = app.sessions.cached();
+        assert_eq!(records.len(), 1, "the refused launch must leave evidence");
+        assert!(records[0].argv.is_empty(), "{:?}", records[0].argv);
+
+        // Allowing the exposure carries the same project past the guard.
+        app.save_project(Some(id), "P".into(), None, None, None, Some(setup), true)
+            .unwrap();
+        let later = app.launch_project(id).unwrap_err();
+        assert_ne!(later.code, "startupNeedsPath");
+    }
+
+    #[test]
     fn saving_a_project_whose_startup_file_is_missing_is_refused() {
         let temp = tempfile::tempdir().unwrap();
         let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
@@ -1848,7 +1931,7 @@ mod tests {
 
         let missing = temp.path().join("setup.sas");
         let error = app
-            .save_project(None, "P".into(), None, None, None, Some(missing))
+            .save_project(None, "P".into(), None, None, None, Some(missing), false)
             .unwrap_err();
         assert_eq!(error.code, "startupFileMissing");
         assert!(
@@ -1866,7 +1949,15 @@ mod tests {
         // A relative path has no project folder to resolve against, so it is
         // refused instead of being read against the sessions root by accident.
         let error = app
-            .save_project(None, "P".into(), None, None, None, Some("setup.sas".into()))
+            .save_project(
+                None,
+                "P".into(),
+                None,
+                None,
+                None,
+                Some("setup.sas".into()),
+                false,
+            )
             .unwrap_err();
         assert_eq!(error.code, "startupFileNotAbsolute");
     }
@@ -1878,8 +1969,16 @@ mod tests {
         let mut app = app_with_install(temp.path(), &exe);
         let setup = temp.path().join("setup.sas");
         std::fs::write(&setup, b"%put setup;").unwrap();
-        app.save_project(None, "P".into(), None, None, None, Some(setup.clone()))
-            .unwrap();
+        app.save_project(
+            None,
+            "P".into(),
+            None,
+            None,
+            None,
+            Some(setup.clone()),
+            false,
+        )
+        .unwrap();
         let id = app.store.projects()[0].id;
         std::fs::remove_file(&setup).unwrap();
 
@@ -1904,8 +2003,16 @@ mod tests {
         let mut app = app_with_install(temp.path(), &exe);
         let setup = temp.path().join("setup.sas");
         std::fs::write(&setup, b"%put setup;").unwrap();
-        app.save_project(None, "P".into(), None, None, None, Some(setup.clone()))
-            .unwrap();
+        app.save_project(
+            None,
+            "P".into(),
+            None,
+            None,
+            None,
+            Some(setup.clone()),
+            false,
+        )
+        .unwrap();
         let id = app.store.projects()[0].id;
         std::fs::remove_file(&setup).unwrap();
 
@@ -1999,6 +2106,7 @@ mod tests {
                 layers: interface_only,
             }),
             None,
+            false,
         )
         .unwrap();
         // What the new default leaves behind on an old project: the declaration
@@ -2016,6 +2124,7 @@ mod tests {
             None,
             Some(ProfileChoice::Keep),
             None,
+            false,
         )
         .unwrap();
 
@@ -2046,6 +2155,7 @@ mod tests {
                     layers: Layers::DEFAULT,
                 }),
                 None,
+                false,
             )
             .unwrap_err();
 
@@ -2074,6 +2184,7 @@ mod tests {
                     layers: Layers::DEFAULT,
                 }),
                 None,
+                false,
             )
             .unwrap_err();
 
@@ -2104,6 +2215,7 @@ mod tests {
                     layers: Layers::DEFAULT,
                 }),
                 None,
+                false,
             )
             .unwrap_err();
 
@@ -2130,6 +2242,7 @@ mod tests {
                 layers: Layers::DEFAULT,
             }),
             None,
+            false,
         )
         .unwrap();
         let id = app.store.projects()[0].id;
@@ -2172,6 +2285,7 @@ mod tests {
                 layers: Layers::DEFAULT,
             }),
             None,
+            false,
         )
         .unwrap();
 
@@ -2211,6 +2325,7 @@ mod tests {
                     layers: Layers::DEFAULT,
                 }),
                 None,
+                false,
             )
             .unwrap_err();
         assert_eq!(error.code, "profileLocked");
@@ -2235,6 +2350,7 @@ mod tests {
                 layers: Layers::DEFAULT,
             }),
             None,
+            false,
         )
         .unwrap();
         let saved = app.store.projects()[0].clone();
@@ -2261,6 +2377,7 @@ mod tests {
                     layers: Layers::DEFAULT,
                 }),
                 None,
+                false,
             )
             .unwrap_err();
         assert_eq!(error.code, "profileLocked");

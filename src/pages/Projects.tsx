@@ -236,6 +236,7 @@ export function Projects({
                 config: project.config,
                 profile: profileDraftFrom(project.profile),
                 startupFile: project.startupFile ?? '',
+                startupExposesPath: project.startupExposesPath,
               })
             }
             onDelete={() => void onDeleteProject(project.id)}

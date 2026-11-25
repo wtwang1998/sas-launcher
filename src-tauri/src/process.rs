@@ -32,13 +32,16 @@ pub enum Status {
 /// `-ENCODING`/`-LOCALE` are intentionally absent: they live in the cfg the
 /// `-CONFIG` argument points at. A project's own autoexec file is appended with
 /// `-APPEND AUTOEXEC`: on Windows that adds it to the autoexec chain the factory
-/// cfg already declares instead of replacing the site's file.
+/// cfg already declares instead of replacing the site's file. Projects whose
+/// script locates itself also get `-SET SAS_EXECFILEPATH`, because SAS only
+/// fills that variable for programs the Enhanced Editor submits.
 pub fn arguments(
     cfg: &Path,
     sasuser: &Path,
     title: &str,
     altlog_dir: &Path,
     startup: Option<&Path>,
+    expose_startup_path: bool,
 ) -> Vec<OsString> {
     let mut arguments: Vec<OsString> = vec![
         "-CONFIG".into(),
@@ -54,6 +57,11 @@ pub fn arguments(
         "WRITE=IMMEDIATE".into(),
     ];
     if let Some(startup) = startup {
+        if expose_startup_path {
+            arguments.push("-SET".into());
+            arguments.push("SAS_EXECFILEPATH".into());
+            arguments.push(startup.as_os_str().into());
+        }
         arguments.push("-APPEND".into());
         arguments.push("AUTOEXEC".into());
         arguments.push(startup.as_os_str().into());
@@ -137,6 +145,7 @@ mod tests {
             "项目一 · UTF-8",
             Path::new(r"C:\用户设置\会话"),
             None,
+            false,
         );
         assert_eq!(
             arguments,
@@ -170,8 +179,8 @@ mod tests {
         let altlog = Path::new("C:/用户设置/会话");
         let startup = Path::new("C:/程序/setup.sas");
 
-        let plain = arguments(cfg, sasuser, "项目一", altlog, None);
-        let appended = arguments(cfg, sasuser, "项目一", altlog, Some(startup));
+        let plain = arguments(cfg, sasuser, "项目一", altlog, None, false);
+        let appended = arguments(cfg, sasuser, "项目一", altlog, Some(startup), false);
 
         let tail: Vec<String> = appended[plain.len()..]
             .iter()
@@ -187,6 +196,45 @@ mod tests {
         );
         // Appending must not touch the copy of the log or the window title.
         assert_eq!(&appended[..plain.len()], plain);
+    }
+
+    #[test]
+    fn arguments_expose_the_startup_path_only_when_the_project_asks() {
+        let cfg = Path::new("C:/配置/sasv9.cfg");
+        let sasuser = Path::new("C:/会话/sasuser");
+        let altlog = Path::new("C:/会话");
+        let startup = Path::new("C:/程序/setup.sas");
+
+        let hidden = arguments(cfg, sasuser, "项目一", altlog, Some(startup), false);
+        let exposed = arguments(cfg, sasuser, "项目一", altlog, Some(startup), true);
+
+        let tail: Vec<String> = hidden[hidden.len() - 3..]
+            .iter()
+            .map(|argument| argument.to_string_lossy().into_owned())
+            .collect();
+        // Without the switch the session never learns where the file is.
+        assert_eq!(
+            tail,
+            ["-APPEND", "AUTOEXEC", "C:/程序/setup.sas"].map(str::to_owned)
+        );
+        assert!(!hidden.iter().any(|argument| argument == "-SET"));
+        assert_eq!(
+            exposed[hidden.len() - 3..]
+                .iter()
+                .map(|argument| argument.to_string_lossy().into_owned())
+                .collect::<Vec<String>>(),
+            [
+                "-SET",
+                "SAS_EXECFILEPATH",
+                "C:/程序/setup.sas",
+                "-APPEND",
+                "AUTOEXEC",
+                "C:/程序/setup.sas",
+            ]
+            .map(str::to_owned)
+        );
+        // The exposure only adds a prefix pair; the log copy is untouched.
+        assert_eq!(&exposed[..hidden.len() - 3], &hidden[..hidden.len() - 3]);
     }
 
     #[test]

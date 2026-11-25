@@ -189,6 +189,7 @@ export function App() {
           next.config,
           profileChoiceFor(project, next.profile),
           next.startupFile.trim() || null,
+          next.startupExposesPath,
         ),
       'projectSaved',
       'form',

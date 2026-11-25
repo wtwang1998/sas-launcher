@@ -33,6 +33,7 @@ it('a project card says when its snapshot misses a declared layer', async () => 
       projects: [
         {
           startupFile: null,
+          startupExposesPath: false,
           id: 'p1',
           name: '项目 A',
           note: null,
@@ -84,6 +85,7 @@ it('editing a project shows where its preference comes from', async () => {
       projects: [
         {
           startupFile: null,
+          startupExposesPath: false,
           id: 'p1',
           name: '项目 A',
           note: null,
@@ -125,6 +127,7 @@ it('editing a project can turn the environment layer on', async () => {
       projects: [
         {
           startupFile: null,
+          startupExposesPath: false,
           id: 'p1',
           name: '项目 A',
           note: null,
@@ -167,6 +170,7 @@ it('a failed save while editing the card explains itself there', async () => {
       projects: [
         {
           startupFile: null,
+          startupExposesPath: false,
           id: 'p1',
           name: '项目 A',
           note: null,
@@ -224,6 +228,7 @@ it('submitting_default_following_project_sends_null_config', async () => {
     config: null,
     profile: { kind: 'fresh', layers: { interface: true, environment: true, templates: false } },
     startupFile: null,
+    startupExposesPath: false,
   })
 })
 
@@ -248,7 +253,65 @@ it('a_typed_startup_file_is_sent_with_the_project', async () => {
     config: null,
     profile: { kind: 'fresh', layers: { interface: true, environment: true, templates: false } },
     startupFile: 'D:/项目/setup.sas',
+    startupExposesPath: false,
   })
+})
+
+it('exposing_the_startup_path_is_opt_in_and_travels_with_the_project', async () => {
+  const user = userEvent.setup()
+  const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [],
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+  await user.type(screen.getByLabelText(/项目名称/), '项目 A')
+
+  const toggle = screen.getByRole('switch', { name: '向会话提供启动文件路径' })
+  expect(toggle).toBeDisabled()
+  expect(toggle).toHaveAttribute('aria-checked', 'false')
+
+  await user.type(screen.getByLabelText(/启动代码文件/), 'D:/项目/setup.sas')
+  expect(toggle).toBeEnabled()
+  await user.click(toggle)
+  expect(toggle).toHaveAttribute('aria-checked', 'true')
+
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'save_project')).toHaveLength(1),
+  )
+  expect(backend.calls.find((call) => call.cmd === 'save_project')?.args).toMatchObject({
+    startupFile: 'D:/项目/setup.sas',
+    startupExposesPath: true,
+  })
+})
+
+it('a_launch_refused_because_the_file_locates_itself_says_what_to_change', async () => {
+  const user = userEvent.setup()
+  renderApp(
+    makeView({
+      projects: [
+        {
+          id: 'p1',
+          name: '项目 A',
+          note: null,
+          config: null,
+          profile: null,
+          startupFile: 'D:/项目/setup.sas',
+          startupExposesPath: false,
+        },
+      ],
+    }),
+    {
+      launch_project: () => {
+        throw { code: 'startupNeedsPath', detail: 'D:/项目/setup.sas' }
+      },
+    },
+  )
+
+  await user.click(await screen.findByRole('button', { name: '启动' }))
+
+  const alert = await screen.findByRole('alert')
+  expect(alert).toHaveTextContent('SAS_EXECFILEPATH')
 })
 
 it('a_new_project_inherits_the_detected_user_folder_by_default', async () => {
@@ -285,6 +348,7 @@ it('a_new_project_inherits_the_detected_user_folder_by_default', async () => {
       layers: { interface: true, environment: true, templates: false },
     },
     startupFile: null,
+    startupExposesPath: false,
   })
 })
 
@@ -428,6 +492,7 @@ it('name_is_required_and_trimmed', async () => {
     config: null,
     profile: { kind: 'fresh', layers: { interface: true, environment: true, templates: false } },
     startupFile: null,
+    startupExposesPath: false,
   })
 })
 
@@ -436,9 +501,18 @@ it('batch_launch_sends_selected_ids', async () => {
   const view = makeView({
     configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
     projects: [
-      { id: 'p1', name: '项目 A', note: null, config: null, profile: null, startupFile: null },
+      {
+        id: 'p1',
+        name: '项目 A',
+        note: null,
+        config: null,
+        profile: null,
+        startupFile: null,
+        startupExposesPath: false,
+      },
       {
         startupFile: null,
+        startupExposesPath: false,
         id: 'p2',
         name: '项目 B',
         note: null,
@@ -465,7 +539,15 @@ it('a_running_project_is_marked_and_cannot_be_launched_again', async () => {
   const user = userEvent.setup()
   const view = makeView({
     projects: [
-      { id: 'p1', name: '项目 A', note: null, config: null, profile: null, startupFile: null },
+      {
+        id: 'p1',
+        name: '项目 A',
+        note: null,
+        config: null,
+        profile: null,
+        startupFile: null,
+        startupExposesPath: false,
+      },
     ],
     sessions: [makeSession({ id: 's1', name: '项目 A', projectId: 'p1', status: 'running' })],
   })
@@ -483,7 +565,15 @@ it('an_idle_project_still_launches_from_its_row', async () => {
   const user = userEvent.setup()
   const view = makeView({
     projects: [
-      { id: 'p1', name: '项目 A', note: null, config: null, profile: null, startupFile: null },
+      {
+        id: 'p1',
+        name: '项目 A',
+        note: null,
+        config: null,
+        profile: null,
+        startupFile: null,
+        startupExposesPath: false,
+      },
     ],
   })
   const { backend } = renderApp(view, {
@@ -527,6 +617,7 @@ it('a_failed_launch_explains_itself_in_the_project_list', async () => {
     config: null,
     profile: null,
     startupFile: null,
+    startupExposesPath: false,
   }
   renderApp(makeView({ projects: [project] }), {
     launch_project: () => {
@@ -550,6 +641,7 @@ it('a_failed_delete_keeps_the_confirmation_open_and_says_why', async () => {
     config: null,
     profile: null,
     startupFile: null,
+    startupExposesPath: false,
   }
   renderApp(makeView({ projects: [project] }), {
     delete_project: () => {

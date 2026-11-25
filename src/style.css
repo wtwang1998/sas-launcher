@@ -1170,6 +1170,16 @@ details[open] .disclosure {
   font-family: "Cascadia Mono", Consolas, monospace;
   font-size: 12px;
 }
+/* A labelled switch that belongs to the field above it. */
+.field-switch {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+}
+.field-switch-label {
+  font-weight: 650;
+}
 .option-warning {
   margin: 0;
   color: var(--warn-text);

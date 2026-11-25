@@ -5,6 +5,8 @@ import { configReady } from '../lib/config'
 import { emptyProfileDraft, type ProfileDraft, profileReady } from '../lib/profile'
 import { ConfigChoice } from './ConfigChoice'
 import { FieldLabel } from './form-fields'
+import { Switch } from './Switch'
+import { Tooltip } from './Tooltip'
 import { UserFolderChoice } from './UserFolderChoice'
 
 export type ProjectDraft = {
@@ -15,6 +17,8 @@ export type ProjectDraft = {
   profile: ProfileDraft
   /** The project's own autoexec file; an empty string means "run none". */
   startupFile: string
+  /** Whether the session is told where that file is (`SAS_EXECFILEPATH`). */
+  startupExposesPath: boolean
 }
 
 export const emptyProjectDraft: ProjectDraft = {
@@ -24,6 +28,7 @@ export const emptyProjectDraft: ProjectDraft = {
   config: null,
   profile: emptyProfileDraft,
   startupFile: '',
+  startupExposesPath: false,
 }
 
 /**
@@ -67,6 +72,7 @@ export function ProjectForm({
   const nameId = useId()
   const noteId = useId()
   const startupId = useId()
+  const exposeId = useId()
   const errorId = useId()
   const [nameMissing, setNameMissing] = useState(false)
 
@@ -167,6 +173,18 @@ export function ProjectForm({
               {t('clearStartupFile')}
             </button>
           )}
+        </div>
+        <div className="field-switch">
+          <span id={exposeId} className="field-switch-label">
+            {t('startupExposesPath')}
+          </span>
+          <Tooltip label={t('helpHint')} text={t('startupExposesPathHint')} />
+          <Switch
+            labelledBy={exposeId}
+            checked={draft.startupExposesPath}
+            disabled={busy || draft.startupFile === ''}
+            onChange={(next) => onChange({ ...draft, startupExposesPath: next })}
+          />
         </div>
       </div>
       <div className="field">

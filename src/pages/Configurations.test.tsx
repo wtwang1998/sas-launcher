@@ -96,6 +96,7 @@ it('referenced_configuration_cannot_be_deleted', async () => {
           config: { kind: 'user', id: 'cfg-1' },
           profile: null,
           startupFile: null,
+          startupExposesPath: false,
         },
       ],
     }),

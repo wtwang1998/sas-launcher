@@ -93,6 +93,11 @@ export const messages = {
   clearStartupFile: ['清除', 'Clear'],
   pickStartupFile: ['选择启动代码文件', 'Select the startup code file'],
   sasProgram: ['SAS 程序', 'SAS program'],
+  startupExposesPath: ['向会话提供启动文件路径', 'Tell the session where the startup file is'],
+  startupExposesPathHint: [
+    '脚本用 %sysget(SAS_EXECFILEPATH) 推导项目路径时需要打开；路径写死、只设 libname 或 options 的不需要。',
+    'Turn it on when the script derives project paths from %sysget(SAS_EXECFILEPATH); leave it off when paths are hard-coded.',
+  ],
   cancel: ['取消', 'Cancel'],
   save: ['保存', 'Save'],
   launch: ['启动', 'Launch'],

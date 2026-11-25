@@ -42,6 +42,10 @@
     "启动代码文件需要一个绝对路径。",
     "The startup code file needs an absolute path."
   ],
+  "startupNeedsPath": [
+    "该启动文件读取 SAS_EXECFILEPATH，请勾选「向会话提供启动文件路径」，或在脚本里改掉这个用法。",
+    "The startup file reads SAS_EXECFILEPATH. Turn on \"tell the session where the startup file is\", or stop relying on that variable in the script."
+  ],
   "configurationSetupActive": [
     "请先关闭 SAS 设置会话并保存或丢弃本次设置。",
     "Close the SAS settings session and save or discard its changes first."

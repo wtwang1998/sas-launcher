@@ -75,7 +75,15 @@ it('commands_match_the_rust_handler_names', async () => {
     {
       name: 'saveProject',
       run: () =>
-        api.saveProject('p1', '项目 A', '备注', userRef, { kind: 'keep' }, 'D:/项目/setup.sas'),
+        api.saveProject(
+          'p1',
+          '项目 A',
+          '备注',
+          userRef,
+          { kind: 'keep' },
+          'D:/项目/setup.sas',
+          true,
+        ),
       cmd: 'save_project',
       args: {
         id: 'p1',
@@ -84,11 +92,12 @@ it('commands_match_the_rust_handler_names', async () => {
         config: userRef,
         profile: { kind: 'keep' },
         startupFile: 'D:/项目/setup.sas',
+        startupExposesPath: true,
       },
     },
     {
       name: 'saveProject with defaults',
-      run: () => api.saveProject(null, '项目 B', null, null, null, null),
+      run: () => api.saveProject(null, '项目 B', null, null, null, null, false),
       cmd: 'save_project',
       args: {
         id: null,
@@ -97,6 +106,7 @@ it('commands_match_the_rust_handler_names', async () => {
         config: null,
         profile: null,
         startupFile: null,
+        startupExposesPath: false,
       },
     },
     {

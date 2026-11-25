@@ -81,6 +81,11 @@ pub struct Project {
     /// project can set up its own paths without a manual run on every launch.
     #[serde(default)]
     pub startup_file: Option<PathBuf>,
+    /// Whether the launch also tells the session where that file is. Off unless
+    /// the project asks, because it fills in a variable SAS reserves for
+    /// programs the Enhanced Editor submits.
+    #[serde(default)]
+    pub startup_exposes_path: bool,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -874,6 +879,7 @@ mod tests {
                     fresh: false,
                 }),
                 startup_file: None,
+                startup_exposes_path: false,
             }],
         )
         .unwrap();

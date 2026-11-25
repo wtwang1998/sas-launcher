@@ -52,6 +52,8 @@ pub struct ProjectView {
     pub profile: Option<ProjectProfileView>,
     /// The project's own autoexec file; `None` runs no project initialization.
     pub startup_file: Option<PathBuf>,
+    /// Whether the launch tells the session where that file is.
+    pub startup_exposes_path: bool,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -220,6 +222,7 @@ fn project_view(app: &App, project: &Project) -> ProjectView {
         note: project.note.clone(),
         config: project.config.clone(),
         startup_file: project.startup_file.clone(),
+        startup_exposes_path: project.startup_exposes_path,
         profile: project.profile.as_ref().map(|profile| ProjectProfileView {
             origin: profile.origin.clone(),
             layers: profile.layers,

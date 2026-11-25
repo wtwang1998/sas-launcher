@@ -87,6 +87,8 @@ pub struct LaunchRequest {
     pub profile: Option<PathBuf>,
     /// The project's own autoexec file, appended to the site's autoexec chain.
     pub startup: Option<PathBuf>,
+    /// Whether the session is told where that file is (`SAS_EXECFILEPATH`).
+    pub expose_startup_path: bool,
     pub exe: PathBuf,
 }
 
@@ -212,6 +214,7 @@ impl Sessions {
             &title,
             &directory,
             request.startup.as_deref(),
+            request.expose_startup_path,
         );
         let mut writable = false;
         let mut record = Record {
@@ -913,6 +916,7 @@ mod tests {
                 config: None,
                 profile,
                 startup_file: None,
+                startup_exposes_path: false,
             }],
         )
         .unwrap();
