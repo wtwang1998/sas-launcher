@@ -77,6 +77,10 @@ pub struct Project {
     /// those keep seeding from the configuration they point at.
     #[serde(default)]
     pub profile: Option<ProjectProfile>,
+    /// A project-specific autoexec file SAS runs before any user code, so each
+    /// project can set up its own paths without a manual run on every launch.
+    #[serde(default)]
+    pub startup_file: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -741,6 +745,31 @@ mod tests {
     }
 
     #[test]
+    fn a_project_saved_before_startup_files_existed_loads_without_one() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut store = Store::open(temp.path().join("data")).unwrap();
+        let id = Uuid::new_v4();
+        fs::write(
+            store.data_dir().join("projects.json"),
+            format!(r#"[{{"id":"{id}","name":"Old project"}}]"#),
+        )
+        .unwrap();
+        store.reload().unwrap();
+        assert_eq!(store.projects().len(), 1);
+        assert!(store.projects()[0].startup_file.is_none());
+
+        let expected = temp.path().join("setup.sas");
+        let mut project = store.projects()[0].clone();
+        project.startup_file = Some(expected.clone());
+        store.save_project(project).unwrap();
+        store.reload().unwrap();
+        assert_eq!(
+            store.projects()[0].startup_file.as_deref(),
+            Some(expected.as_path())
+        );
+    }
+
+    #[test]
     fn archives_legacy_entries_once_and_keeps_webview_profile() {
         let temp = tempfile::tempdir().unwrap();
         let root = temp.path().join("data");
@@ -844,6 +873,7 @@ mod tests {
                     layers: Layers::DEFAULT,
                     fresh: false,
                 }),
+                startup_file: None,
             }],
         )
         .unwrap();

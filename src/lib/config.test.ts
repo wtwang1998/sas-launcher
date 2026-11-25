@@ -160,6 +160,7 @@ describe('ordering and lookups', () => {
         note: null,
         config: { kind: 'user' as const, id: 'cfg-1' },
         profile: null,
+        startupFile: null,
       },
       {
         id: 'p2',
@@ -167,6 +168,7 @@ describe('ordering and lookups', () => {
         note: null,
         config: { kind: 'user' as const, id: 'cfg-2' },
         profile: null,
+        startupFile: null,
       },
       {
         id: 'p3',
@@ -174,6 +176,7 @@ describe('ordering and lookups', () => {
         note: null,
         config: { kind: 'user' as const, id: 'cfg-1' },
         profile: null,
+        startupFile: null,
       },
     ]
     expect(usageCount(projects, { kind: 'user', id: 'cfg-1' })).toBe(2)

@@ -188,6 +188,7 @@ export function App() {
           next.note.trim() || null,
           next.config,
           profileChoiceFor(project, next.profile),
+          next.startupFile.trim() || null,
         ),
       'projectSaved',
       'form',
@@ -259,6 +260,21 @@ export function App() {
       )
     } catch (failure) {
       setNotice({ tone: 'error', target: 'page', error: failure })
+    }
+  }
+
+  /** The startup file stays typeable; picking one only fills the field in. */
+  async function browseStartupFile() {
+    try {
+      const picked = await open({
+        multiple: false,
+        title: t('pickStartupFile'),
+        filters: [{ name: t('sasProgram'), extensions: ['sas'] }],
+      })
+      if (typeof picked !== 'string' || !picked) return
+      setDraft((current) => (current ? { ...current, startupFile: picked } : current))
+    } catch (failure) {
+      setNotice({ tone: 'error', target: 'form', error: failure })
     }
   }
 
@@ -493,6 +509,7 @@ export function App() {
               notice={notice}
               onDismissNotice={dismissNotice}
               onBrowseProfile={() => void browseProfile()}
+              onBrowseStartupFile={() => void browseStartupFile()}
               language={language}
               t={t}
               busy={busy}

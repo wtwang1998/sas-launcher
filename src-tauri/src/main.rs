@@ -65,6 +65,8 @@ struct Resolved {
     factory: PathBuf,
     thin: Option<PathBuf>,
     profile: Option<PathBuf>,
+    /// A project's own autoexec file; only `resolved_for` ever fills it in.
+    startup: Option<PathBuf>,
 }
 
 #[derive(Serialize)]
@@ -216,6 +218,7 @@ impl App {
                         .store
                         .profile_revision_dir(config)
                         .filter(|directory| profile::has_catalog_files(directory)),
+                    startup: None,
                 })
             }
         }
@@ -237,6 +240,7 @@ impl App {
             factory: built.cfg,
             thin,
             profile,
+            startup: None,
         })
     }
 
@@ -264,6 +268,7 @@ impl App {
             encoding: encoding.clone(),
             locale: resolved.locale.clone(),
             profile: resolved.profile,
+            startup: resolved.startup,
             exe,
         });
         if let Some(locale) = resolved.locale.as_deref() {
@@ -446,6 +451,9 @@ impl App {
                 .store
                 .profile_revision_dir(&config)
                 .filter(|directory| profile::has_catalog_files(directory)),
+            // A settings session builds a clean snapshot: the project's own
+            // autoexec file must never run here.
+            startup: None,
         };
         self.launch(resolved, config.name.clone(), Purpose::Setup { config: id })?;
         Ok(())
@@ -466,6 +474,7 @@ impl App {
         if project.profile.is_some() {
             resolved.profile = self.store.project_profile_source(project);
         }
+        resolved.startup = validate_startup_file(project.startup_file.clone())?;
         Ok(resolved)
     }
 
@@ -704,6 +713,26 @@ fn validate_note(note: Option<String>) -> Result<Option<String>, Issue> {
     Ok((!note.is_empty()).then(|| note.to_owned()))
 }
 
+/// A project's startup file is named on the SAS command line, so it must be a
+/// real file at an absolute path: there is no project folder to resolve a
+/// relative path against, and SAS would read it from the sessions root instead.
+fn validate_startup_file(path: Option<PathBuf>) -> Result<Option<PathBuf>, Issue> {
+    let Some(path) = path else { return Ok(None) };
+    if !path.is_absolute() {
+        return Err(Issue::with_detail(
+            "startupFileNotAbsolute",
+            path.display().to_string(),
+        ));
+    }
+    if !path.is_file() {
+        return Err(Issue::with_detail(
+            "startupFileMissing",
+            path.display().to_string(),
+        ));
+    }
+    Ok(Some(path))
+}
+
 fn failure_stage(code: &str) -> Stage {
     match code {
         "sasMissing" | "invalidExe" | "exeAccess" | "dataPath" => Stage::Exe,
@@ -879,9 +908,10 @@ async fn save_project(
     note: Option<String>,
     config: Option<ConfigRef>,
     profile: Option<ProfileChoice>,
+    startup_file: Option<PathBuf>,
 ) -> Result<View, Issue> {
     with_app(&state, |app| {
-        app.save_project(id, name, note, config, profile)?;
+        app.save_project(id, name, note, config, profile, startup_file)?;
         Ok(app.view())
     })
 }
@@ -924,9 +954,11 @@ impl App {
         note: Option<String>,
         config: Option<ConfigRef>,
         choice: Option<ProfileChoice>,
+        startup_file: Option<PathBuf>,
     ) -> Result<(), Issue> {
         let name = validate_name(&name)?;
         let note = validate_note(note)?;
+        let startup_file = validate_startup_file(startup_file)?;
         let id = match id {
             Some(id) if self.store.projects().iter().any(|project| project.id == id) => id,
             Some(_) => return Err(Issue::new("projectMissing")),
@@ -1021,6 +1053,7 @@ impl App {
             note,
             config,
             profile,
+            startup_file,
         })?;
         let Some(source) = source else {
             return Ok(());
@@ -1482,6 +1515,7 @@ mod tests {
                 note: None,
                 config: None,
                 profile: None,
+                startup_file: None,
             })
             .unwrap();
         app.store
@@ -1670,6 +1704,7 @@ mod tests {
                 note: None,
                 config: Some(ConfigRef::User { id }),
                 profile: None,
+                startup_file: None,
             })
             .unwrap();
 
@@ -1684,6 +1719,7 @@ mod tests {
                 note: None,
                 config: None,
                 profile: None,
+                startup_file: None,
             })
             .unwrap();
         app.delete_configuration(id).unwrap();
@@ -1787,6 +1823,7 @@ mod tests {
                     code: "missing".into(),
                 }),
                 profile: None,
+                startup_file: None,
             })
             .unwrap();
         let id = app.store.projects()[0].id;
@@ -1800,6 +1837,84 @@ mod tests {
         assert_eq!(
             records[0].failure.as_ref().map(|note| note.code.as_str()),
             Some("configUnavailable")
+        );
+    }
+
+    #[test]
+    fn saving_a_project_whose_startup_file_is_missing_is_refused() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+
+        let missing = temp.path().join("setup.sas");
+        let error = app
+            .save_project(None, "P".into(), None, None, None, Some(missing))
+            .unwrap_err();
+        assert_eq!(error.code, "startupFileMissing");
+        assert!(
+            error
+                .detail
+                .as_deref()
+                .is_some_and(|detail| detail.ends_with("setup.sas")),
+            "{error:?}"
+        );
+        assert!(
+            app.store.projects().is_empty(),
+            "a refused save stores nothing"
+        );
+
+        // A relative path has no project folder to resolve against, so it is
+        // refused instead of being read against the sessions root by accident.
+        let error = app
+            .save_project(None, "P".into(), None, None, None, Some("setup.sas".into()))
+            .unwrap_err();
+        assert_eq!(error.code, "startupFileNotAbsolute");
+    }
+
+    #[test]
+    fn a_project_whose_startup_file_vanished_is_not_launched() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let setup = temp.path().join("setup.sas");
+        std::fs::write(&setup, b"%put setup;").unwrap();
+        app.save_project(None, "P".into(), None, None, None, Some(setup.clone()))
+            .unwrap();
+        let id = app.store.projects()[0].id;
+        std::fs::remove_file(&setup).unwrap();
+
+        let error = app.launch_project(id).unwrap_err();
+        assert_eq!(error.code, "startupFileMissing");
+
+        let records = app.sessions.cached();
+        assert_eq!(records.len(), 1, "the refused launch must leave evidence");
+        assert_eq!(records[0].stage, Stage::Cfg);
+        assert_eq!(
+            records[0].failure.as_ref().map(|note| note.code.as_str()),
+            Some("startupFileMissing")
+        );
+        // Recorded before the command line existed: no process was spawned.
+        assert!(records[0].argv.is_empty(), "{:?}", records[0].argv);
+    }
+
+    #[test]
+    fn a_batched_launch_reports_a_project_without_its_startup_file() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let setup = temp.path().join("setup.sas");
+        std::fs::write(&setup, b"%put setup;").unwrap();
+        app.save_project(None, "P".into(), None, None, None, Some(setup.clone()))
+            .unwrap();
+        let id = app.store.projects()[0].id;
+        std::fs::remove_file(&setup).unwrap();
+
+        let results = app.launch_batch(vec![id]);
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].status, "failed");
+        assert_eq!(
+            results[0].reason.as_ref().map(|issue| issue.code),
+            Some("startupFileMissing")
         );
     }
 
@@ -1883,6 +1998,7 @@ mod tests {
                 path: source.clone(),
                 layers: interface_only,
             }),
+            None,
         )
         .unwrap();
         // What the new default leaves behind on an old project: the declaration
@@ -1899,6 +2015,7 @@ mod tests {
             None,
             None,
             Some(ProfileChoice::Keep),
+            None,
         )
         .unwrap();
 
@@ -1928,6 +2045,7 @@ mod tests {
                     path: source.clone(),
                     layers: Layers::DEFAULT,
                 }),
+                None,
             )
             .unwrap_err();
 
@@ -1955,6 +2073,7 @@ mod tests {
                     path: empty,
                     layers: Layers::DEFAULT,
                 }),
+                None,
             )
             .unwrap_err();
 
@@ -1984,6 +2103,7 @@ mod tests {
                     config,
                     layers: Layers::DEFAULT,
                 }),
+                None,
             )
             .unwrap_err();
 
@@ -2009,6 +2129,7 @@ mod tests {
                 path: source.clone(),
                 layers: Layers::DEFAULT,
             }),
+            None,
         )
         .unwrap();
         let id = app.store.projects()[0].id;
@@ -2050,6 +2171,7 @@ mod tests {
                 path: source.clone(),
                 layers: Layers::DEFAULT,
             }),
+            None,
         )
         .unwrap();
 
@@ -2088,6 +2210,7 @@ mod tests {
                     path: source.clone(),
                     layers: Layers::DEFAULT,
                 }),
+                None,
             )
             .unwrap_err();
         assert_eq!(error.code, "profileLocked");
@@ -2111,6 +2234,7 @@ mod tests {
                 path: first.clone(),
                 layers: Layers::DEFAULT,
             }),
+            None,
         )
         .unwrap();
         let saved = app.store.projects()[0].clone();
@@ -2136,6 +2260,7 @@ mod tests {
                     path: second.clone(),
                     layers: Layers::DEFAULT,
                 }),
+                None,
             )
             .unwrap_err();
         assert_eq!(error.code, "profileLocked");

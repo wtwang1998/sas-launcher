@@ -30,9 +30,17 @@ pub enum Status {
 
 /// The launch command line, in the order documented in the redesign spec.
 /// `-ENCODING`/`-LOCALE` are intentionally absent: they live in the cfg the
-/// `-CONFIG` argument points at.
-pub fn arguments(cfg: &Path, sasuser: &Path, title: &str, altlog_dir: &Path) -> Vec<OsString> {
-    vec![
+/// `-CONFIG` argument points at. A project's own autoexec file is appended with
+/// `-APPEND AUTOEXEC`: on Windows that adds it to the autoexec chain the factory
+/// cfg already declares instead of replacing the site's file.
+pub fn arguments(
+    cfg: &Path,
+    sasuser: &Path,
+    title: &str,
+    altlog_dir: &Path,
+    startup: Option<&Path>,
+) -> Vec<OsString> {
+    let mut arguments: Vec<OsString> = vec![
         "-CONFIG".into(),
         cfg.as_os_str().into(),
         "-SASUSER".into(),
@@ -44,7 +52,13 @@ pub fn arguments(cfg: &Path, sasuser: &Path, title: &str, altlog_dir: &Path) -> 
         altlog_dir.as_os_str().into(),
         "-LOGPARM".into(),
         "WRITE=IMMEDIATE".into(),
-    ]
+    ];
+    if let Some(startup) = startup {
+        arguments.push("-APPEND".into());
+        arguments.push("AUTOEXEC".into());
+        arguments.push(startup.as_os_str().into());
+    }
+    arguments
 }
 
 pub fn start(exe: &Path, args: &[OsString], cwd: &Path) -> Result<Child, Issue> {
@@ -122,6 +136,7 @@ mod tests {
             Path::new(r"C:\用户设置\会话\sasuser"),
             "项目一 · UTF-8",
             Path::new(r"C:\用户设置\会话"),
+            None,
         );
         assert_eq!(
             arguments,
@@ -144,6 +159,34 @@ mod tests {
         assert!(!arguments.iter().any(|argument| argument == "-LOCALE"));
         // -LOG is batch-only; the copy must come from -ALTLOG.
         assert!(!arguments.iter().any(|argument| argument == "-LOG"));
+        // A plain -AUTOEXEC would replace the site's file instead of extending it.
+        assert!(!arguments.iter().any(|argument| argument == "-AUTOEXEC"));
+    }
+
+    #[test]
+    fn arguments_append_the_projects_startup_file_after_the_log_copy() {
+        let cfg = Path::new("C:/用户设置/配置 一/sasv9.cfg");
+        let sasuser = Path::new("C:/用户设置/会话/sasuser");
+        let altlog = Path::new("C:/用户设置/会话");
+        let startup = Path::new("C:/程序/setup.sas");
+
+        let plain = arguments(cfg, sasuser, "项目一", altlog, None);
+        let appended = arguments(cfg, sasuser, "项目一", altlog, Some(startup));
+
+        let tail: Vec<String> = appended[plain.len()..]
+            .iter()
+            .map(|argument| argument.to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(
+            tail,
+            [
+                "-APPEND".to_owned(),
+                "AUTOEXEC".to_owned(),
+                "C:/程序/setup.sas".to_owned(),
+            ]
+        );
+        // Appending must not touch the copy of the log or the window title.
+        assert_eq!(&appended[..plain.len()], plain);
     }
 
     #[test]

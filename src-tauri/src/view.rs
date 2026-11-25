@@ -50,6 +50,8 @@ pub struct ProjectView {
     pub config: Option<ConfigRef>,
     /// Absent for projects that still follow their configuration.
     pub profile: Option<ProjectProfileView>,
+    /// The project's own autoexec file; `None` runs no project initialization.
+    pub startup_file: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -217,6 +219,7 @@ fn project_view(app: &App, project: &Project) -> ProjectView {
         name: project.name.clone(),
         note: project.note.clone(),
         config: project.config.clone(),
+        startup_file: project.startup_file.clone(),
         profile: project.profile.as_ref().map(|profile| ProjectProfileView {
             origin: profile.origin.clone(),
             layers: profile.layers,

@@ -85,6 +85,8 @@ pub struct LaunchRequest {
     pub locale: Option<String>,
     /// Snapshot directory whose catalog files seed the new sasuser folder.
     pub profile: Option<PathBuf>,
+    /// The project's own autoexec file, appended to the site's autoexec chain.
+    pub startup: Option<PathBuf>,
     pub exe: PathBuf,
 }
 
@@ -204,7 +206,13 @@ impl Sessions {
         fs::create_dir(&directory).map_err(|error| Issue::with_detail("sessionCreate", error))?;
         let sasuser = directory.join(SASUSER);
         let title = window_title(&request.name, Some(&request.encoding));
-        let arguments = process::arguments(&request.cfg, &sasuser, &title, &directory);
+        let arguments = process::arguments(
+            &request.cfg,
+            &sasuser,
+            &title,
+            &directory,
+            request.startup.as_deref(),
+        );
         let mut writable = false;
         let mut record = Record {
             id,
@@ -904,6 +912,7 @@ mod tests {
                 note: None,
                 config: None,
                 profile,
+                startup_file: None,
             }],
         )
         .unwrap();

@@ -14,6 +14,7 @@ export type ProjectsProps = {
   draft: ProjectDraft | null
   profileCandidates: SasuserCandidate[]
   onBrowseProfile: () => void
+  onBrowseStartupFile: () => void
   language: Language
   t: Translator
   busy: boolean
@@ -33,6 +34,7 @@ export function Projects({
   draft,
   profileCandidates,
   onBrowseProfile,
+  onBrowseStartupFile,
   language,
   t,
   busy,
@@ -127,6 +129,7 @@ export function Projects({
             onCancel={() => onDraft(null)}
             onCreateConfiguration={() => onCreateConfiguration(draft)}
             onBrowseProfile={onBrowseProfile}
+            onBrowseStartupFile={onBrowseStartupFile}
             onSubmit={(next) => void onSaveProject(next)}
             notice={
               notice?.target === 'form' ? (
@@ -232,6 +235,7 @@ export function Projects({
                 note: project.note ?? '',
                 config: project.config,
                 profile: profileDraftFrom(project.profile),
+                startupFile: project.startupFile ?? '',
               })
             }
             onDelete={() => void onDeleteProject(project.id)}
@@ -251,6 +255,7 @@ export function Projects({
                 onCancel={() => onDraft(null)}
                 onCreateConfiguration={() => onCreateConfiguration(draft)}
                 onBrowseProfile={onBrowseProfile}
+                onBrowseStartupFile={onBrowseStartupFile}
                 onSubmit={(next) => void onSaveProject(next)}
                 notice={
                   notice?.target === 'form' ? (

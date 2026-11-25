@@ -74,15 +74,30 @@ it('commands_match_the_rust_handler_names', async () => {
     { name: 'quit', run: () => api.quit(), cmd: 'quit', args: {} },
     {
       name: 'saveProject',
-      run: () => api.saveProject('p1', '项目 A', '备注', userRef, { kind: 'keep' }),
+      run: () =>
+        api.saveProject('p1', '项目 A', '备注', userRef, { kind: 'keep' }, 'D:/项目/setup.sas'),
       cmd: 'save_project',
-      args: { id: 'p1', name: '项目 A', note: '备注', config: userRef, profile: { kind: 'keep' } },
+      args: {
+        id: 'p1',
+        name: '项目 A',
+        note: '备注',
+        config: userRef,
+        profile: { kind: 'keep' },
+        startupFile: 'D:/项目/setup.sas',
+      },
     },
     {
       name: 'saveProject with defaults',
-      run: () => api.saveProject(null, '项目 B', null, null, null),
+      run: () => api.saveProject(null, '项目 B', null, null, null, null),
       cmd: 'save_project',
-      args: { id: null, name: '项目 B', note: null, config: null, profile: null },
+      args: {
+        id: null,
+        name: '项目 B',
+        note: null,
+        config: null,
+        profile: null,
+        startupFile: null,
+      },
     },
     {
       name: 'deleteProject',

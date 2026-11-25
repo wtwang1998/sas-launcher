@@ -57,6 +57,8 @@ export type Project = {
   note: string | null
   config: ConfigRef | null
   profile: ProjectProfile | null
+  /** A project's own autoexec file SAS runs at launch; null when it has none. */
+  startupFile: string | null
 }
 export type SessionStage = 'exe' | 'cfg' | 'profile' | 'spawn' | 'started'
 export type SessionStatus = 'running' | 'exited' | 'setup' | 'cleanupPending' | 'unknown'
@@ -147,7 +149,8 @@ export const api = {
     note: string | null,
     config: ConfigRef | null,
     profile: ProfileChoice | null,
-  ) => invoke<View>('save_project', { id, name, note, config, profile }),
+    startupFile: string | null,
+  ) => invoke<View>('save_project', { id, name, note, config, profile, startupFile }),
   deleteProject: (id: string) => invoke<View>('delete_project', { id }),
   createConfiguration: (base: ConfigBase, name: string | null) =>
     invoke<View>('create_configuration', { base, name }),

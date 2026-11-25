@@ -1152,6 +1152,18 @@ details[open] .disclosure {
   color: var(--muted);
   font-size: 12px;
 }
+/* A typed path plus its pick/clear buttons; the path keeps the room it needs. */
+.field-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.field-path input {
+  flex: 1 1 280px;
+  min-width: 0;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+}
 .option-warning {
   margin: 0;
   color: var(--warn-text);

@@ -13,6 +13,8 @@ export type ProjectDraft = {
   note: string
   config: ConfigRef | null
   profile: ProfileDraft
+  /** The project's own autoexec file; an empty string means "run none". */
+  startupFile: string
 }
 
 export const emptyProjectDraft: ProjectDraft = {
@@ -21,6 +23,7 @@ export const emptyProjectDraft: ProjectDraft = {
   note: '',
   config: null,
   profile: emptyProfileDraft,
+  startupFile: '',
 }
 
 /**
@@ -41,6 +44,7 @@ export function ProjectForm({
   onCancel,
   onCreateConfiguration,
   onBrowseProfile,
+  onBrowseStartupFile,
   notice,
 }: {
   draft: ProjectDraft
@@ -56,11 +60,13 @@ export function ProjectForm({
   onCancel?: () => void
   onCreateConfiguration?: () => void
   onBrowseProfile?: () => void
+  onBrowseStartupFile?: () => void
   /** The last save's outcome, shown next to the buttons it belongs to. */
   notice?: ReactNode
 }) {
   const nameId = useId()
   const noteId = useId()
+  const startupId = useId()
   const errorId = useId()
   const [nameMissing, setNameMissing] = useState(false)
 
@@ -126,6 +132,42 @@ export function ProjectForm({
           onBrowse={onBrowseProfile}
           onChange={(profile) => onChange({ ...draft, profile })}
         />
+      </div>
+      <div className="field">
+        <label htmlFor={startupId}>
+          <FieldLabel label={t('startupFile')} marker={t('optionalField')} />
+        </label>
+        <div className="field-path">
+          <input
+            id={startupId}
+            name="startupFile"
+            value={draft.startupFile}
+            placeholder={t('startupFileHint')}
+            spellCheck={false}
+            disabled={busy}
+            onChange={(event) => onChange({ ...draft, startupFile: event.target.value })}
+          />
+          {onBrowseStartupFile && (
+            <button
+              type="button"
+              className="button small"
+              disabled={busy}
+              onClick={onBrowseStartupFile}
+            >
+              {t('browseStartupFile')}
+            </button>
+          )}
+          {draft.startupFile !== '' && (
+            <button
+              type="button"
+              className="button small"
+              disabled={busy}
+              onClick={() => onChange({ ...draft, startupFile: '' })}
+            >
+              {t('clearStartupFile')}
+            </button>
+          )}
+        </div>
       </div>
       <div className="field">
         <label htmlFor={noteId}>

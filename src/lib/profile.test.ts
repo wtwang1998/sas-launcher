@@ -22,6 +22,7 @@ const project = (profile: ProjectProfile | null): Project => ({
   note: null,
   config: null,
   profile,
+  startupFile: null,
 })
 
 it('an untouched preference carries the layer the Explorer options live in', () => {

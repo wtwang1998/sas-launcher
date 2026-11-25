@@ -34,6 +34,14 @@
     "The factory base configuration is unavailable. Choose another one."
   ],
   "managedConfigurationMissing": ["用户配置不存在。", "The user configuration does not exist."],
+  "startupFileMissing": [
+    "项目的启动代码文件不存在，请重新选择文件后再启动。",
+    "The project's startup code file is missing. Choose a file again before launching."
+  ],
+  "startupFileNotAbsolute": [
+    "启动代码文件需要一个绝对路径。",
+    "The startup code file needs an absolute path."
+  ],
   "configurationSetupActive": [
     "请先关闭 SAS 设置会话并保存或丢弃本次设置。",
     "Close the SAS settings session and save or discard its changes first."

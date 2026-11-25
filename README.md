@@ -40,6 +40,11 @@ SAS Launcher gives every project its own configuration and hands each launch a p
 - A project carries your interface and environment settings by default — window layout, function keys, menus, Explorer options and library assignments — and takes back whatever the session changed when it exits, whatever the exit code. ODS templates stay opt-in.
 - Batch-launch the projects you use daily; projects that are already running are skipped.
 
+**Per-project startup code**
+
+- Point a project at its own autoexec file and SAS runs it on every launch, before any code you type: reset globals, set the raw, analysis and TFL folders and load the macro library once instead of in every session.
+- It is added to the site's autoexec chain with `-APPEND AUTOEXEC`, so an installation or company `autoexec.sas` still runs first. A missing file refuses the launch instead of opening a session with half its paths undefined.
+
 **Diagnostics you can act on**
 
 - Each record keeps the resolution chain (thin cfg → factory cfg → effective encoding, locale and `SASUSER`), the exact argv, the stage that failed and the exit code.
@@ -85,7 +90,7 @@ Projects, configurations and diagnostics live in `%LOCALAPPDATA%\com.saslauncher
 
 1. Launch the app. It finds an installed SAS 9.4 automatically; if it cannot, the banner offers to pick `sas.exe`.
 2. In **Configurations**, review the factory configurations, or derive a user configuration and adjust its encoding and locale.
-3. In **Projects**, create a project: a name, one of the three configuration sources, where its user preference comes from (`My SAS Files`, a configuration's saved session, or a clean environment), and an optional note.
+3. In **Projects**, create a project: a name, one of the three configuration sources, where its user preference comes from (`My SAS Files`, a configuration's saved session, or a clean environment), an optional note, and an optional startup code file.
 4. To change SAS UI preferences for a configuration, choose **Open SAS to adjust settings**, then exit SAS and save.
 5. If a launch misbehaves, open **Diagnostics** to inspect the chain, the argv and the log.
 6. In **Settings**, change the theme, the language, the SAS path, or how the window behaves on close and at login.

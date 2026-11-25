@@ -32,6 +32,7 @@ it('a project card says when its snapshot misses a declared layer', async () => 
     makeView({
       projects: [
         {
+          startupFile: null,
           id: 'p1',
           name: '项目 A',
           note: null,
@@ -82,6 +83,7 @@ it('editing a project shows where its preference comes from', async () => {
       configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
       projects: [
         {
+          startupFile: null,
           id: 'p1',
           name: '项目 A',
           note: null,
@@ -122,6 +124,7 @@ it('editing a project can turn the environment layer on', async () => {
       configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
       projects: [
         {
+          startupFile: null,
           id: 'p1',
           name: '项目 A',
           note: null,
@@ -163,6 +166,7 @@ it('a failed save while editing the card explains itself there', async () => {
       configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
       projects: [
         {
+          startupFile: null,
           id: 'p1',
           name: '项目 A',
           note: null,
@@ -219,6 +223,31 @@ it('submitting_default_following_project_sends_null_config', async () => {
     note: null,
     config: null,
     profile: { kind: 'fresh', layers: { interface: true, environment: true, templates: false } },
+    startupFile: null,
+  })
+})
+
+it('a_typed_startup_file_is_sent_with_the_project', async () => {
+  const user = userEvent.setup()
+  const { backend } = renderApp(makeView({ configs: [builtIn('u8', 'UTF-8', 'zh_CN')] }), {
+    sasuser_candidates: () => [],
+  })
+
+  await user.click(await screen.findByRole('button', { name: '新建项目' }))
+  await user.type(screen.getByLabelText(/项目名称/), '项目 A')
+  await user.type(screen.getByLabelText(/启动代码文件/), 'D:/项目/setup.sas')
+  await user.click(screen.getByRole('button', { name: '保存项目' }))
+
+  await waitFor(() =>
+    expect(backend.calls.filter((call) => call.cmd === 'save_project')).toHaveLength(1),
+  )
+  expect(backend.calls.find((call) => call.cmd === 'save_project')?.args).toEqual({
+    id: null,
+    name: '项目 A',
+    note: null,
+    config: null,
+    profile: { kind: 'fresh', layers: { interface: true, environment: true, templates: false } },
+    startupFile: 'D:/项目/setup.sas',
   })
 })
 
@@ -255,6 +284,7 @@ it('a_new_project_inherits_the_detected_user_folder_by_default', async () => {
       path: folder,
       layers: { interface: true, environment: true, templates: false },
     },
+    startupFile: null,
   })
 })
 
@@ -397,6 +427,7 @@ it('name_is_required_and_trimmed', async () => {
     note: null,
     config: null,
     profile: { kind: 'fresh', layers: { interface: true, environment: true, templates: false } },
+    startupFile: null,
   })
 })
 
@@ -405,8 +436,9 @@ it('batch_launch_sends_selected_ids', async () => {
   const view = makeView({
     configs: [builtIn('u8', 'UTF-8', 'zh_CN')],
     projects: [
-      { id: 'p1', name: '项目 A', note: null, config: null, profile: null },
+      { id: 'p1', name: '项目 A', note: null, config: null, profile: null, startupFile: null },
       {
+        startupFile: null,
         id: 'p2',
         name: '项目 B',
         note: null,
@@ -432,7 +464,9 @@ it('batch_launch_sends_selected_ids', async () => {
 it('a_running_project_is_marked_and_cannot_be_launched_again', async () => {
   const user = userEvent.setup()
   const view = makeView({
-    projects: [{ id: 'p1', name: '项目 A', note: null, config: null, profile: null }],
+    projects: [
+      { id: 'p1', name: '项目 A', note: null, config: null, profile: null, startupFile: null },
+    ],
     sessions: [makeSession({ id: 's1', name: '项目 A', projectId: 'p1', status: 'running' })],
   })
   const { backend } = renderApp(view)
@@ -448,7 +482,9 @@ it('a_running_project_is_marked_and_cannot_be_launched_again', async () => {
 it('an_idle_project_still_launches_from_its_row', async () => {
   const user = userEvent.setup()
   const view = makeView({
-    projects: [{ id: 'p1', name: '项目 A', note: null, config: null, profile: null }],
+    projects: [
+      { id: 'p1', name: '项目 A', note: null, config: null, profile: null, startupFile: null },
+    ],
   })
   const { backend } = renderApp(view, {
     launch_project: () => makeSession({ id: 's1', projectId: 'p1' }),
@@ -490,6 +526,7 @@ it('a_failed_launch_explains_itself_in_the_project_list', async () => {
     note: null,
     config: null,
     profile: null,
+    startupFile: null,
   }
   renderApp(makeView({ projects: [project] }), {
     launch_project: () => {
@@ -512,6 +549,7 @@ it('a_failed_delete_keeps_the_confirmation_open_and_says_why', async () => {
     note: null,
     config: null,
     profile: null,
+    startupFile: null,
   }
   renderApp(makeView({ projects: [project] }), {
     delete_project: () => {
