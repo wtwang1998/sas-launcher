@@ -66,14 +66,16 @@ pub fn migrate(contents: &str) -> Result<String, MigrateError> {
     if !needs_migration(contents) {
         return Err(MigrateError::NothingToDo);
     }
-    let eol = if contents.contains("\r\n") {
-        "\r\n"
-    } else {
-        "\n"
+    // A byte-order mark is not whitespace, so it would hide the first `%let`
+    // from the scan. Split it off and put it back untouched.
+    let (bom, body) = match contents.strip_prefix('\u{feff}') {
+        Some(rest) => ("\u{feff}", rest),
+        None => ("", contents),
     };
-    let mut out = String::with_capacity(contents.len() + 256);
+    let eol = if body.contains("\r\n") { "\r\n" } else { "\n" };
+    let mut out = String::with_capacity(body.len() + 256);
     let mut replaced = 0;
-    for line in contents.split_inclusive('\n') {
+    for line in body.split_inclusive('\n') {
         let (body, ending) = match line.strip_suffix("\r\n") {
             Some(body) => (body, "\r\n"),
             None => match line.strip_suffix('\n') {
@@ -100,7 +102,7 @@ pub fn migrate(contents: &str) -> Result<String, MigrateError> {
     if replaced == 0 {
         return Err(MigrateError::NothingToDo);
     }
-    Ok(out)
+    Ok(format!("{bom}{out}"))
 }
 
 #[cfg(test)]
@@ -182,6 +184,19 @@ mod tests {
         for prefix in ["/*设", "/*设置", "/* 设"] {
             assert_eq!(migrate(prefix), Err(MigrateError::NothingToDo), "{prefix}");
         }
+    }
+
+    #[test]
+    fn keeps_a_byte_order_mark_and_mixed_line_endings() {
+        let source = "\u{feff}%let DIR = %sysget(SAS_EXECFILEPATH);\r\n\r\n%put done;\n";
+        let migrated = migrate(source).expect("migrates");
+        assert!(migrated.starts_with("\u{feff}%if "), "{migrated}");
+        assert!(
+            migrated.contains("%let DIR = &SASLAUNCHER_STARTUP_FILE;"),
+            "{migrated}"
+        );
+        // Untouched lines keep their own endings, blank line included.
+        assert!(migrated.ends_with("\r\n\r\n%put done;\n"), "{migrated}");
     }
 
     #[test]
