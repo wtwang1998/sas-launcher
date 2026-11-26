@@ -96,14 +96,14 @@ export function ProjectForm({
     <form className="editor" noValidate onSubmit={submit}>
       <div className="field">
         <label htmlFor={nameId}>
-          <FieldLabel label={t('name')} marker={t('requiredField')} />
+          <FieldLabel label={t('project.name')} marker={t('form.requiredField')} />
         </label>
         <input
           id={nameId}
           name="name"
           value={draft.name}
           maxLength={100}
-          placeholder={t('example')}
+          placeholder={t('project.example')}
           disabled={busy}
           aria-invalid={nameMissing || undefined}
           aria-describedby={nameMissing ? errorId : undefined}
@@ -114,12 +114,12 @@ export function ProjectForm({
         />
         {nameMissing && (
           <p className="field-error" id={errorId}>
-            {t('nameRequired')}
+            {t('project.nameRequired')}
           </p>
         )}
       </div>
       <div className="field">
-        <span className="field-title">{t('configSelection')}</span>
+        <span className="field-title">{t('project.configSelection')}</span>
         <ConfigChoice
           value={draft.config}
           configs={configs}
@@ -132,7 +132,7 @@ export function ProjectForm({
         />
       </div>
       <div className="field">
-        <span className="field-title">{t('userFolderGroup')}</span>
+        <span className="field-title">{t('profile.userFolderGroup')}</span>
         <UserFolderChoice
           value={draft.profile}
           candidates={profileCandidates}
@@ -146,14 +146,14 @@ export function ProjectForm({
       </div>
       <div className="field">
         <label htmlFor={startupId}>
-          <FieldLabel label={t('startupFile')} marker={t('optionalField')} />
+          <FieldLabel label={t('project.startupFile')} marker={t('form.optionalField')} />
         </label>
         <div className="field-path">
           <input
             id={startupId}
             name="startupFile"
             value={draft.startupFile}
-            placeholder={t('startupFileHint')}
+            placeholder={t('project.startupFileHint')}
             spellCheck={false}
             disabled={busy}
             onChange={(event) => onChange({ ...draft, startupFile: event.target.value })}
@@ -165,7 +165,7 @@ export function ProjectForm({
               disabled={busy}
               onClick={onBrowseStartupFile}
             >
-              {t('browseStartupFile')}
+              {t('dialog.browseStartupFile')}
             </button>
           )}
           {draft.startupFile !== '' && (
@@ -175,15 +175,15 @@ export function ProjectForm({
               disabled={busy}
               onClick={() => onChange({ ...draft, startupFile: '' })}
             >
-              {t('clearStartupFile')}
+              {t('common.clearStartupFile')}
             </button>
           )}
         </div>
         <div className="field-switch">
           <span id={exposeId} className="field-switch-label">
-            {t('startupExposesPath')}
+            {t('project.startupExposesPath')}
           </span>
-          <Tooltip label={t('helpHint')} text={t('startupExposesPathHint')} />
+          <Tooltip label={t('common.helpHint')} text={t('project.startupExposesPathHint')} />
           <Switch
             labelledBy={exposeId}
             checked={draft.startupExposesPath}
@@ -193,10 +193,10 @@ export function ProjectForm({
         </div>
         {startupNeedsMigration && (
           <div className="field-switch">
-            <span className="field-hint">{t('startupNeedsMigrationHint')}</span>
+            <span className="field-hint">{t('project.startupNeedsMigrationHint')}</span>
             {onMigrateStartup && (
               <button type="button" className="button small" onClick={onMigrateStartup}>
-                {t('migrateStartup')}
+                {t('project.migrateStartup')}
               </button>
             )}
           </div>
@@ -204,14 +204,14 @@ export function ProjectForm({
       </div>
       <div className="field">
         <label htmlFor={noteId}>
-          <FieldLabel label={t('note')} marker={t('optionalField')} />
+          <FieldLabel label={t('project.note')} marker={t('form.optionalField')} />
         </label>
         <textarea
           id={noteId}
           rows={3}
           maxLength={2000}
           value={draft.note}
-          placeholder={t('noteHint')}
+          placeholder={t('project.noteHint')}
           disabled={busy}
           onChange={(event) => onChange({ ...draft, note: event.target.value })}
         />
@@ -220,7 +220,7 @@ export function ProjectForm({
       <div className="form-actions">
         {onCancel && (
           <button type="button" className="button" disabled={busy} onClick={onCancel}>
-            {t('cancel')}
+            {t('common.cancel')}
           </button>
         )}
         <button

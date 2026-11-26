@@ -47,20 +47,20 @@ export function UserFolderChoice({
   const cards: Card[] = [
     {
       kind: 'sasUser',
-      label: t('inheritUserFolderOption'),
-      hint: t('inheritUserFolderHint'),
+      label: t('profile.inheritUserFolderOption'),
+      hint: t('profile.inheritUserFolderHint'),
       ready: candidates.length > 0 || draftPath !== '' || !!onBrowse,
     },
     {
       kind: 'configSnapshot',
-      label: t('inheritConfigSnapshotOption'),
-      hint: t('inheritConfigSnapshotHint'),
+      label: t('profile.inheritConfigSnapshotOption'),
+      hint: t('profile.inheritConfigSnapshotHint'),
       ready: snapshots.length > 0,
     },
     {
       kind: 'fresh',
-      label: t('noPreferenceOption'),
-      hint: t('noPreferenceHint'),
+      label: t('profile.noPreferenceOption'),
+      hint: t('profile.noPreferenceHint'),
       ready: true,
     },
   ]
@@ -107,7 +107,7 @@ export function UserFolderChoice({
 
   return (
     <>
-      <div className="radio-cards" role="radiogroup" aria-label={t('userFolderGroup')}>
+      <div className="radio-cards" role="radiogroup" aria-label={t('profile.userFolderGroup')}>
         {cards.map((card, index) => {
           const checked = kind === card.kind
           return (
@@ -129,16 +129,16 @@ export function UserFolderChoice({
               <div className="radio-head">
                 <span className="radio-dot" aria-hidden="true" />
                 <span className="radio-label">{card.label}</span>
-                <Tooltip label={t('helpHint')} text={card.hint} />
+                <Tooltip label={t('common.helpHint')} text={card.hint} />
               </div>
               {!card.ready && card.kind === 'configSnapshot' && (
-                <p className="radio-hint">{t('inheritConfigSnapshotEmpty')}</p>
+                <p className="radio-hint">{t('profile.inheritConfigSnapshotEmpty')}</p>
               )}
               {checked && card.kind === 'sasUser' && (
                 <div className="radio-control" onClick={(event) => event.stopPropagation()}>
                   {candidates.length > 0 ? (
                     <select
-                      aria-label={t('inheritUserFolderOption')}
+                      aria-label={t('profile.inheritUserFolderOption')}
                       aria-describedby={hintId}
                       value={chosen?.path ?? candidates[0]?.path ?? ''}
                       disabled={busy}
@@ -153,7 +153,7 @@ export function UserFolderChoice({
                       ))}
                     </select>
                   ) : (
-                    <p className="radio-hint">{t('inheritUserFolderMissing')}</p>
+                    <p className="radio-hint">{t('profile.inheritUserFolderMissing')}</p>
                   )}
                   {onBrowse && (
                     <div className="profile-browse">
@@ -163,7 +163,7 @@ export function UserFolderChoice({
                         disabled={busy}
                         onClick={onBrowse}
                       >
-                        {t('browseFolder')}
+                        {t('dialog.browseFolder')}
                       </button>
                     </div>
                   )}
@@ -172,8 +172,8 @@ export function UserFolderChoice({
               {checked && card.kind === 'sasUser' && chosen && (
                 <p className="radio-hint" id={hintId}>
                   {carriedCount(chosen.present, value.layers) === 0
-                    ? t('inheritUserFolderEmpty')
-                    : t('inheritUserFolderSummary', {
+                    ? t('profile.inheritUserFolderEmpty')
+                    : t('profile.inheritUserFolderSummary', {
                         count: carriedCount(chosen.present, value.layers),
                         when: formatModified(language, chosen.modified),
                       })}
@@ -182,7 +182,7 @@ export function UserFolderChoice({
               {checked && card.kind === 'configSnapshot' && (
                 <div className="radio-control" onClick={(event) => event.stopPropagation()}>
                   <select
-                    aria-label={t('inheritConfigSnapshotOption')}
+                    aria-label={t('profile.inheritConfigSnapshotOption')}
                     value={
                       snapshots.some((config) => config.id === snapshotConfig) ? snapshotConfig : ''
                     }
@@ -192,7 +192,7 @@ export function UserFolderChoice({
                     }
                   >
                     {snapshots.length === 0 && (
-                      <option value="">{t('inheritConfigSnapshotEmpty')}</option>
+                      <option value="">{t('profile.inheritConfigSnapshotEmpty')}</option>
                     )}
                     {snapshots.map((config) => (
                       <option key={config.id} value={config.id}>
@@ -205,8 +205,8 @@ export function UserFolderChoice({
               {checked && card.kind !== 'fresh' && (
                 <div className="radio-control" onClick={(event) => event.stopPropagation()}>
                   <div className="profile-layers">
-                    <p className="profile-layer">{t('profileLayersCarryOver')}</p>
-                    <p className="profile-layer profile-also">{t('profileLayersAlso')}</p>
+                    <p className="profile-layer">{t('profile.profileLayersCarryOver')}</p>
+                    <p className="profile-layer profile-also">{t('profile.profileLayersAlso')}</p>
                     <div className="profile-layer">
                       <label className="profile-option">
                         <input
@@ -220,9 +220,12 @@ export function UserFolderChoice({
                             })
                           }
                         />
-                        {t('profileLayersEnvironment')}
+                        {t('profile.profileLayersEnvironment')}
                       </label>
-                      <Tooltip label={t('helpHint')} text={t('profileLayersEnvironmentHint')} />
+                      <Tooltip
+                        label={t('common.helpHint')}
+                        text={t('profile.profileLayersEnvironmentHint')}
+                      />
                     </div>
                     <label className="profile-option">
                       <input
@@ -236,7 +239,7 @@ export function UserFolderChoice({
                           })
                         }
                       />
-                      {t('profileLayersTemplates')}
+                      {t('profile.profileLayersTemplates')}
                     </label>
                   </div>
                 </div>

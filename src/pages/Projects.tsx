@@ -94,8 +94,8 @@ export function Projects({
     <>
       <header className="page-head">
         <div>
-          <h1>{t('projects')}</h1>
-          <p>{t('projectsHelp')}</p>
+          <h1>{t('nav.projects')}</h1>
+          <p>{t('nav.projectsHelp')}</p>
         </div>
         <button
           type="button"
@@ -104,7 +104,7 @@ export function Projects({
           onClick={() => onNewProject()}
         >
           <Plus size={17} aria-hidden="true" />
-          {t('newProject')}
+          {t('project.newProject')}
         </button>
       </header>
 
@@ -121,7 +121,7 @@ export function Projects({
 
       {draft && draft.id === null && (
         <section className="panel edit-panel">
-          <h2>{t('newProject')}</h2>
+          <h2>{t('project.newProject')}</h2>
           <ProjectForm
             draft={draft}
             configs={view.configs}
@@ -130,7 +130,7 @@ export function Projects({
             language={language}
             t={t}
             busy={busy}
-            submitLabel={t('saveProject')}
+            submitLabel={t('project.saveProject')}
             onChange={onDraft}
             onCancel={() => onDraft(null)}
             onCreateConfiguration={() => onCreateConfiguration(draft)}
@@ -166,7 +166,7 @@ export function Projects({
               }}
               onChange={toggleAll}
             />
-            {t('checkAll')}
+            {t('project.checkAll')}
           </label>
           <button
             type="button"
@@ -175,7 +175,7 @@ export function Projects({
             onClick={() => void launchSelected()}
           >
             <Play size={16} aria-hidden="true" />
-            {t('launchSelected', { count: selected.length })}
+            {t('project.launchSelected', { count: selected.length })}
           </button>
         </div>
       )}
@@ -185,11 +185,11 @@ export function Projects({
           <span className="empty-icon">
             <FolderPlus size={31} strokeWidth={1.5} aria-hidden="true" />
           </span>
-          <h2>{t('noProjects')}</h2>
-          <p>{t('noProjectsHelp')}</p>
+          <h2>{t('project.noProjects')}</h2>
+          <p>{t('project.noProjectsHelp')}</p>
           <button type="button" className="button" disabled={busy} onClick={() => onNewProject()}>
             <FolderPlus size={17} aria-hidden="true" />
-            {t('firstProject')}
+            {t('project.firstProject')}
           </button>
         </div>
       )}
@@ -247,7 +247,7 @@ export function Projects({
                 language={language}
                 t={t}
                 busy={busy}
-                submitLabel={t('saveProject')}
+                submitLabel={t('project.saveProject')}
                 onChange={onDraft}
                 onCancel={() => onDraft(null)}
                 onCreateConfiguration={() => onCreateConfiguration(draft)}

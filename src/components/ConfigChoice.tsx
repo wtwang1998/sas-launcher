@@ -41,22 +41,22 @@ export function ConfigChoice({
   const cards: Card[] = [
     {
       kind: 'default',
-      label: t('followDefaultOption'),
+      label: t('configChoice.followDefaultOption'),
       hint: summary
-        ? t('followDefaultOptionHintWith', { options: summary })
-        : t('followDefaultOptionHint'),
+        ? t('configChoice.followDefaultOptionHintWith', { options: summary })
+        : t('configChoice.followDefaultOptionHint'),
       ready: true,
     },
     {
       kind: 'builtIn',
-      label: t('builtInOption'),
-      hint: t('builtInOptionHint'),
+      label: t('configChoice.builtInOption'),
+      hint: t('configChoice.builtInOptionHint'),
       ready: builtIns.length > 0,
     },
     {
       kind: 'user',
-      label: t('userOption'),
-      hint: t('userOptionHint'),
+      label: t('configChoice.userOption'),
+      hint: t('configChoice.userOptionHint'),
       ready: users.length > 0 || !!onCreateConfiguration,
     },
   ]
@@ -109,7 +109,7 @@ export function ConfigChoice({
   }
 
   return (
-    <div className="radio-cards" role="radiogroup" aria-label={t('configSelection')}>
+    <div className="radio-cards" role="radiogroup" aria-label={t('project.configSelection')}>
       {cards.map((card, index) => {
         const checked = kind === card.kind
         return (
@@ -131,10 +131,12 @@ export function ConfigChoice({
             <div className="radio-head">
               <span className="radio-dot" aria-hidden="true" />
               <span className="radio-label">{card.label}</span>
-              <Tooltip label={t('helpHint')} text={card.hint} />
+              <Tooltip label={t('common.helpHint')} text={card.hint} />
             </div>
             {checked && card.kind === 'default' && (
-              <p className="radio-hint">{defaultConfig ? card.hint : t('followDefaultMissing')}</p>
+              <p className="radio-hint">
+                {defaultConfig ? card.hint : t('configChoice.followDefaultMissing')}
+              </p>
             )}
             {checked && card.kind === 'builtIn' && (
               <div className="radio-control" onClick={(event) => event.stopPropagation()}>
@@ -144,7 +146,7 @@ export function ConfigChoice({
                   language={language}
                   t={t}
                   disabled={busy}
-                  ariaLabel={t('builtInOption')}
+                  ariaLabel={t('configChoice.builtInOption')}
                   onChange={(config) => {
                     if (config.reference.kind === 'builtIn')
                       onChange({ kind: 'builtIn', code: config.reference.code })
@@ -160,7 +162,7 @@ export function ConfigChoice({
                   language={language}
                   t={t}
                   disabled={busy}
-                  ariaLabel={t('userOption')}
+                  ariaLabel={t('configChoice.userOption')}
                   onChange={(config) => {
                     if (config.reference.kind === 'user')
                       onChange({ kind: 'user', id: config.reference.id })
@@ -176,7 +178,7 @@ export function ConfigChoice({
                   disabled={busy}
                   onClick={() => onCreateConfiguration()}
                 >
-                  {t('createConfiguration')}
+                  {t('configChoice.createConfiguration')}
                 </button>
               </div>
             )}

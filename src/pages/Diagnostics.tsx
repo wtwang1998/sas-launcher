@@ -44,8 +44,8 @@ export function Diagnostics({
     <>
       <header className="page-head">
         <div>
-          <h1>{t('sessions')}</h1>
-          <p>{t('sessionsHelp')}</p>
+          <h1>{t('nav.sessions')}</h1>
+          <p>{t('nav.sessionsHelp')}</p>
         </div>
         <button
           type="button"
@@ -54,7 +54,7 @@ export function Diagnostics({
           onClick={() => void onClear()}
         >
           <Eraser size={16} aria-hidden="true" />
-          {t('clearRecords')}
+          {t('sessions.clearRecords')}
         </button>
       </header>
 
@@ -73,8 +73,8 @@ export function Diagnostics({
           <span className="empty-icon">
             <Activity size={30} aria-hidden="true" />
           </span>
-          <h2>{t('diagnosticsEmpty')}</h2>
-          <p>{t('diagnosticsEmptyHelp')}</p>
+          <h2>{t('sessions.diagnosticsEmpty')}</h2>
+          <p>{t('sessions.diagnosticsEmptyHelp')}</p>
         </div>
       ) : (
         <ul className="session-list">

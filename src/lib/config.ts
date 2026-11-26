@@ -15,15 +15,17 @@ import { joinList } from './format'
 export function configLabel(t: Translator, config: Config): string {
   const name = config.name?.trim()
   if (name) return name
-  return config.reference.kind === 'builtIn' ? config.reference.code : t('unnamedConfiguration')
+  return config.reference.kind === 'builtIn'
+    ? config.reference.code
+    : t('config.unnamedConfiguration')
 }
 
 export function presetLabel(t: Translator, preset: PresetStatus): string {
   return preset === 'failed'
-    ? t('presetFailed')
+    ? t('config.presetFailed')
     : preset === 'unverified'
-      ? t('presetUnverified')
-      : t('presetVerified')
+      ? t('config.presetUnverified')
+      : t('config.presetVerified')
 }
 
 const collator = new Intl.Collator('zh-Hans', { numeric: true, sensitivity: 'base' })
@@ -73,9 +75,10 @@ export function optionsWarning(
   preset: PresetStatus,
 ): OptionCheck {
   if (!encoding?.trim() || !locale?.trim())
-    return { status: 'unverified', warning: 'optionPairMissing' }
-  if (preset === 'failed') return { status: 'failed', warning: 'presetFailedHint' }
-  if (preset === 'unverified') return { status: 'unverified', warning: 'presetUnverifiedHint' }
+    return { status: 'unverified', warning: 'config.optionPairMissing' }
+  if (preset === 'failed') return { status: 'failed', warning: 'config.presetFailedHint' }
+  if (preset === 'unverified')
+    return { status: 'unverified', warning: 'config.presetUnverifiedHint' }
   return { status: 'verified', warning: null }
 }
 
@@ -84,13 +87,13 @@ export type ChainLine = { key: MessageKey; value: string | null }
 /** Thin config → factory config → effective options → what seeded the SASUSER. */
 export function chainLines(chain: Chain, language: Language, t: Translator): ChainLine[] {
   return [
-    { key: 'chainThinCfg', value: chain.thinCfg },
-    { key: 'chainFactoryCfg', value: chain.factoryCfg },
-    { key: 'chainEncoding', value: chain.encoding },
-    { key: 'chainLocale', value: chain.locale },
-    { key: 'chainSasuser', value: chain.sasuser },
-    { key: 'chainProfile', value: preferenceValue(chain.profile, language, t) },
-    { key: 'chainLog', value: chain.log },
+    { key: 'session.chainThinCfg', value: chain.thinCfg },
+    { key: 'session.chainFactoryCfg', value: chain.factoryCfg },
+    { key: 'session.chainEncoding', value: chain.encoding },
+    { key: 'session.chainLocale', value: chain.locale },
+    { key: 'session.chainSasuser', value: chain.sasuser },
+    { key: 'session.chainProfile', value: preferenceValue(chain.profile, language, t) },
+    { key: 'session.chainLog', value: chain.log },
   ]
 }
 
@@ -105,11 +108,11 @@ function preferenceValue(
 ): string | null {
   if (!seed) return null
   const layers = [
-    seed.layers.interface ? t('layerInterface') : null,
-    seed.layers.environment ? t('layerEnvironment') : null,
-    seed.layers.templates ? t('layerTemplates') : null,
+    seed.layers.interface ? t('session.layerInterface') : null,
+    seed.layers.environment ? t('session.layerEnvironment') : null,
+    seed.layers.templates ? t('session.layerTemplates') : null,
   ].filter((name): name is string => name !== null)
-  return t('profileSeedValue', {
+  return t('session.profileSeedValue', {
     layers: joinList(language, layers),
     count: seed.files,
   })

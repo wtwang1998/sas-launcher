@@ -55,7 +55,7 @@ export function NoticeBanner({
       <div className="notice-actions">
         {failed && onRetry && (
           <button type="button" className="button small" onClick={onRetry}>
-            {t('retry')}
+            {t('common.retry')}
           </button>
         )}
         {onMigrateStartup && migrate?.kind === 'migrateStartup' && (
@@ -64,13 +64,13 @@ export function NoticeBanner({
             className="button small"
             onClick={() => onMigrateStartup(migrate.projectId)}
           >
-            {t('migrateStartup')}
+            {t('project.migrateStartup')}
           </button>
         )}
         <button
           type="button"
           className="icon-button"
-          aria-label={t(failed ? 'closeError' : 'closeMessage')}
+          aria-label={t(failed ? 'notice.closeError' : 'notice.closeMessage')}
           onClick={onDismiss}
         >
           <X size={16} />

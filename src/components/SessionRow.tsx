@@ -7,19 +7,19 @@ import { chainLines } from '../lib/config'
 import { formatArgv, formatStartedAt } from '../lib/format'
 
 const statusKeys: Record<SessionStatus, MessageKey> = {
-  running: 'statusRunning',
-  exited: 'statusExited',
-  setup: 'statusSetup',
-  cleanupPending: 'statusCleanupPending',
-  unknown: 'statusUnknown',
+  running: 'session.statusRunning',
+  exited: 'session.statusExited',
+  setup: 'session.statusSetup',
+  cleanupPending: 'session.statusCleanupPending',
+  unknown: 'session.statusUnknown',
 }
 
 const stageKeys: Record<SessionStage, MessageKey> = {
-  exe: 'stageExe',
-  cfg: 'stageCfg',
-  profile: 'stageProfile',
-  spawn: 'stageSpawn',
-  started: 'stageStarted',
+  exe: 'session.stageExe',
+  cfg: 'session.stageCfg',
+  profile: 'session.stageProfile',
+  spawn: 'session.stageSpawn',
+  started: 'session.stageStarted',
 }
 
 export function SessionRow({
@@ -50,7 +50,7 @@ export function SessionRow({
           className="session-toggle"
           aria-expanded={expanded}
           aria-controls={expanded ? detailId : undefined}
-          aria-label={t('expandSession', { name: session.name })}
+          aria-label={t('session.expandSession', { name: session.name })}
           onClick={onToggle}
         >
           <ChevronRight
@@ -63,19 +63,21 @@ export function SessionRow({
             {t(statusKeys[session.status])}
           </span>
           <span className="session-stage">
-            {failed ? t('failedStageWith', { stage }) : t('stageWith', { stage })}
+            {failed ? t('session.failedStageWith', { stage }) : t('session.stageWith', { stage })}
           </span>
           {session.exitCode !== null && (
-            <span className="session-exit">{t('exitCodeValue', { code: session.exitCode })}</span>
+            <span className="session-exit">
+              {t('session.exitCodeValue', { code: session.exitCode })}
+            </span>
           )}
         </button>
         <div className="session-actions">
           <button type="button" className="button small" onClick={onOpenLog}>
-            {t('openLog')}
+            {t('sessions.openLog')}
           </button>
           {session.status === 'running' && (
             <button type="button" className="button small" onClick={onOpenSasuser}>
-              {t('openSasuser')}
+              {t('sessions.openSasuser')}
             </button>
           )}
         </div>
@@ -83,22 +85,22 @@ export function SessionRow({
       {expanded && (
         <div className="session-detail" id={detailId}>
           <h3>
-            {t('chainHeading')}
+            {t('session.chainHeading')}
             {session.chain.label ? ` · ${session.chain.label}` : ''}
           </h3>
           <dl className="chain-list">
             {chainLines(session.chain, language, t).map((line) => (
               <div className="chain-row" key={line.key}>
                 <dt>{t(line.key)}</dt>
-                <dd>{line.value ?? t('chainNone')}</dd>
+                <dd>{line.value ?? t('session.chainNone')}</dd>
               </div>
             ))}
           </dl>
-          <h3>{t('argvHeading')}</h3>
+          <h3>{t('session.argvHeading')}</h3>
           {session.argv.length > 0 ? (
             <code className="argv">{formatArgv(session.argv)}</code>
           ) : (
-            <p className="muted">{t('noArgv')}</p>
+            <p className="muted">{t('session.noArgv')}</p>
           )}
           {session.failure && (
             <p className="session-failure" role="status">
@@ -106,17 +108,19 @@ export function SessionRow({
             </p>
           )}
           <p className="session-meta">
-            {t('startedAt', { time: formatStartedAt(session.startedAt, language) })}
+            {t('session.startedAt', { time: formatStartedAt(session.startedAt, language) })}
             {' · '}
-            {t('logCounts', { errors: session.errors, warnings: session.warnings })}
+            {t('session.logCounts', { errors: session.errors, warnings: session.warnings })}
             {' · '}
-            {session.sasuserWritable ? t('sasuserWritable') : t('sasuserReadOnly')}
+            {session.sasuserWritable ? t('session.sasuserWritable') : t('session.sasuserReadOnly')}
             {' · '}
-            {t(session.kind === 'setup' ? 'sessionKindSetup' : 'sessionKindProject')}
+            {t(
+              session.kind === 'setup' ? 'session.sessionKindSetup' : 'session.sessionKindProject',
+            )}
           </p>
           {session.hints.length > 0 && (
             <>
-              <h3>{t('hintsHeading')}</h3>
+              <h3>{t('session.hintsHeading')}</h3>
               <ul className="session-hints">
                 {session.hints.map((hint) => (
                   <li key={hint.code}>{issueText(language, hint)}</li>

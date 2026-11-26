@@ -66,7 +66,7 @@ export function ConfigRow({
           <span className="config-name">{configLabel(t, config)}</span>
           {!builtIn && config.derivedFrom && (
             <small className="config-derived">
-              {t('derivedFrom', { name: config.derivedFrom })}
+              {t('config.derivedFrom', { name: config.derivedFrom })}
             </small>
           )}
         </div>
@@ -74,9 +74,11 @@ export function ConfigRow({
           {config.error && (
             <span className="config-error">{issueText(language, config.error)}</span>
           )}
-          {setupRunning && <span className="config-setup">{t('setupSessionRunning')}</span>}
+          {setupRunning && (
+            <span className="config-setup">{t('configurations.setupSessionRunning')}</span>
+          )}
           {usage > 0 && (
-            <span className="config-usage">{t('usedByProjects', { count: usage })}</span>
+            <span className="config-usage">{t('config.usedByProjects', { count: usage })}</span>
           )}
           {config.preset !== 'verified' && (
             <span className={`preset ${config.preset}`}>{presetLabel(t, config.preset)}</span>
@@ -93,7 +95,7 @@ export function ConfigRow({
               disabled={busy}
               onClick={() => onFinishSetup(true)}
             >
-              {t('saveSessionSettings')}
+              {t('configurations.saveSessionSettings')}
             </button>
             <button
               type="button"
@@ -101,7 +103,7 @@ export function ConfigRow({
               disabled={busy}
               onClick={() => onFinishSetup(false)}
             >
-              {t('discard')}
+              {t('common.discard')}
             </button>
           </>
         )}
@@ -109,7 +111,7 @@ export function ConfigRow({
           <button
             type="button"
             className="icon-button"
-            aria-label={t('configActions', { name: configLabel(t, config) })}
+            aria-label={t('configurations.configActions', { name: configLabel(t, config) })}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             disabled={busy}
@@ -121,7 +123,7 @@ export function ConfigRow({
             <div
               className="menu"
               role="menu"
-              aria-label={t('configActions', { name: configLabel(t, config) })}
+              aria-label={t('configurations.configActions', { name: configLabel(t, config) })}
             >
               {!builtIn && (
                 <>
@@ -130,10 +132,10 @@ export function ConfigRow({
                     role="menuitem"
                     className="menu-item"
                     disabled={!!setupRunning}
-                    title={setupRunning ? t('setupSessionRunning') : undefined}
+                    title={setupRunning ? t('configurations.setupSessionRunning') : undefined}
                     onClick={() => run(onEdit)}
                   >
-                    {t('editSettings')}
+                    {t('configurations.editSettings')}
                   </button>
                   <button
                     type="button"
@@ -141,7 +143,7 @@ export function ConfigRow({
                     className="menu-item"
                     onClick={() => run(onOpenSetup)}
                   >
-                    {t('openSasSettings')}
+                    {t('configurations.openSasSettings')}
                   </button>
                 </>
               )}
@@ -151,7 +153,7 @@ export function ConfigRow({
                 className="menu-item"
                 onClick={() => run(onDerive)}
               >
-                {t('deriveAction')}
+                {t('configurations.deriveAction')}
               </button>
               {!builtIn && (
                 <button
@@ -159,10 +161,10 @@ export function ConfigRow({
                   role="menuitem"
                   className="menu-item danger"
                   disabled={usage > 0}
-                  title={usage > 0 ? t('deleteInUse') : undefined}
+                  title={usage > 0 ? t('config.deleteInUse') : undefined}
                   onClick={() => run(onDelete)}
                 >
-                  {t('deleteConfiguration')}
+                  {t('configurations.deleteConfiguration')}
                 </button>
               )}
             </div>

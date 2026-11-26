@@ -92,12 +92,12 @@ export function Configurations({
     <>
       <header className="page-head">
         <div>
-          <h1>{t('configurations')}</h1>
-          <p>{t('configurationsHelp')}</p>
+          <h1>{t('nav.configurations')}</h1>
+          <p>{t('nav.configurationsHelp')}</p>
         </div>
         {returnDraft && (
           <button type="button" className="button" onClick={returnDraft}>
-            {t('returnToDraft')}
+            {t('project.returnToDraft')}
           </button>
         )}
       </header>
@@ -113,14 +113,14 @@ export function Configurations({
       )}
 
       <section className="config-group" aria-labelledby={`${fieldId}-users`}>
-        <h2 id={`${fieldId}-users`}>{t('userConfigurations')}</h2>
+        <h2 id={`${fieldId}-users`}>{t('configurations.userConfigurations')}</h2>
         {users.length === 0 ? (
           <div className="empty panel config-empty">
             <span className="empty-icon">
               <Layers3 size={28} strokeWidth={1.5} aria-hidden="true" />
             </span>
-            <h3>{t('noUserConfigurations')}</h3>
-            <p>{t('noUserConfigurationsHelp')}</p>
+            <h3>{t('configurations.noUserConfigurations')}</h3>
+            <p>{t('configurations.noUserConfigurationsHelp')}</p>
           </div>
         ) : (
           <ul className="config-list">
@@ -151,9 +151,9 @@ export function Configurations({
       </section>
 
       <section className="config-group" aria-labelledby={`${fieldId}-builtins`}>
-        <h2 id={`${fieldId}-builtins`}>{t('builtInConfigurations')}</h2>
+        <h2 id={`${fieldId}-builtins`}>{t('configurations.builtInConfigurations')}</h2>
         {builtIns.length === 0 ? (
-          <p className="muted config-empty-note">{t('noBuiltInConfigurations')}</p>
+          <p className="muted config-empty-note">{t('configurations.noBuiltInConfigurations')}</p>
         ) : (
           <ul className="config-list tiles">
             {builtIns.map((config) => (
@@ -191,10 +191,10 @@ export function Configurations({
             aria-labelledby={dialogTitleId}
           >
             <h2 id={dialogTitleId}>
-              {t('editSettingsTitle', { name: configLabel(t, editing.config) })}
+              {t('configurations.editSettingsTitle', { name: configLabel(t, editing.config) })}
             </h2>
             <div className="field">
-              <label htmlFor={`${fieldId}-preset`}>{t('presetCombination')}</label>
+              <label htmlFor={`${fieldId}-preset`}>{t('config.presetCombination')}</label>
               <select
                 id={`${fieldId}-preset`}
                 value={currentPreset?.key ?? ''}
@@ -209,7 +209,7 @@ export function Configurations({
                     )
                 }}
               >
-                {!currentPreset && <option value="">{t('presetCustom')}</option>}
+                {!currentPreset && <option value="">{t('config.presetCustom')}</option>}
                 {presets.map((preset) => (
                   <option key={preset.key} value={preset.key}>
                     {(localeLanguageName(language, preset.locale) ?? preset.locale) +
@@ -220,27 +220,27 @@ export function Configurations({
               </select>
             </div>
             <div className="field">
-              <label htmlFor={`${fieldId}-encoding`}>{t('encoding')}</label>
+              <label htmlFor={`${fieldId}-encoding`}>{t('config.encoding')}</label>
               <input
                 id={`${fieldId}-encoding`}
                 value={editing.encoding}
                 disabled={busy}
-                placeholder={t('encodingHint')}
+                placeholder={t('config.encodingHint')}
                 onChange={(event) => setEditing({ ...editing, encoding: event.target.value })}
               />
             </div>
             <div className="field">
-              <label htmlFor={`${fieldId}-locale`}>{t('locale')}</label>
+              <label htmlFor={`${fieldId}-locale`}>{t('config.locale')}</label>
               <input
                 id={`${fieldId}-locale`}
                 value={editing.locale}
                 disabled={busy}
-                placeholder={t('localeHint')}
+                placeholder={t('config.localeHint')}
                 onChange={(event) => setEditing({ ...editing, locale: event.target.value })}
               />
             </div>
             {check?.warning && <p className="option-warning">{t(check.warning)}</p>}
-            <p className="field-hint">{t('editorSettingsNotIncluded')}</p>
+            <p className="field-hint">{t('config.editorSettingsNotIncluded')}</p>
             {notice?.target === 'dialog' && (
               <NoticeBanner
                 notice={notice}
@@ -257,7 +257,7 @@ export function Configurations({
                 disabled={busy}
                 onClick={() => setEditing(null)}
               >
-                {t('cancel')}
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
@@ -265,7 +265,7 @@ export function Configurations({
                 disabled={busy}
                 onClick={() => void saveEditing()}
               >
-                {t('save')}
+                {t('common.save')}
               </button>
             </div>
           </div>
@@ -286,10 +286,10 @@ export function Configurations({
             aria-labelledby={`${dialogTitleId}-setup`}
           >
             <h2 id={`${dialogTitleId}-setup`}>
-              {t('setupDialogTitle', { name: configLabel(t, setupPrompt) })}
+              {t('configurations.setupDialogTitle', { name: configLabel(t, setupPrompt) })}
             </h2>
-            <p className="modal-body">{t('setupDialogBody')}</p>
-            <p className="field-hint">{t('editorSettingsNotIncluded')}</p>
+            <p className="modal-body">{t('configurations.setupDialogBody')}</p>
+            <p className="field-hint">{t('config.editorSettingsNotIncluded')}</p>
             <div className="form-actions">
               <button
                 type="button"
@@ -297,7 +297,7 @@ export function Configurations({
                 disabled={busy}
                 onClick={() => setSetupPrompt(null)}
               >
-                {t('cancel')}
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
@@ -309,7 +309,7 @@ export function Configurations({
                   void onStartSetup(id)
                 }}
               >
-                {t('setupDialogConfirm')}
+                {t('configurations.setupDialogConfirm')}
               </button>
             </div>
           </div>

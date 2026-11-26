@@ -132,7 +132,7 @@ export function useConfirmation({
               disabled={running}
               onClick={dismiss}
             >
-              {t('cancel')}
+              {t('common.cancel')}
             </button>
             <button
               type="button"

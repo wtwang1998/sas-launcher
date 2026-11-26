@@ -39,11 +39,11 @@ import { Settings as SettingsPage } from './pages/Settings'
 type Page = 'projects' | 'configurations' | 'diagnostics' | 'settings' | 'about'
 
 const navigation = [
-  { id: 'projects', label: 'projects', icon: Folders },
-  { id: 'configurations', label: 'configurations', icon: Layers3 },
-  { id: 'diagnostics', label: 'sessions', icon: Activity },
-  { id: 'settings', label: 'settings', icon: SettingsIcon },
-  { id: 'about', label: 'about', icon: BadgeInfo },
+  { id: 'projects', label: 'nav.projects', icon: Folders },
+  { id: 'configurations', label: 'nav.configurations', icon: Layers3 },
+  { id: 'diagnostics', label: 'nav.sessions', icon: Activity },
+  { id: 'settings', label: 'nav.settings', icon: SettingsIcon },
+  { id: 'about', label: 'nav.about', icon: BadgeInfo },
 ] as const
 
 export function App() {
@@ -75,7 +75,7 @@ export function App() {
   })
 
   useEffect(() => {
-    const title = translate(language)('title')
+    const title = translate(language)('app.title')
     document.documentElement.lang = language
     document.title = title
     try {
@@ -230,7 +230,7 @@ export function App() {
           next.startupFile.trim() || null,
           next.startupExposesPath,
         ),
-      'projectSaved',
+      'notice.projectSaved',
       'form',
       'page',
     )
@@ -286,7 +286,7 @@ export function App() {
   /** A folder outside `My SAS Files` is still a valid source, but must be picked. */
   async function browseProfile() {
     try {
-      const picked = await open({ directory: true, title: t('browseFolder') })
+      const picked = await open({ directory: true, title: t('dialog.browseFolder') })
       if (typeof picked !== 'string' || !picked) return
       const found = await api.sasuserCandidates(picked)
       setProfileCandidates(found)
@@ -308,8 +308,8 @@ export function App() {
     try {
       const picked = await open({
         multiple: false,
-        title: t('pickStartupFile'),
-        filters: [{ name: t('sasProgram'), extensions: ['sas'] }],
+        title: t('dialog.pickStartupFile'),
+        filters: [{ name: t('project.sasProgram'), extensions: ['sas'] }],
       })
       if (typeof picked !== 'string' || !picked) return
       setDraft((current) => (current ? { ...current, startupFile: picked } : current))
@@ -321,23 +321,27 @@ export function App() {
   async function deleteProject(id: string) {
     const name = view?.projects.find((project) => project.id === id)?.name
     confirm(
-      t('deleteTitle'),
-      t('deletePrompt', { name: name ?? '' }),
-      t('deleteAction'),
+      t('project.deleteTitle'),
+      t('project.deletePrompt', { name: name ?? '' }),
+      t('common.deleteAction'),
       async () => {
-        const next = await mutate(() => api.deleteProject(id), 'projectDeleted', 'dialog')
+        const next = await mutate(() => api.deleteProject(id), 'notice.projectDeleted', 'dialog')
         return next !== null
       },
     )
   }
 
   async function launchProject(id: string) {
-    await launch(() => api.launchProject(id), 'launched', id)
+    await launch(() => api.launchProject(id), 'notice.launched', id)
   }
 
   /** Rewrite the script, then try the launch the user originally asked for. */
   async function migrateStartup(projectId: string) {
-    const updated = await mutate(() => api.migrateStartupFile(projectId), 'startupMigrated', 'page')
+    const updated = await mutate(
+      () => api.migrateStartupFile(projectId),
+      'notice.startupMigrated',
+      'page',
+    )
     if (updated) await launchProject(projectId)
   }
 
@@ -366,7 +370,10 @@ export function App() {
 
   async function createConfiguration(base: ConfigBase, name: string | null) {
     const known = new Set((view?.configs ?? []).map((config) => refKey(config.reference)))
-    const next = await mutate(() => api.createConfiguration(base, name), 'configurationCreated')
+    const next = await mutate(
+      () => api.createConfiguration(base, name),
+      'notice.configurationCreated',
+    )
     if (!next) return
     const created = next.configs.find((config) => !known.has(refKey(config.reference)))
     const createdId = created?.reference.kind === 'user' ? created.reference.id : null
@@ -380,7 +387,7 @@ export function App() {
   async function updateConfiguration(id: string, encoding: string, locale: string) {
     const next = await mutate(
       () => api.updateConfiguration(id, encoding, locale),
-      'configurationSaved',
+      'notice.configurationSaved',
       'dialog',
       'page',
     )
@@ -390,13 +397,13 @@ export function App() {
   async function deleteConfiguration(id: string) {
     const name = view?.configs.find((config) => refKey(config.reference) === `user:${id}`)?.name
     confirm(
-      t('deleteConfigurationTitle'),
-      t('deleteConfigurationDetail', { name: name ?? '' }),
-      t('deleteAction'),
+      t('configurations.deleteConfigurationTitle'),
+      t('configurations.deleteConfigurationDetail', { name: name ?? '' }),
+      t('common.deleteAction'),
       async () => {
         const next = await mutate(
           () => api.deleteConfiguration(id),
-          'configurationDeleted',
+          'notice.configurationDeleted',
           'dialog',
           'page',
         )
@@ -406,30 +413,40 @@ export function App() {
   }
 
   async function startConfigSetup(id: string) {
-    await mutate(() => api.startConfigSetup(id), 'setupStarted', 'page')
+    await mutate(() => api.startConfigSetup(id), 'notice.setupStarted', 'page')
   }
 
   async function finishConfigSetup(id: string, save: boolean) {
     await mutate(
       () => api.finishConfigSetup(id, save),
-      save ? 'setupSaved' : 'setupDiscarded',
+      save ? 'notice.setupSaved' : 'notice.setupDiscarded',
       'page',
     )
   }
 
   async function clearDiagnostics() {
-    confirm(t('clearRecordsTitle'), t('clearRecordsDetail'), t('clearRecordsAction'), async () => {
-      const next = await mutate(() => api.clearDiagnostics(), 'recordsCleared', 'dialog', 'page')
-      return next !== null
-    })
+    confirm(
+      t('sessions.clearRecordsTitle'),
+      t('sessions.clearRecordsDetail'),
+      t('sessions.clearRecordsAction'),
+      async () => {
+        const next = await mutate(
+          () => api.clearDiagnostics(),
+          'notice.recordsCleared',
+          'dialog',
+          'page',
+        )
+        return next !== null
+      },
+    )
   }
 
   async function saveSasPath(path: string) {
-    await mutate(() => api.selectInstallation(path), 'installationUpdated', 'sas')
+    await mutate(() => api.selectInstallation(path), 'notice.installationUpdated', 'sas')
   }
 
   async function autoDetectSas() {
-    await mutate(() => api.clearInstallation(), 'installationAutoDetected', 'sas')
+    await mutate(() => api.clearInstallation(), 'settings.installationAutoDetected', 'sas')
   }
 
   /**
@@ -440,10 +457,15 @@ export function App() {
   useEffect(() => {
     quitRequested.current = () => {
       const count = view?.sessions.filter((session) => session.status === 'running').length ?? 0
-      confirm(t('quitTitle'), t('quitMessage', { count }), t('quitAction'), async () => {
-        await api.quit()
-        return true
-      })
+      confirm(
+        t('quit.quitTitle'),
+        t('quit.quitMessage', { count }),
+        t('quit.quitAction'),
+        async () => {
+          await api.quit()
+          return true
+        },
+      )
     }
   })
   useEffect(() => onHostEvent('quit-requested', () => quitRequested.current()), [])
@@ -468,11 +490,11 @@ export function App() {
     void (async () => {
       try {
         const selected = await open({
-          title: t('pickSas'),
-          filters: [{ name: t('windowsProgram'), extensions: ['exe'] }],
+          title: t('dialog.pickSas'),
+          filters: [{ name: t('dialog.windowsProgram'), extensions: ['exe'] }],
         })
         if (typeof selected === 'string' && selected) {
-          await mutate(() => api.selectInstallation(selected), 'installationUpdated', 'sas')
+          await mutate(() => api.selectInstallation(selected), 'notice.installationUpdated', 'sas')
         }
       } catch (failure) {
         report(failure)
@@ -487,9 +509,9 @@ export function App() {
           <span className="brand-icon">
             <SquareTerminal size={24} strokeWidth={1.9} aria-hidden="true" />
           </span>
-          <span>{t('title')}</span>
+          <span>{t('app.title')}</span>
         </div>
-        <nav aria-label={t('navigation')}>
+        <nav aria-label={t('app.navigation')}>
           {navigation.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -513,7 +535,7 @@ export function App() {
               <span>{issueText(language, view.scanError)}</span>
               <button type="button" className="button small" disabled={busy} onClick={pickExe}>
                 <FolderOpen size={15} aria-hidden="true" />
-                {t('chooseExe')}
+                {t('dialog.chooseExe')}
               </button>
             </div>
           )}
@@ -525,25 +547,25 @@ export function App() {
                 type="button"
                 className="button small"
                 disabled={busy}
-                onClick={() => void mutate(() => api.refresh(), 'refreshed')}
+                onClick={() => void mutate(() => api.refresh(), 'notice.refreshed')}
               >
                 <RefreshCw size={15} aria-hidden="true" />
-                {t('refresh')}
+                {t('common.refresh')}
               </button>
             </div>
           )}
           {view?.archived && (
             <div className="banner info">
               <Archive size={18} aria-hidden="true" />
-              <span>{t('archiveNotice', { path: view.archived })}</span>
+              <span>{t('notice.archiveNotice', { path: view.archived })}</span>
               <button type="button" className="button small" disabled={busy} onClick={openArchive}>
-                {t('openArchive')}
+                {t('common.openArchive')}
               </button>
             </div>
           )}
           {!view && (
             <p className="muted" role="status">
-              {t('discovering')}
+              {t('app.discovering')}
             </p>
           )}
 

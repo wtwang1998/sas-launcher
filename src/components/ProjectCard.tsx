@@ -44,7 +44,7 @@ export function ProjectCard({
         <input
           type="checkbox"
           className="project-checkbox"
-          aria-label={t('selectNamed', { name: project.name })}
+          aria-label={t('project.selectNamed', { name: project.name })}
           checked={checked}
           disabled={busy}
           onChange={onCheck}
@@ -61,13 +61,13 @@ export function ProjectCard({
                 <Chips config={config} language={language} t={t} />
               </>
             ) : (
-              <span className="missing">{t('missingConfig')}</span>
+              <span className="missing">{t('project.missingConfig')}</span>
             )}
           </div>
           {project.note && <p className="project-note">{project.note}</p>}
           {project.profile && project.profile.missing > 0 && (
             <p className="project-note missing">
-              {t('profileIncomplete', { count: project.profile.missing })}
+              {t('session.profileIncomplete', { count: project.profile.missing })}
             </p>
           )}
         </div>
@@ -75,7 +75,7 @@ export function ProjectCard({
           <button
             type="button"
             className="icon-button"
-            aria-label={t('editNamed', { name: project.name })}
+            aria-label={t('project.editNamed', { name: project.name })}
             aria-expanded={editing}
             disabled={busy}
             onClick={onEdit}
@@ -85,7 +85,7 @@ export function ProjectCard({
           <button
             type="button"
             className="icon-button delete"
-            aria-label={t('deleteNamed', { name: project.name })}
+            aria-label={t('project.deleteNamed', { name: project.name })}
             disabled={busy}
             onClick={onDelete}
           >
@@ -98,7 +98,7 @@ export function ProjectCard({
             onClick={onLaunch}
           >
             <Play size={14} aria-hidden="true" />
-            {t(running ? 'statusRunning' : 'launch')}
+            {t(running ? 'session.statusRunning' : 'common.launch')}
           </button>
         </div>
       </div>

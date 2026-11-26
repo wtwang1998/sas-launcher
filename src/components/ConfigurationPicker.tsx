@@ -167,7 +167,9 @@ export function ConfigurationPicker({
             <Chips config={selected} language={language} t={t} />
           </>
         ) : (
-          <span className="config-trigger-placeholder">{t('configurationPickerEmpty')}</span>
+          <span className="config-trigger-placeholder">
+            {t('configChoice.configurationPickerEmpty')}
+          </span>
         )}
         <ChevronDown
           size={16}
@@ -184,13 +186,13 @@ export function ConfigurationPicker({
         >
           {users.length > 0 && (
             <div className="config-menu-group" role="presentation">
-              {t('userConfigurations')}
+              {t('configurations.userConfigurations')}
             </div>
           )}
           {users.map((config, index) => option(config, index))}
           {builtIns.length > 0 && (
             <div className="config-menu-group" role="presentation">
-              {t('builtInConfigurations')}
+              {t('configurations.builtInConfigurations')}
             </div>
           )}
           {builtIns.map((config, index) => option(config, users.length + index))}

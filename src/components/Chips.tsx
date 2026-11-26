@@ -20,14 +20,16 @@ export function Chips({
         <span
           className="chip"
           title={
-            interfaceLanguage ? t('sasUiLanguage', { language: interfaceLanguage }) : undefined
+            interfaceLanguage
+              ? t('config.sasUiLanguage', { language: interfaceLanguage })
+              : undefined
           }
         >
           {region}
         </span>
       )}
       {config.encoding && <span className="chip">{config.encoding.toUpperCase()}</span>}
-      {config.hasProfile && <span className="chip">{t('includesSettings')}</span>}
+      {config.hasProfile && <span className="chip">{t('config.includesSettings')}</span>}
     </span>
   )
 }

@@ -21,8 +21,8 @@ it('every_message_has_both_languages', () => {
 })
 
 it('placeholders_are_interpolated_in_both_languages', () => {
-  expect(translate('zh-Hans')('derivedFrom', { name: 'u8' })).toBe('衍生自 u8')
-  expect(translate('en')('derivedFrom', { name: 'u8' })).toBe('Derived from u8')
-  expect(translate('zh-Hans')('usedByProjects', { count: 1 })).toBe('被 1 个项目使用')
-  expect(translate('en')('exitCodeValue', { code: 5 })).toBe('Exit code 5')
+  expect(translate('zh-Hans')('config.derivedFrom', { name: 'u8' })).toBe('衍生自 u8')
+  expect(translate('en')('config.derivedFrom', { name: 'u8' })).toBe('Derived from u8')
+  expect(translate('zh-Hans')('config.usedByProjects', { count: 1 })).toBe('被 1 个项目使用')
+  expect(translate('en')('session.exitCodeValue', { code: 5 })).toBe('Exit code 5')
 })

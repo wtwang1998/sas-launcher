@@ -25,10 +25,10 @@ export type AboutProps = {
 }
 
 const FAILED: Record<string, MessageKey> = {
-  timeout: 'updateTimeout',
-  offline: 'updateOffline',
-  rateLimited: 'updateRateLimited',
-  unreadable: 'updateUnreadable',
+  timeout: 'about.updateTimeout',
+  offline: 'about.updateOffline',
+  rateLimited: 'about.updateRateLimited',
+  unreadable: 'about.updateUnreadable',
 }
 
 function statusIcon(check: UpdateCheck) {
@@ -47,13 +47,13 @@ function statusIcon(check: UpdateCheck) {
 function statusText(check: UpdateCheck, t: Translator, version: string) {
   switch (check.kind) {
     case 'checking':
-      return t('updateChecking')
+      return t('about.updateChecking')
     case 'latest':
-      return t('updateLatest', { version: `v${version}` })
+      return t('about.updateLatest', { version: `v${version}` })
     case 'available':
       return check.prerelease
-        ? t('updatePreRelease', { version: check.tag })
-        : t('updateAvailable', { version: check.tag })
+        ? t('about.updatePreRelease', { version: check.tag })
+        : t('about.updateAvailable', { version: check.tag })
     case 'failed':
       return t(FAILED[check.reason])
     default:
@@ -105,19 +105,19 @@ export function About({
     <>
       <header className="page-head">
         <div>
-          <h1>{t('about')}</h1>
-          <p>{t('aboutHelp')}</p>
+          <h1>{t('nav.about')}</h1>
+          <p>{t('nav.aboutHelp')}</p>
         </div>
       </header>
 
       <section className="settings-group panel" aria-labelledby={`${id}-version`}>
-        <h2 id={`${id}-version`}>{t('versionGroup')}</h2>
+        <h2 id={`${id}-version`}>{t('about.versionGroup')}</h2>
         <div className="about-identity">
           <span className="card-icon">
             <SquareTerminal size={22} strokeWidth={1.8} aria-hidden="true" />
           </span>
           <span className="about-identity-name">
-            {t('title')}
+            {t('app.title')}
             <span className="chip chip-name about-version">v{view.version}</span>
           </span>
           <button type="button" className="button small about-copy" onClick={() => void copy()}>
@@ -126,19 +126,19 @@ export function About({
             ) : (
               <Copy size={15} aria-hidden="true" />
             )}
-            {copied ? t('copied') : t('copyVersion')}
+            {copied ? t('notice.copied') : t('about.copyVersion')}
           </button>
         </div>
         <dl className="diagnostic about-facts">
-          <dt>{t('buildCommit')}</dt>
+          <dt>{t('about.buildCommit')}</dt>
           <dd className="config-code">{view.commit}</dd>
         </dl>
       </section>
 
       <section className="settings-group panel" aria-labelledby={`${id}-update`}>
-        <h2 id={`${id}-update`}>{t('updateGroup')}</h2>
+        <h2 id={`${id}-update`}>{t('about.updateGroup')}</h2>
         <div className="setting-row">
-          <span className="setting-label">{t('checkUpdate')}</span>
+          <span className="setting-label">{t('about.checkUpdate')}</span>
           <div className="setting-control">
             <button
               type="button"
@@ -147,7 +147,7 @@ export function About({
               onClick={() => void runCheck()}
             >
               <RefreshCw size={15} aria-hidden="true" />
-              {t('checkUpdate')}
+              {t('about.checkUpdate')}
             </button>
           </div>
         </div>
@@ -161,7 +161,7 @@ export function About({
                 className="button small primary"
                 onClick={() => void open('update', () => onOpenRelease(check.tag))}
               >
-                {t('openRelease')}
+                {t('common.openRelease')}
               </button>
             )}
           </div>
@@ -174,14 +174,14 @@ export function About({
       </section>
 
       <section className="settings-group panel" aria-labelledby={`${id}-links`}>
-        <h2 id={`${id}-links`}>{t('linksGroup')}</h2>
+        <h2 id={`${id}-links`}>{t('about.linksGroup')}</h2>
         <button
           type="button"
           className="about-link"
           onClick={() => void open('links', onOpenRepository)}
         >
           <GitBranch size={16} aria-hidden="true" />
-          <span>{t('repository')}</span>
+          <span>{t('about.repository')}</span>
           <ExternalLink className="about-link-arrow" size={15} aria-hidden="true" />
         </button>
         <button
@@ -190,7 +190,7 @@ export function About({
           onClick={() => void open('links', onOpenIssues)}
         >
           <MessageSquare size={16} aria-hidden="true" />
-          <span>{t('reportIssue')}</span>
+          <span>{t('about.reportIssue')}</span>
           <ExternalLink className="about-link-arrow" size={15} aria-hidden="true" />
         </button>
         {failure?.where === 'links' && (

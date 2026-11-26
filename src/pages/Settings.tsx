@@ -59,40 +59,40 @@ export function Settings({
     <>
       <header className="page-head">
         <div>
-          <h1>{t('settings')}</h1>
-          <p>{t('settingsHelp')}</p>
+          <h1>{t('nav.settings')}</h1>
+          <p>{t('nav.settingsHelp')}</p>
         </div>
       </header>
 
       <section className="settings-group panel" aria-labelledby={`${id}-interface`}>
-        <h2 id={`${id}-interface`}>{t('interfaceGroup')}</h2>
+        <h2 id={`${id}-interface`}>{t('settings.interfaceGroup')}</h2>
         <div className="setting-row">
-          <span className="setting-label">{t('theme')}</span>
+          <span className="setting-label">{t('settings.theme')}</span>
           <div className="setting-control">
             <select
-              aria-label={t('theme')}
+              aria-label={t('settings.theme')}
               value={view.themePreference}
               disabled={busy}
               onChange={(event) => onTheme(event.target.value as ThemePreference)}
             >
-              <option value="system">{t('system')}</option>
-              <option value="dark">{t('themeDark')}</option>
-              <option value="light">{t('themeLight')}</option>
+              <option value="system">{t('settings.system')}</option>
+              <option value="dark">{t('settings.themeDark')}</option>
+              <option value="light">{t('settings.themeLight')}</option>
             </select>
           </div>
         </div>
         <div className="setting-row">
-          <span className="setting-label">{t('language')}</span>
+          <span className="setting-label">{t('settings.language')}</span>
           <div className="setting-control">
             <select
-              aria-label={t('language')}
+              aria-label={t('settings.language')}
               value={view.languagePreference}
               disabled={busy}
               onChange={(event) => onLanguage(event.target.value as Preference)}
             >
-              <option value="system">{t('system')}</option>
-              <option value="zh-Hans">{t('languageZhHans')}</option>
-              <option value="en">{t('languageEnglish')}</option>
+              <option value="system">{t('settings.system')}</option>
+              <option value="zh-Hans">{t('settings.languageZhHans')}</option>
+              <option value="en">{t('settings.languageEnglish')}</option>
             </select>
           </div>
         </div>
@@ -108,12 +108,12 @@ export function Settings({
       </section>
 
       <section className="settings-group panel" aria-labelledby={`${id}-sas`}>
-        <h2 id={`${id}-sas`}>{t('sasGroup')}</h2>
+        <h2 id={`${id}-sas`}>{t('settings.sasGroup')}</h2>
         <div className="setting-row wide">
-          <span className="setting-label">{t('sasPath')}</span>
+          <span className="setting-label">{t('settings.sasPath')}</span>
           <div className="setting-control path-control">
             <input
-              aria-label={t('sasPath')}
+              aria-label={t('settings.sasPath')}
               value={path}
               disabled={busy}
               spellCheck={false}
@@ -130,7 +130,7 @@ export function Settings({
               }}
             />
             <button type="button" className="button small" disabled={busy} onClick={onBrowse}>
-              {t('browse')}
+              {t('common.browse')}
             </button>
             <button
               type="button"
@@ -138,7 +138,7 @@ export function Settings({
               disabled={busy || !dirty || !trimmed}
               onClick={() => void save()}
             >
-              {t('savePath')}
+              {t('settings.savePath')}
             </button>
             <button
               type="button"
@@ -146,11 +146,11 @@ export function Settings({
               disabled={busy}
               onClick={() => void onAutoDetect()}
             >
-              {t('autoDetect')}
+              {t('common.autoDetect')}
             </button>
           </div>
         </div>
-        <p className="setting-hint">{t('sasPathHint')}</p>
+        <p className="setting-hint">{t('settings.sasPathHint')}</p>
         {notice?.target === 'sas' && (
           <NoticeBanner
             notice={notice}
@@ -163,11 +163,11 @@ export function Settings({
       </section>
 
       <section className="settings-group panel" aria-labelledby={`${id}-window`}>
-        <h2 id={`${id}-window`}>{t('windowGroup')}</h2>
+        <h2 id={`${id}-window`}>{t('settings.windowGroup')}</h2>
         <div className="setting-row">
           <span className="setting-label">
-            <span id={`${id}-startup`}>{t('startup')}</span>
-            <span className="setting-state">{t('startupHint')}</span>
+            <span id={`${id}-startup`}>{t('settings.startup')}</span>
+            <span className="setting-state">{t('settings.startupHint')}</span>
           </span>
           <div className="setting-control">
             <Switch
@@ -181,11 +181,11 @@ export function Settings({
         {view.autostart && (
           <div className="setting-row">
             <span className="setting-label">
-              <span id={`${id}-start-minimized`}>{t('startMinimized')}</span>
+              <span id={`${id}-start-minimized`}>{t('settings.startMinimized')}</span>
               <span className="setting-state">
                 {startMinimizedActive(view.autostart, view.startMinimized)
-                  ? t('startMinimizedActive')
-                  : t('startMinimizedShown')}
+                  ? t('settings.startMinimizedActive')
+                  : t('settings.startMinimizedShown')}
               </span>
             </span>
             <div className="setting-control">
@@ -200,8 +200,8 @@ export function Settings({
         )}
         <div className="setting-row">
           <span className="setting-label">
-            <span id={`${id}-close-to-tray`}>{t('closeToTray')}</span>
-            <span className="setting-state">{t('closeToTrayHint')}</span>
+            <span id={`${id}-close-to-tray`}>{t('settings.closeToTray')}</span>
+            <span className="setting-state">{t('settings.closeToTrayHint')}</span>
           </span>
           <div className="setting-control">
             <Switch

@@ -55,21 +55,21 @@ describe('encoding/locale combination state', () => {
         locale: 'en_US',
         preset: 'unverified',
         status: 'unverified',
-        warning: 'presetUnverifiedHint',
+        warning: 'config.presetUnverifiedHint',
       },
       {
         encoding: 'UTF-8',
         locale: 'en_US',
         preset: 'failed',
         status: 'failed',
-        warning: 'presetFailedHint',
+        warning: 'config.presetFailedHint',
       },
       {
         encoding: null,
         locale: 'zh_CN',
         preset: 'verified',
         status: 'unverified',
-        warning: 'optionPairMissing',
+        warning: 'config.optionPairMissing',
       },
     ]
     for (const entry of cases) {
@@ -202,13 +202,13 @@ describe('resolution chain', () => {
     const session = makeSession({ id: 's1', status: 'running', stage: 'started' })
     const lines = chainLines(session.chain, 'zh-Hans', zh)
     expect(lines.map((line) => line.key)).toEqual([
-      'chainThinCfg',
-      'chainFactoryCfg',
-      'chainEncoding',
-      'chainLocale',
-      'chainSasuser',
-      'chainProfile',
-      'chainLog',
+      'session.chainThinCfg',
+      'session.chainFactoryCfg',
+      'session.chainEncoding',
+      'session.chainLocale',
+      'session.chainSasuser',
+      'session.chainProfile',
+      'session.chainLog',
     ])
     expect(lines.map((line) => line.value)).toEqual([
       session.chain.thinCfg,
@@ -227,7 +227,7 @@ describe('resolution chain', () => {
     const session = makeSession({ id: 's2' })
     session.chain = { ...session.chain, thinCfg: null, log: null }
     expect(chainLines(session.chain, 'zh-Hans', zh)[0].value).toBeNull()
-    expect(zh('chainNone')).toBe('未使用')
+    expect(zh('session.chainNone')).toBe('未使用')
   })
 
   it('the chain names the preference layers this launch was seeded with', () => {
@@ -240,13 +240,14 @@ describe('resolution chain', () => {
       'zh-Hans',
       zh,
     )
-    expect(seeded.find((line) => line.key === 'chainProfile')?.value).toBe(
+    expect(seeded.find((line) => line.key === 'session.chainProfile')?.value).toBe(
       '界面设置、环境设置 · 3 个文件',
     )
 
     // An untouched, fresh session says so instead of pretending.
     expect(
-      chainLines(session.chain, 'en', en).find((line) => line.key === 'chainProfile')?.value,
+      chainLines(session.chain, 'en', en).find((line) => line.key === 'session.chainProfile')
+        ?.value,
     ).toBeNull()
   })
 })
