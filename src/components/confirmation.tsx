@@ -1,6 +1,5 @@
 import { CircleAlert } from 'lucide-react'
 import { useId, useLayoutEffect, useRef, useState } from 'react'
-import type { Language } from '../api'
 import type { Notice } from '../lib/notice'
 import type { Translator } from '../i18n'
 import { NoticeBanner } from './Notice'
@@ -48,12 +47,10 @@ function closeModal(dialog: HTMLDialogElement) {
 /** Native-<dialog> confirmation, salvaged from v0.1 and hardened for the test renderer. */
 export function useConfirmation({
   t,
-  language,
   notice,
   onDismissNotice,
 }: {
   t: Translator
-  language: Language
   notice: Notice | null
   onDismissNotice: () => void
 }) {
@@ -122,7 +119,7 @@ export function useConfirmation({
           </div>
           <p id={detailId}>{active.message}</p>
           {notice?.target === 'dialog' && (
-            <NoticeBanner notice={notice} language={language} t={t} onDismiss={onDismissNotice} />
+            <NoticeBanner notice={notice} onDismiss={onDismissNotice} />
           )}
           <div className="form-actions">
             <button

@@ -1,17 +1,10 @@
-import type { Config, Language } from '../api'
-import type { Translator } from '../i18n'
+import type { Config } from '../api'
 import { localeLanguageName } from '../lib/config'
+import { useI18n } from '../i18n/provider'
 
 /** Region (as a language name), encoding, and whether the configuration carries a settings snapshot. */
-export function Chips({
-  config,
-  language,
-  t,
-}: {
-  config: Config
-  language: Language
-  t: Translator
-}) {
+export function Chips({ config }: { config: Config }) {
+  const { language, t } = useI18n()
   const region = localeLanguageName(language, config.locale)
   const interfaceLanguage = localeLanguageName(language, config.uiLanguage)
   return (

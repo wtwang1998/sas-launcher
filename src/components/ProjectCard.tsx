@@ -1,15 +1,13 @@
 import { Folders, Pencil, Play, Trash2 } from 'lucide-react'
 import type { ReactNode } from 'react'
-import type { Config, Language, Project } from '../api'
-import type { Translator } from '../i18n'
+import type { Config, Project } from '../api'
 import { configLabel } from '../lib/config'
 import { Chips } from './Chips'
+import { useT } from '../i18n/provider'
 
 export function ProjectCard({
   project,
   config,
-  language,
-  t,
   busy,
   running,
   checked,
@@ -23,8 +21,6 @@ export function ProjectCard({
 }: {
   project: Project
   config: Config | null
-  language: Language
-  t: Translator
   busy: boolean
   /** A session for this project is still running, so it cannot start again. */
   running: boolean
@@ -38,6 +34,7 @@ export function ProjectCard({
   notice?: ReactNode
   children?: ReactNode
 }) {
+  const t = useT()
   return (
     <article className="panel project-card">
       <div className="project-summary">
@@ -58,7 +55,7 @@ export function ProjectCard({
             {config ? (
               <>
                 <span className="chip chip-name">{configLabel(t, config)}</span>
-                <Chips config={config} language={language} t={t} />
+                <Chips config={config} />
               </>
             ) : (
               <span className="missing">{t('project.missingConfig')}</span>

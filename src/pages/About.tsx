@@ -10,15 +10,14 @@ import {
   SquareTerminal,
 } from 'lucide-react'
 import { useId, useState } from 'react'
-import type { Language, View } from '../api'
+import type { View } from '../api'
 import { issueText, type MessageKey, type Translator } from '../i18n'
 import { copyVersion, LICENSE } from '../lib/about'
 import { checkForUpdate, type UpdateCheck } from '../lib/update'
+import { useI18n } from '../i18n/provider'
 
 export type AboutProps = {
   view: View
-  t: Translator
-  language: Language
   onOpenRepository: () => Promise<void>
   onOpenIssues: () => Promise<void>
   onOpenRelease: (tag: string) => Promise<void>
@@ -61,14 +60,8 @@ function statusText(check: UpdateCheck, t: Translator, version: string) {
   }
 }
 
-export function About({
-  view,
-  t,
-  language,
-  onOpenRepository,
-  onOpenIssues,
-  onOpenRelease,
-}: AboutProps) {
+export function About({ view, onOpenRepository, onOpenIssues, onOpenRelease }: AboutProps) {
+  const { language, t } = useI18n()
   const id = useId()
   const [copied, setCopied] = useState(false)
   const [check, setCheck] = useState<UpdateCheck>({ kind: 'idle' })

@@ -1,14 +1,13 @@
 import { MoreHorizontal } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import type { Config, Language, Session } from '../api'
-import { issueText, type Translator } from '../i18n'
+import type { Config, Session } from '../api'
+import { issueText } from '../i18n'
 import { configLabel, presetLabel } from '../lib/config'
 import { Chips } from './Chips'
+import { useI18n } from '../i18n/provider'
 
 export type ConfigRowProps = {
   config: Config
-  language: Language
-  t: Translator
   busy: boolean
   /** How many projects reference this configuration. */
   usage: number
@@ -25,8 +24,6 @@ export type ConfigRowProps = {
 
 export function ConfigRow({
   config,
-  language,
-  t,
   busy,
   usage,
   setupSession,
@@ -37,6 +34,7 @@ export function ConfigRow({
   onFinishSetup,
   layout = 'row',
 }: ConfigRowProps) {
+  const { language, t } = useI18n()
   const [menuOpen, setMenuOpen] = useState(false)
   const root = useRef<HTMLLIElement>(null)
   const builtIn = config.reference.kind === 'builtIn'
@@ -85,7 +83,7 @@ export function ConfigRow({
           )}
         </div>
       </div>
-      <Chips config={config} language={language} t={t} />
+      <Chips config={config} />
       <div className="config-row-actions">
         {setupExited && (
           <>

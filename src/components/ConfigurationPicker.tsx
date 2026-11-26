@@ -1,9 +1,9 @@
 import { ChevronDown } from 'lucide-react'
 import { type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } from 'react'
-import { type Config, type ConfigRef, type Language, refKey, sameRef } from '../api'
-import type { Translator } from '../i18n'
+import { type Config, type ConfigRef, refKey, sameRef } from '../api'
 import { configLabel, groupConfigs } from '../lib/config'
 import { Chips } from './Chips'
+import { useI18n } from '../i18n/provider'
 
 /**
  * Custom listbox for configurations. Keeps the v0.1 keyboard model
@@ -13,20 +13,17 @@ import { Chips } from './Chips'
 export function ConfigurationPicker({
   value,
   configs,
-  language,
-  t,
   disabled = false,
   ariaLabel,
   onChange,
 }: {
   value: ConfigRef | null
   configs: Config[]
-  language: Language
-  t: Translator
   disabled?: boolean
   ariaLabel: string
   onChange: (config: Config) => void
 }) {
+  const { language, t } = useI18n()
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
   const [up, setUp] = useState(false)
@@ -136,7 +133,7 @@ export function ConfigurationPicker({
         onClick={() => choose(index)}
       >
         <span className="config-option-name">{configLabel(t, config)}</span>
-        <Chips config={config} language={language} t={t} />
+        <Chips config={config} />
       </div>
     )
   }
@@ -164,7 +161,7 @@ export function ConfigurationPicker({
         {selected ? (
           <>
             <span className="config-trigger-label">{configLabel(t, selected)}</span>
-            <Chips config={selected} language={language} t={t} />
+            <Chips config={selected} />
           </>
         ) : (
           <span className="config-trigger-placeholder">

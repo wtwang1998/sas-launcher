@@ -26,6 +26,7 @@ import {
 import { useConfirmation } from './components/confirmation'
 import { emptyProjectDraft, type ProjectDraft } from './components/ProjectForm'
 import { browserLanguage, issueText, type MessageKey, translate } from './i18n'
+import { I18nProvider } from './i18n/provider'
 import type { Notice, NoticeTarget } from './lib/notice'
 import { onHostEvent } from './lib/host'
 import { profileChoiceFor } from './lib/profile'
@@ -69,7 +70,6 @@ export function App() {
   const dismissNotice = () => setNotice(null)
   const { confirm, confirmation } = useConfirmation({
     t,
-    language,
     notice,
     onDismissNotice: dismissNotice,
   })
@@ -503,170 +503,167 @@ export function App() {
   }
 
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <div className="brand">
-          <span className="brand-icon">
-            <SquareTerminal size={24} strokeWidth={1.9} aria-hidden="true" />
-          </span>
-          <span>{t('app.title')}</span>
-        </div>
-        <nav aria-label={t('app.navigation')}>
-          {navigation.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              className={`nav-item ${page === id ? 'selected' : ''}`}
-              aria-current={page === id ? 'page' : undefined}
-              onClick={() => navigate(id)}
-            >
-              <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
-              {t(label)}
-            </button>
-          ))}
-        </nav>
-      </aside>
-
-      <main>
-        <div className="content">
-          {view?.scanError && (
-            <div className="banner warning">
-              <CircleAlert size={18} aria-hidden="true" />
-              <span>{issueText(language, view.scanError)}</span>
-              <button type="button" className="button small" disabled={busy} onClick={pickExe}>
-                <FolderOpen size={15} aria-hidden="true" />
-                {t('dialog.chooseExe')}
-              </button>
-            </div>
-          )}
-          {view?.defaultError && !view.scanError && (
-            <div className="banner warning">
-              <CircleAlert size={18} aria-hidden="true" />
-              <span>{issueText(language, view.defaultError)}</span>
+    <I18nProvider language={language}>
+      <div className="app">
+        <aside className="sidebar">
+          <div className="brand">
+            <span className="brand-icon">
+              <SquareTerminal size={24} strokeWidth={1.9} aria-hidden="true" />
+            </span>
+            <span>{t('app.title')}</span>
+          </div>
+          <nav aria-label={t('app.navigation')}>
+            {navigation.map(({ id, label, icon: Icon }) => (
               <button
+                key={id}
                 type="button"
-                className="button small"
-                disabled={busy}
-                onClick={() => void mutate(() => api.refresh(), 'notice.refreshed')}
+                className={`nav-item ${page === id ? 'selected' : ''}`}
+                aria-current={page === id ? 'page' : undefined}
+                onClick={() => navigate(id)}
               >
-                <RefreshCw size={15} aria-hidden="true" />
-                {t('common.refresh')}
+                <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+                {t(label)}
               </button>
-            </div>
-          )}
-          {view?.archived && (
-            <div className="banner info">
-              <Archive size={18} aria-hidden="true" />
-              <span>{t('notice.archiveNotice', { path: view.archived })}</span>
-              <button type="button" className="button small" disabled={busy} onClick={openArchive}>
-                {t('common.openArchive')}
-              </button>
-            </div>
-          )}
-          {!view && (
-            <p className="muted" role="status">
-              {t('app.discovering')}
-            </p>
-          )}
+            ))}
+          </nav>
+        </aside>
 
-          {view && page === 'projects' && (
-            <Projects
-              view={view}
-              draft={draft}
-              profileCandidates={profileCandidates}
-              notice={notice}
-              onDismissNotice={dismissNotice}
-              onBrowseProfile={() => void browseProfile()}
-              onBrowseStartupFile={() => void browseStartupFile()}
-              onMigrateStartup={(projectId) => void migrateStartup(projectId)}
-              language={language}
-              t={t}
-              busy={busy}
-              onNewProject={() => void startNewProject()}
-              onDraft={(next) => void editProject(next)}
-              onCreateConfiguration={beginConfigurationTrip}
-              onSaveProject={saveProject}
-              onDeleteProject={deleteProject}
-              onLaunchProject={launchProject}
-              onLaunchBatch={launchBatch}
-              projectNotices={projectNotices}
-              onDismissProjectNotice={(projectId) => clearProjectFailure(projectId)}
-            />
-          )}
+        <main>
+          <div className="content">
+            {view?.scanError && (
+              <div className="banner warning">
+                <CircleAlert size={18} aria-hidden="true" />
+                <span>{issueText(language, view.scanError)}</span>
+                <button type="button" className="button small" disabled={busy} onClick={pickExe}>
+                  <FolderOpen size={15} aria-hidden="true" />
+                  {t('dialog.chooseExe')}
+                </button>
+              </div>
+            )}
+            {view?.defaultError && !view.scanError && (
+              <div className="banner warning">
+                <CircleAlert size={18} aria-hidden="true" />
+                <span>{issueText(language, view.defaultError)}</span>
+                <button
+                  type="button"
+                  className="button small"
+                  disabled={busy}
+                  onClick={() => void mutate(() => api.refresh(), 'notice.refreshed')}
+                >
+                  <RefreshCw size={15} aria-hidden="true" />
+                  {t('common.refresh')}
+                </button>
+              </div>
+            )}
+            {view?.archived && (
+              <div className="banner info">
+                <Archive size={18} aria-hidden="true" />
+                <span>{t('notice.archiveNotice', { path: view.archived })}</span>
+                <button
+                  type="button"
+                  className="button small"
+                  disabled={busy}
+                  onClick={openArchive}
+                >
+                  {t('common.openArchive')}
+                </button>
+              </div>
+            )}
+            {!view && (
+              <p className="muted" role="status">
+                {t('app.discovering')}
+              </p>
+            )}
 
-          {view && page === 'configurations' && (
-            <Configurations
-              view={view}
-              language={language}
-              t={t}
-              busy={busy}
-              notice={notice}
-              onDismissNotice={dismissNotice}
-              returnDraft={pendingDraft ? returnToDraft : null}
-              onCreate={createConfiguration}
-              onUpdate={updateConfiguration}
-              onDelete={deleteConfiguration}
-              onStartSetup={startConfigSetup}
-              onFinishSetup={finishConfigSetup}
-            />
-          )}
+            {view && page === 'projects' && (
+              <Projects
+                view={view}
+                draft={draft}
+                profileCandidates={profileCandidates}
+                notice={notice}
+                onDismissNotice={dismissNotice}
+                onBrowseProfile={() => void browseProfile()}
+                onBrowseStartupFile={() => void browseStartupFile()}
+                onMigrateStartup={(projectId) => void migrateStartup(projectId)}
+                busy={busy}
+                onNewProject={() => void startNewProject()}
+                onDraft={(next) => void editProject(next)}
+                onCreateConfiguration={beginConfigurationTrip}
+                onSaveProject={saveProject}
+                onDeleteProject={deleteProject}
+                onLaunchProject={launchProject}
+                onLaunchBatch={launchBatch}
+                projectNotices={projectNotices}
+                onDismissProjectNotice={(projectId) => clearProjectFailure(projectId)}
+              />
+            )}
 
-          {view && page === 'diagnostics' && (
-            <Diagnostics
-              view={view}
-              language={language}
-              t={t}
-              busy={busy}
-              notice={notice}
-              onDismissNotice={dismissNotice}
-              onClear={clearDiagnostics}
-              onOpenLog={openLog}
-              onOpenSasuser={openSasuser}
-            />
-          )}
+            {view && page === 'configurations' && (
+              <Configurations
+                view={view}
+                busy={busy}
+                notice={notice}
+                onDismissNotice={dismissNotice}
+                returnDraft={pendingDraft ? returnToDraft : null}
+                onCreate={createConfiguration}
+                onUpdate={updateConfiguration}
+                onDelete={deleteConfiguration}
+                onStartSetup={startConfigSetup}
+                onFinishSetup={finishConfigSetup}
+              />
+            )}
 
-          {view && page === 'settings' && (
-            <SettingsPage
-              view={view}
-              t={t}
-              language={language}
-              busy={busy}
-              notice={notice}
-              onDismissNotice={dismissNotice}
-              onTheme={(preference) =>
-                void mutate(() => api.setTheme(preference), undefined, 'interface')
-              }
-              onLanguage={(preference) =>
-                void mutate(() => api.setLanguage(preference), undefined, 'interface')
-              }
-              onSavePath={saveSasPath}
-              onBrowse={pickExe}
-              onAutoDetect={autoDetectSas}
-              onStartup={(enabled) =>
-                void mutate(() => api.setStartup(enabled), undefined, 'window')
-              }
-              onStartMinimized={(enabled) =>
-                void mutate(() => api.setStartMinimized(enabled), undefined, 'window')
-              }
-              onCloseToTray={(enabled) =>
-                void mutate(() => api.setCloseToTray(enabled), undefined, 'window')
-              }
-            />
-          )}
+            {view && page === 'diagnostics' && (
+              <Diagnostics
+                view={view}
+                busy={busy}
+                notice={notice}
+                onDismissNotice={dismissNotice}
+                onClear={clearDiagnostics}
+                onOpenLog={openLog}
+                onOpenSasuser={openSasuser}
+              />
+            )}
 
-          {view && page === 'about' && (
-            <About
-              view={view}
-              t={t}
-              language={language}
-              onOpenRepository={() => api.openRepository()}
-              onOpenIssues={() => api.openIssues()}
-              onOpenRelease={(tag) => api.openRelease(tag)}
-            />
-          )}
-        </div>
-      </main>
-      {confirmation}
-    </div>
+            {view && page === 'settings' && (
+              <SettingsPage
+                view={view}
+                busy={busy}
+                notice={notice}
+                onDismissNotice={dismissNotice}
+                onTheme={(preference) =>
+                  void mutate(() => api.setTheme(preference), undefined, 'interface')
+                }
+                onLanguage={(preference) =>
+                  void mutate(() => api.setLanguage(preference), undefined, 'interface')
+                }
+                onSavePath={saveSasPath}
+                onBrowse={pickExe}
+                onAutoDetect={autoDetectSas}
+                onStartup={(enabled) =>
+                  void mutate(() => api.setStartup(enabled), undefined, 'window')
+                }
+                onStartMinimized={(enabled) =>
+                  void mutate(() => api.setStartMinimized(enabled), undefined, 'window')
+                }
+                onCloseToTray={(enabled) =>
+                  void mutate(() => api.setCloseToTray(enabled), undefined, 'window')
+                }
+              />
+            )}
+
+            {view && page === 'about' && (
+              <About
+                view={view}
+                onOpenRepository={() => api.openRepository()}
+                onOpenIssues={() => api.openIssues()}
+                onOpenRelease={(tag) => api.openRelease(tag)}
+              />
+            )}
+          </div>
+        </main>
+        {confirmation}
+      </div>
+    </I18nProvider>
   )
 }

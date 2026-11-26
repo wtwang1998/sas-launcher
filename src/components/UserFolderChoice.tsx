@@ -1,9 +1,9 @@
 import { type KeyboardEvent, useId, useRef } from 'react'
-import type { Config, Language, SasuserCandidate } from '../api'
-import type { Translator } from '../i18n'
+import type { Config, SasuserCandidate } from '../api'
 import { carriedCount, type ProfileDraft, samePath } from '../lib/profile'
 import { formatModified } from '../lib/format'
 import { Tooltip } from './Tooltip'
+import { useI18n } from '../i18n/provider'
 
 type Kind = ProfileDraft['kind']
 
@@ -18,8 +18,6 @@ export function UserFolderChoice({
   value,
   candidates,
   configs,
-  language,
-  t,
   busy = false,
   onBrowse,
   onChange,
@@ -27,12 +25,11 @@ export function UserFolderChoice({
   value: ProfileDraft
   candidates: SasuserCandidate[]
   configs: Config[]
-  language: Language
-  t: Translator
   busy?: boolean
   onBrowse?: () => void
   onChange: (value: ProfileDraft) => void
 }) {
+  const { language, t } = useI18n()
   const hintId = useId()
   const snapshots = configs.flatMap((config) =>
     config.hasProfile && config.reference.kind === 'user'

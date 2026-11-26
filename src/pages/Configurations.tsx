@@ -1,9 +1,8 @@
 import { Layers3 } from 'lucide-react'
 import { useId, useState } from 'react'
-import type { Config, ConfigBase, ConfigRef, Language, View } from '../api'
+import type { Config, ConfigBase, ConfigRef, View } from '../api'
 import { ConfigRow } from '../components/ConfigRow'
 import { NoticeBanner } from '../components/Notice'
-import type { Translator } from '../i18n'
 import {
   configLabel,
   factoryPresets,
@@ -14,11 +13,10 @@ import {
   usageCount,
 } from '../lib/config'
 import type { Notice } from '../lib/notice'
+import { useI18n } from '../i18n/provider'
 
 export type ConfigurationsProps = {
   view: View
-  language: Language
-  t: Translator
   busy: boolean
   notice: Notice | null
   onDismissNotice: () => void
@@ -35,8 +33,6 @@ type Editing = { config: Config; encoding: string; locale: string }
 
 export function Configurations({
   view,
-  language,
-  t,
   busy,
   notice,
   onDismissNotice,
@@ -47,6 +43,7 @@ export function Configurations({
   onStartSetup,
   onFinishSetup,
 }: ConfigurationsProps) {
+  const { language, t } = useI18n()
   const { users, builtIns } = groupConfigs(view.configs, language)
   const presets = factoryPresets(view.configs)
   const [editing, setEditing] = useState<Editing | null>(null)
@@ -103,13 +100,7 @@ export function Configurations({
       </header>
 
       {notice?.target === 'page' && (
-        <NoticeBanner
-          notice={notice}
-          language={language}
-          t={t}
-          onDismiss={onDismissNotice}
-          className="page-notice"
-        />
+        <NoticeBanner notice={notice} onDismiss={onDismissNotice} className="page-notice" />
       )}
 
       <section className="config-group" aria-labelledby={`${fieldId}-users`}>
@@ -128,8 +119,6 @@ export function Configurations({
               <ConfigRow
                 key={idOf(config.reference)}
                 config={config}
-                language={language}
-                t={t}
                 busy={busy}
                 usage={usageCount(view.projects, config.reference)}
                 setupSession={setupOf(idOf(config.reference))}
@@ -160,8 +149,6 @@ export function Configurations({
               <ConfigRow
                 key={idOf(config.reference)}
                 config={config}
-                language={language}
-                t={t}
                 busy={busy}
                 layout="tile"
                 usage={usageCount(view.projects, config.reference)}
@@ -242,13 +229,7 @@ export function Configurations({
             {check?.warning && <p className="option-warning">{t(check.warning)}</p>}
             <p className="field-hint">{t('config.editorSettingsNotIncluded')}</p>
             {notice?.target === 'dialog' && (
-              <NoticeBanner
-                notice={notice}
-                language={language}
-                t={t}
-                onDismiss={onDismissNotice}
-                className="form-notice"
-              />
+              <NoticeBanner notice={notice} onDismiss={onDismissNotice} className="form-notice" />
             )}
             <div className="form-actions">
               <button

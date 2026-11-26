@@ -1,8 +1,8 @@
 import { Check, CircleAlert, X } from 'lucide-react'
 import { useEffect, useRef } from 'react'
-import type { Language } from '../api'
-import { issueText, type Translator } from '../i18n'
+import { issueText } from '../i18n'
 import type { Notice } from '../lib/notice'
+import { useI18n } from '../i18n/provider'
 
 /**
  * The result of the action the user just took, rendered by the page next to
@@ -10,8 +10,6 @@ import type { Notice } from '../lib/notice'
  */
 export function NoticeBanner({
   notice,
-  language,
-  t,
   onDismiss,
   onRetry,
   onMigrateStartup,
@@ -19,8 +17,6 @@ export function NoticeBanner({
   className = '',
 }: {
   notice: Notice
-  language: Language
-  t: Translator
   onDismiss: () => void
   /** Offered when the action can simply be run again, e.g. after closing SAS. */
   onRetry?: () => void
@@ -30,6 +26,7 @@ export function NoticeBanner({
   compact?: boolean
   className?: string
 }) {
+  const { language, t } = useI18n()
   const failed = notice.tone === 'error'
   const migrate = notice.tone === 'error' ? notice.action : undefined
   const ref = useRef<HTMLDivElement>(null)

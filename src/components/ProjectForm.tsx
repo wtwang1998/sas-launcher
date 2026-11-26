@@ -1,6 +1,5 @@
 import { type FormEvent, type ReactNode, useId, useState } from 'react'
-import type { Config, ConfigRef, Language, SasuserCandidate } from '../api'
-import type { Translator } from '../i18n'
+import type { Config, ConfigRef, SasuserCandidate } from '../api'
 import { configReady } from '../lib/config'
 import { emptyProfileDraft, type ProfileDraft, profileReady } from '../lib/profile'
 import { ConfigChoice } from './ConfigChoice'
@@ -8,6 +7,7 @@ import { FieldLabel } from './form-fields'
 import { Switch } from './Switch'
 import { Tooltip } from './Tooltip'
 import { UserFolderChoice } from './UserFolderChoice'
+import { useT } from '../i18n/provider'
 
 export type ProjectDraft = {
   id: string | null
@@ -40,8 +40,6 @@ export function ProjectForm({
   configs,
   defaultConfig,
   profileCandidates,
-  language,
-  t,
   busy,
   submitLabel,
   onChange,
@@ -58,8 +56,6 @@ export function ProjectForm({
   configs: Config[]
   defaultConfig: Config | null
   profileCandidates: SasuserCandidate[]
-  language: Language
-  t: Translator
   busy: boolean
   submitLabel: string
   onChange: (draft: ProjectDraft) => void
@@ -74,6 +70,7 @@ export function ProjectForm({
   /** The last save's outcome, shown next to the buttons it belongs to. */
   notice?: ReactNode
 }) {
+  const t = useT()
   const nameId = useId()
   const noteId = useId()
   const startupId = useId()
@@ -124,8 +121,6 @@ export function ProjectForm({
           value={draft.config}
           configs={configs}
           defaultConfig={defaultConfig}
-          language={language}
-          t={t}
           busy={busy}
           onCreateConfiguration={onCreateConfiguration}
           onChange={(config) => onChange({ ...draft, config })}
@@ -137,8 +132,6 @@ export function ProjectForm({
           value={draft.profile}
           candidates={profileCandidates}
           configs={configs}
-          language={language}
-          t={t}
           busy={busy}
           onBrowse={onBrowseProfile}
           onChange={(profile) => onChange({ ...draft, profile })}

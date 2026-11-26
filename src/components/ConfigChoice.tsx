@@ -1,9 +1,9 @@
 import { type KeyboardEvent, useRef } from 'react'
-import type { Config, ConfigRef, Language } from '../api'
-import type { Translator } from '../i18n'
+import type { Config, ConfigRef } from '../api'
 import { groupConfigs, optionSummary } from '../lib/config'
 import { ConfigurationPicker } from './ConfigurationPicker'
 import { Tooltip } from './Tooltip'
+import { useI18n } from '../i18n/provider'
 
 export type ConfigChoiceValue = ConfigRef | null
 type Kind = 'default' | 'builtIn' | 'user'
@@ -19,8 +19,6 @@ export function ConfigChoice({
   value,
   configs,
   defaultConfig,
-  language,
-  t,
   busy = false,
   onCreateConfiguration,
   onChange,
@@ -28,12 +26,11 @@ export function ConfigChoice({
   value: ConfigChoiceValue
   configs: Config[]
   defaultConfig: Config | null
-  language: Language
-  t: Translator
   busy?: boolean
   onCreateConfiguration?: () => void
   onChange: (value: ConfigChoiceValue) => void
 }) {
+  const { language, t } = useI18n()
   const { users, builtIns } = groupConfigs(configs, language)
   const kind: Kind = value === null ? 'default' : value.kind
   const refs = useRef<(HTMLDivElement | null)[]>([])
@@ -143,8 +140,6 @@ export function ConfigChoice({
                 <ConfigurationPicker
                   value={value}
                   configs={builtIns}
-                  language={language}
-                  t={t}
                   disabled={busy}
                   ariaLabel={t('configChoice.builtInOption')}
                   onChange={(config) => {
@@ -159,8 +154,6 @@ export function ConfigChoice({
                 <ConfigurationPicker
                   value={value}
                   configs={users}
-                  language={language}
-                  t={t}
                   disabled={busy}
                   ariaLabel={t('configChoice.userOption')}
                   onChange={(config) => {

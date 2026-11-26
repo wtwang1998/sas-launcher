@@ -1,16 +1,14 @@
 import { useEffect, useId, useState } from 'react'
-import type { Language, Preference, ThemePreference, View } from '../api'
+import type { Preference, ThemePreference, View } from '../api'
 import { NoticeBanner } from '../components/Notice'
 import { Switch } from '../components/Switch'
-import type { Translator } from '../i18n'
 import { localeLanguageName } from '../lib/config'
 import type { Notice } from '../lib/notice'
 import { startMinimizedActive } from '../lib/settings'
+import { useI18n } from '../i18n/provider'
 
 export type SettingsProps = {
   view: View
-  t: Translator
-  language: Language
   busy: boolean
   notice: Notice | null
   onDismissNotice: () => void
@@ -26,8 +24,6 @@ export type SettingsProps = {
 
 export function Settings({
   view,
-  t,
-  language,
   busy,
   notice,
   onDismissNotice,
@@ -40,6 +36,7 @@ export function Settings({
   onStartMinimized,
   onCloseToTray,
 }: SettingsProps) {
+  const { language, t } = useI18n()
   const id = useId()
   const [path, setPath] = useState(view.exe ?? '')
   const [dirty, setDirty] = useState(false)
@@ -106,13 +103,7 @@ export function Settings({
           </p>
         )}
         {notice?.target === 'interface' && (
-          <NoticeBanner
-            notice={notice}
-            language={language}
-            t={t}
-            onDismiss={onDismissNotice}
-            className="section-notice"
-          />
+          <NoticeBanner notice={notice} onDismiss={onDismissNotice} className="section-notice" />
         )}
       </section>
 
@@ -161,13 +152,7 @@ export function Settings({
         </div>
         <p className="setting-hint">{t('settings.sasPathHint')}</p>
         {notice?.target === 'sas' && (
-          <NoticeBanner
-            notice={notice}
-            language={language}
-            t={t}
-            onDismiss={onDismissNotice}
-            className="section-notice"
-          />
+          <NoticeBanner notice={notice} onDismiss={onDismissNotice} className="section-notice" />
         )}
       </section>
 
@@ -222,13 +207,7 @@ export function Settings({
           </div>
         </div>
         {notice?.target === 'window' && (
-          <NoticeBanner
-            notice={notice}
-            language={language}
-            t={t}
-            onDismiss={onDismissNotice}
-            className="section-notice"
-          />
+          <NoticeBanner notice={notice} onDismiss={onDismissNotice} className="section-notice" />
         )}
       </section>
     </>

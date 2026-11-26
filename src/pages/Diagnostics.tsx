@@ -1,15 +1,13 @@
 import { Activity, Eraser } from 'lucide-react'
 import { useState } from 'react'
-import type { Language, View } from '../api'
+import type { View } from '../api'
 import { NoticeBanner } from '../components/Notice'
 import { SessionRow } from '../components/SessionRow'
-import type { Translator } from '../i18n'
 import type { Notice } from '../lib/notice'
+import { useT } from '../i18n/provider'
 
 export type DiagnosticsProps = {
   view: View
-  language: Language
-  t: Translator
   busy: boolean
   notice: Notice | null
   onDismissNotice: () => void
@@ -20,8 +18,6 @@ export type DiagnosticsProps = {
 
 export function Diagnostics({
   view,
-  language,
-  t,
   busy,
   notice,
   onDismissNotice,
@@ -29,6 +25,7 @@ export function Diagnostics({
   onOpenLog,
   onOpenSasuser,
 }: DiagnosticsProps) {
+  const t = useT()
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
 
   function toggle(id: string) {
@@ -59,13 +56,7 @@ export function Diagnostics({
       </header>
 
       {notice?.target === 'page' && (
-        <NoticeBanner
-          notice={notice}
-          language={language}
-          t={t}
-          onDismiss={onDismissNotice}
-          className="page-notice"
-        />
+        <NoticeBanner notice={notice} onDismiss={onDismissNotice} className="page-notice" />
       )}
 
       {view.sessions.length === 0 ? (
@@ -82,8 +73,6 @@ export function Diagnostics({
             <SessionRow
               key={session.id}
               session={session}
-              language={language}
-              t={t}
               expanded={expanded.has(session.id)}
               onToggle={() => toggle(session.id)}
               onOpenLog={() => onOpenLog(session.id)}

@@ -1,10 +1,11 @@
 import { ChevronRight } from 'lucide-react'
 import { useId } from 'react'
-import type { Language, Session, SessionStage, SessionStatus } from '../api'
-import type { MessageKey, Translator } from '../i18n'
+import type { Session, SessionStage, SessionStatus } from '../api'
+import type { MessageKey } from '../i18n'
 import { issueText } from '../i18n'
 import { chainLines } from '../lib/config'
 import { formatArgv, formatStartedAt } from '../lib/format'
+import { useI18n } from '../i18n/provider'
 
 const statusKeys: Record<SessionStatus, MessageKey> = {
   running: 'session.statusRunning',
@@ -24,21 +25,18 @@ const stageKeys: Record<SessionStage, MessageKey> = {
 
 export function SessionRow({
   session,
-  language,
-  t,
   expanded,
   onToggle,
   onOpenLog,
   onOpenSasuser,
 }: {
   session: Session
-  language: Language
-  t: Translator
   expanded: boolean
   onToggle: () => void
   onOpenLog: () => void
   onOpenSasuser: () => void
 }) {
+  const { language, t } = useI18n()
   const detailId = useId()
   const stage = t(stageKeys[session.stage])
   const failed = session.status === 'exited' && session.stage !== 'started'

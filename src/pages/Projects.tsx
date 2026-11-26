@@ -1,13 +1,13 @@
 import { FolderPlus, Play, Plus } from 'lucide-react'
 import { useState } from 'react'
-import type { Language, Project, SasuserCandidate, View } from '../api'
+import type { Project, SasuserCandidate, View } from '../api'
 import { NoticeBanner } from '../components/Notice'
 import { ProjectCard } from '../components/ProjectCard'
 import { type ProjectDraft, ProjectForm } from '../components/ProjectForm'
-import type { Translator } from '../i18n'
 import { configsByRef } from '../lib/config'
 import type { Notice } from '../lib/notice'
 import { profileDraftFrom } from '../lib/profile'
+import { useT } from '../i18n/provider'
 
 export type ProjectsProps = {
   view: View
@@ -15,8 +15,6 @@ export type ProjectsProps = {
   profileCandidates: SasuserCandidate[]
   onBrowseProfile: () => void
   onBrowseStartupFile: () => void
-  language: Language
-  t: Translator
   busy: boolean
   notice: Notice | null
   onDismissNotice: () => void
@@ -39,8 +37,6 @@ export function Projects({
   profileCandidates,
   onBrowseProfile,
   onBrowseStartupFile,
-  language,
-  t,
   busy,
   notice,
   onDismissNotice,
@@ -55,6 +51,7 @@ export function Projects({
   projectNotices,
   onDismissProjectNotice,
 }: ProjectsProps) {
+  const t = useT()
   const [checked, setChecked] = useState<ReadonlySet<string>>(() => new Set())
   const selected = view.projects
     .filter((project) => checked.has(project.id))
@@ -111,8 +108,6 @@ export function Projects({
       {notice?.target === 'page' && (
         <NoticeBanner
           notice={notice}
-          language={language}
-          t={t}
           onDismiss={onDismissNotice}
           onMigrateStartup={onMigrateStartup}
           className="page-notice"
@@ -127,8 +122,6 @@ export function Projects({
             configs={view.configs}
             defaultConfig={view.defaultConfig}
             profileCandidates={profileCandidates}
-            language={language}
-            t={t}
             busy={busy}
             submitLabel={t('project.saveProject')}
             onChange={onDraft}
@@ -141,8 +134,6 @@ export function Projects({
               notice?.target === 'form' ? (
                 <NoticeBanner
                   notice={notice}
-                  language={language}
-                  t={t}
                   onDismiss={onDismissNotice}
                   onRetry={() => void onSaveProject(draft)}
                   onMigrateStartup={onMigrateStartup}
@@ -204,8 +195,6 @@ export function Projects({
                 ? (configsByRef(view.configs, project.config) ?? null)
                 : view.defaultConfig
             }
-            language={language}
-            t={t}
             busy={busy}
             running={running.has(project.id)}
             checked={checked.has(project.id)}
@@ -228,8 +217,6 @@ export function Projects({
               projectNotices[project.id] ? (
                 <NoticeBanner
                   notice={projectNotices[project.id]}
-                  language={language}
-                  t={t}
                   compact
                   onDismiss={() => onDismissProjectNotice(project.id)}
                   onMigrateStartup={onMigrateStartup}
@@ -244,8 +231,6 @@ export function Projects({
                 configs={view.configs}
                 defaultConfig={view.defaultConfig}
                 profileCandidates={profileCandidates}
-                language={language}
-                t={t}
                 busy={busy}
                 submitLabel={t('project.saveProject')}
                 onChange={onDraft}
@@ -263,8 +248,6 @@ export function Projects({
                   notice?.target === 'form' ? (
                     <NoticeBanner
                       notice={notice}
-                      language={language}
-                      t={t}
                       onDismiss={onDismissNotice}
                       onRetry={() => void onSaveProject(draft)}
                       onMigrateStartup={onMigrateStartup}
