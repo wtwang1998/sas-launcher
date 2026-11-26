@@ -34,7 +34,7 @@ export function ConfigurationPicker({
   const trigger = useRef<HTMLButtonElement>(null)
   const listId = useId()
 
-  const { users, builtIns } = groupConfigs(configs)
+  const { users, builtIns } = groupConfigs(configs, language)
   const options = [...users, ...builtIns]
   const selectedIndex = options.findIndex((config) => sameRef(config.reference, value))
   const selected = selectedIndex >= 0 ? options[selectedIndex] : undefined

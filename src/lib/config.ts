@@ -29,7 +29,16 @@ export function presetLabel(t: Translator, preset: PresetStatus): string {
       : t('config.presetVerified')
 }
 
-const collator = new Intl.Collator('zh-Hans', { numeric: true, sensitivity: 'base' })
+/**
+ * One collator per interface language: Simplified Chinese orders Han by pinyin, Traditional
+ * by its own convention, English by its own. Needing a language here is the point — a fixed
+ * collator made the list order Chinese no matter which language the window was showing.
+ */
+const collators: Record<Language, Intl.Collator> = {
+  'zh-Hans': new Intl.Collator('zh-Hans', { numeric: true, sensitivity: 'base' }),
+  'zh-Hant': new Intl.Collator('zh-Hant', { numeric: true, sensitivity: 'base' }),
+  en: new Intl.Collator('en', { numeric: true, sensitivity: 'base' }),
+}
 
 /** Sort key: the display name, falling back to the factory code, unnamed last. */
 function sortName(config: Config): string {
@@ -38,20 +47,29 @@ function sortName(config: Config): string {
   return config.reference.kind === 'builtIn' ? config.reference.code : '\uFFFF'
 }
 
-function byName(configs: Config[]): Config[] {
-  return [...configs].sort((a, b) => collator.compare(sortName(a), sortName(b)))
+function byName(configs: Config[], language: Language): Config[] {
+  return [...configs].sort((a, b) => collators[language].compare(sortName(a), sortName(b)))
 }
 
-export function groupConfigs(configs: Config[]): { users: Config[]; builtIns: Config[] } {
+export function groupConfigs(
+  configs: Config[],
+  language: Language,
+): { users: Config[]; builtIns: Config[] } {
   return {
-    users: byName(configs.filter((config) => config.reference.kind === 'user')),
-    builtIns: byName(configs.filter((config) => config.reference.kind === 'builtIn')),
+    users: byName(
+      configs.filter((config) => config.reference.kind === 'user'),
+      language,
+    ),
+    builtIns: byName(
+      configs.filter((config) => config.reference.kind === 'builtIn'),
+      language,
+    ),
   }
 }
 
 /** User configurations first, then built-in ones, each group ordered by name. */
-export function sortConfigs(configs: Config[]): Config[] {
-  const { users, builtIns } = groupConfigs(configs)
+export function sortConfigs(configs: Config[], language: Language): Config[] {
+  const { users, builtIns } = groupConfigs(configs, language)
   return [...users, ...builtIns]
 }
 

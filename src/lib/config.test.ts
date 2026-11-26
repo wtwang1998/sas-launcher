@@ -155,12 +155,22 @@ describe('ordering and lookups', () => {
       builtIn('en', 'wlatin1', 'en_US'),
       userConfig('cfg-1', '甲配置', 'EUC-CN', 'zh_CN'),
     ]
-    expect(sortConfigs(configs).map((config) => config.name)).toEqual([
+    expect(sortConfigs(configs, 'zh-Hans').map((config) => config.name)).toEqual([
       '甲配置',
       '乙配置',
       'en',
       'u8',
     ])
+  })
+
+  it('ordering_follows_the_interface_language', () => {
+    const configs = [
+      userConfig('a', '张', 'UTF-8', 'zh_CN'),
+      userConfig('b', '阿', 'UTF-8', 'zh_CN'),
+    ]
+    // Pinyin: 阿 (a) before 张 (zhang); the English collator keeps its own order.
+    expect(sortConfigs(configs, 'zh-Hans').map((config) => config.name)).toEqual(['阿', '张'])
+    expect(sortConfigs(configs, 'en').map((config) => config.name)).toEqual(['张', '阿'])
   })
 
   it('usage_count_counts_projects_referencing_the_configuration', () => {

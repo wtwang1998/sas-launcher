@@ -34,7 +34,7 @@ export function ConfigChoice({
   onCreateConfiguration?: () => void
   onChange: (value: ConfigChoiceValue) => void
 }) {
-  const { users, builtIns } = groupConfigs(configs)
+  const { users, builtIns } = groupConfigs(configs, language)
   const kind: Kind = value === null ? 'default' : value.kind
   const refs = useRef<(HTMLDivElement | null)[]>([])
   const summary = optionSummary(language, defaultConfig)

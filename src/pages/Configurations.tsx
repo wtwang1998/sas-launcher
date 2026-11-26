@@ -47,7 +47,7 @@ export function Configurations({
   onStartSetup,
   onFinishSetup,
 }: ConfigurationsProps) {
-  const { users, builtIns } = groupConfigs(view.configs)
+  const { users, builtIns } = groupConfigs(view.configs, language)
   const presets = factoryPresets(view.configs)
   const [editing, setEditing] = useState<Editing | null>(null)
   const [setupPrompt, setSetupPrompt] = useState<Config | null>(null)
