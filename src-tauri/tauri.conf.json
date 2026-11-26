@@ -36,8 +36,30 @@
       "nsis": {
         "languages": [
           "English",
-          "SimpChinese"
+          "German",
+          "Spanish",
+          "SpanishInternational",
+          "French",
+          "Italian",
+          "Dutch",
+          "Portuguese",
+          "PortugueseBR",
+          "Russian",
+          "Ukrainian",
+          "Turkish",
+          "Arabic",
+          "Hebrew",
+          "Farsi",
+          "Bulgarian",
+          "Swedish",
+          "Norwegian",
+          "Japanese",
+          "Korean",
+          "Vietnamese",
+          "SimpChinese",
+          "TradChinese"
         ],
+        "displayLanguageSelector": true,
         "installMode": "currentUser",
         "installerHooks": "windows/preserve-install-location.nsh"
       },
