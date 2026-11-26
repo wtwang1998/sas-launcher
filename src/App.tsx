@@ -639,6 +639,7 @@ export function App() {
               language={language}
               onOpenRepository={() => api.openRepository()}
               onOpenIssues={() => api.openIssues()}
+              onOpenRelease={(tag) => api.openRelease(tag)}
             />
           )}
         </div>

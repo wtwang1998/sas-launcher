@@ -345,6 +345,20 @@ export const messages = {
   linksGroup: ['链接', 'Links'],
   repository: ['源码仓库', 'Source repository'],
   reportIssue: ['报告问题', 'Report an issue'],
+  updateGroup: ['更新', 'Updates'],
+  checkUpdate: ['检查更新', 'Check for updates'],
+  updateChecking: ['正在检查更新…', 'Checking for updates…'],
+  updateLatest: ['已是最新版本（{version}）。', 'You are on the latest version ({version}).'],
+  updateAvailable: ['有新版本 {version}。', 'Version {version} is available.'],
+  updatePreRelease: ['有预发布版 {version}。', 'Pre-release {version} is available.'],
+  updateTimeout: ['检查超时，可稍后重试。', 'The check timed out. Try again later.'],
+  updateOffline: [
+    '无法连接 GitHub，请检查网络后重试。',
+    'Cannot reach GitHub. Check your connection and try again.',
+  ],
+  updateRateLimited: ['请求过于频繁，请稍后再试。', 'Too many requests. Try again later.'],
+  updateUnreadable: ['服务器的响应无法解析。', 'The response could not be read.'],
+  openRelease: ['打开发布页', 'Open the release page'],
 } as const
 
 export type MessageKey = keyof typeof messages

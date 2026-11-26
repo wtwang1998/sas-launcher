@@ -1,8 +1,23 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { expect, it } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
 import { makeView } from '../test/fixtures'
 import { renderApp } from '../test/harness'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+/** A releases response, as the page would receive it from GitHub. */
+const releases = (body: unknown) => {
+  return async () =>
+    ({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: async () => body,
+    }) as unknown as Response
+}
 
 async function openAbout(user: ReturnType<typeof userEvent.setup>) {
   const navigation = await screen.findByRole('navigation', { name: '主导航' })
@@ -44,4 +59,56 @@ it('a_link_that_will_not_open_says_so_where_it_was_clicked', async () => {
   expect(backend.calls.map((call) => call.cmd)).toContain('open_issues')
   expect(await screen.findByText(/无法在浏览器中打开链接/)).toBeInTheDocument()
   expect(screen.getByRole('button', { name: '报告问题' })).toBeEnabled()
+})
+
+it('a_check_names_a_newer_release_and_opens_its_page', async () => {
+  const user = userEvent.setup()
+  vi.stubGlobal('fetch', releases([{ tag_name: 'v0.4.0', draft: false, prerelease: false }]))
+  const { backend } = renderApp(makeView({ version: '0.3.0' }))
+
+  await openAbout(user)
+  await user.click(await screen.findByRole('button', { name: '检查更新' }))
+
+  expect(await screen.findByText('有新版本 v0.4.0。')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: '打开发布页' }))
+  expect(backend.calls.find((call) => call.cmd === 'open_release')?.args).toEqual({
+    tag: 'v0.4.0',
+  })
+})
+
+it('a_pre_release_is_named_as_one', async () => {
+  const user = userEvent.setup()
+  vi.stubGlobal('fetch', releases([{ tag_name: 'v0.5.0-rc.1', draft: false, prerelease: true }]))
+  renderApp(makeView({ version: '0.3.0' }))
+
+  await openAbout(user)
+  await user.click(await screen.findByRole('button', { name: '检查更新' }))
+
+  expect(await screen.findByText('有预发布版 v0.5.0-rc.1。')).toBeInTheDocument()
+})
+
+it('a_check_that_finds_nothing_new_says_so', async () => {
+  const user = userEvent.setup()
+  vi.stubGlobal('fetch', releases([{ tag_name: 'v0.3.0', draft: false, prerelease: true }]))
+  renderApp(makeView({ version: '0.3.0' }))
+
+  await openAbout(user)
+  await user.click(await screen.findByRole('button', { name: '检查更新' }))
+
+  expect(await screen.findByText('已是最新版本（v0.3.0）。')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: '检查更新' })).toBeEnabled()
+})
+
+it('a_check_that_cannot_reach_github_says_why_and_keeps_the_button', async () => {
+  const user = userEvent.setup()
+  vi.stubGlobal('fetch', async () => {
+    throw new TypeError('Failed to fetch')
+  })
+  renderApp(makeView({ version: '0.3.0' }))
+
+  await openAbout(user)
+  await user.click(await screen.findByRole('button', { name: '检查更新' }))
+
+  expect(await screen.findByText('无法连接 GitHub，请检查网络后重试。')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: '检查更新' })).toBeEnabled()
 })
