@@ -55,8 +55,8 @@
     "This startup script is already migrated."
   ],
   "startupMigrateUnsupported": [
-    "这个启动文件在迁移能处理的位置之外还引用了 SAS_EXECFILEPATH，未做任何改动。请手工改成读 SASLAUNCHER_STARTUP_FILE。",
-    "This startup script reads SAS_EXECFILEPATH somewhere the migration does not rewrite, so nothing was changed. Edit it by hand to read SASLAUNCHER_STARTUP_FILE."
+    "这个启动文件在迁移能改的位置之外还引用了 SAS_EXECFILEPATH，未做任何改动。迁移只认「%let 赋值里右侧就是 %sysget(SAS_EXECFILEPATH)」这一种写法；用 &_SASPROGRAMFILE、%sysfunc(getoption(sysin)) 或别的来源定位自己的脚本，也要手工改成读 SASLAUNCHER_STARTUP_FILE。",
+    "This startup script reads SAS_EXECFILEPATH somewhere the migration does not rewrite, so nothing was changed. It recognises one idiom only: a %let assignment whose right side is exactly %sysget(SAS_EXECFILEPATH). A script that locates itself through &_SASPROGRAMFILE, %sysfunc(getoption(sysin)) or another source needs the same hand edit: read SASLAUNCHER_STARTUP_FILE instead."
   ],
   "startupWrite": [
     "无法写入启动文件，未做任何改动。请检查该文件是否只读或被占用。",
