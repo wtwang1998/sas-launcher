@@ -333,6 +333,18 @@ export const messages = {
   expandSession: ['展开 {name} 的详情', 'Expand details for {name}'],
   noLog: ['没有日志副本', 'No log copy'],
   noArgv: ['没有记录启动参数', 'No launch arguments recorded'],
+  about: ['关于', 'About'],
+  aboutHelp: [
+    '安装来源、构建版本与许可证。',
+    'Where this build came from, which version it is, and its license.',
+  ],
+  versionGroup: ['版本信息', 'Version'],
+  buildCommit: ['构建提交', 'Build commit'],
+  copyVersion: ['复制版本信息', 'Copy version info'],
+  copied: ['已复制', 'Copied'],
+  linksGroup: ['链接', 'Links'],
+  repository: ['源码仓库', 'Source repository'],
+  reportIssue: ['报告问题', 'Report an issue'],
 } as const
 
 export type MessageKey = keyof typeof messages

@@ -3,6 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog'
 import {
   Activity,
   Archive,
+  BadgeInfo,
   CircleAlert,
   FolderOpen,
   Folders,
@@ -29,18 +30,20 @@ import type { Notice, NoticeTarget } from './lib/notice'
 import { onHostEvent } from './lib/host'
 import { profileChoiceFor } from './lib/profile'
 import { themeAttribute } from './lib/settings'
+import { About } from './pages/About'
 import { Configurations } from './pages/Configurations'
 import { Diagnostics } from './pages/Diagnostics'
 import { Projects } from './pages/Projects'
 import { Settings as SettingsPage } from './pages/Settings'
 
-type Page = 'projects' | 'configurations' | 'diagnostics' | 'settings'
+type Page = 'projects' | 'configurations' | 'diagnostics' | 'settings' | 'about'
 
 const navigation = [
   { id: 'projects', label: 'projects', icon: Folders },
   { id: 'configurations', label: 'configurations', icon: Layers3 },
   { id: 'diagnostics', label: 'sessions', icon: Activity },
   { id: 'settings', label: 'settings', icon: SettingsIcon },
+  { id: 'about', label: 'about', icon: BadgeInfo },
 ] as const
 
 export function App() {
@@ -484,10 +487,7 @@ export function App() {
           <span className="brand-icon">
             <SquareTerminal size={24} strokeWidth={1.9} aria-hidden="true" />
           </span>
-          <span>
-            {t('title')}
-            {view && <small>v{view.version}</small>}
-          </span>
+          <span>{t('title')}</span>
         </div>
         <nav aria-label={t('navigation')}>
           {navigation.map(({ id, label, icon: Icon }) => (
@@ -629,6 +629,16 @@ export function App() {
               onCloseToTray={(enabled) =>
                 void mutate(() => api.setCloseToTray(enabled), undefined, 'window')
               }
+            />
+          )}
+
+          {view && page === 'about' && (
+            <About
+              view={view}
+              t={t}
+              language={language}
+              onOpenRepository={() => api.openRepository()}
+              onOpenIssues={() => api.openIssues()}
             />
           )}
         </div>

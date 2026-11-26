@@ -135,13 +135,6 @@ dd {
   margin-bottom: 39px;
   font-weight: 700;
 }
-.brand small {
-  display: block;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.045em;
-}
 .brand-icon {
   width: 41px;
   height: 41px;
@@ -1378,6 +1371,68 @@ details[open] .disclosure {
 }
 .link-button:hover:not(:disabled) {
   color: var(--accent-hover);
+}
+
+/* ---------- 关于页 ---------- */
+.about-identity {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px 0 13px;
+}
+.about-identity-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.about-version {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.about-copy {
+  margin-inline-start: auto;
+}
+.about-facts {
+  padding: 9px 0 12px;
+  border-top: 1px solid var(--line-faint);
+}
+.about-facts dd {
+  color: var(--text);
+}
+.about-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-size: 13px;
+  font-weight: 650;
+}
+.about-link:hover:not(:disabled) {
+  color: var(--accent);
+}
+.about-link-arrow {
+  margin-inline-start: auto;
+  color: var(--muted);
+}
+.about-error {
+  padding: 0 0 12px;
+  color: var(--danger-text);
+  font-size: 12px;
+}
+.about-license {
+  margin: 4px 2px 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 /* ⓘ 提示 */

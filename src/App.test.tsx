@@ -11,18 +11,25 @@ it('navigation_lists_every_page_and_keeps_settings_out_of_the_sidebar_footer', a
 
   const navigation = await screen.findByRole('navigation', { name: '主导航' })
   const items = within(navigation).getAllByRole('button')
-  expect(items.map((item) => item.textContent)).toEqual(['项目', '配置管理', '会话诊断', '设置'])
+  expect(items.map((item) => item.textContent)).toEqual([
+    '项目',
+    '配置管理',
+    '会话诊断',
+    '设置',
+    '关于',
+  ])
   expect(screen.queryByText('管理 SAS 程序路径')).not.toBeInTheDocument()
   expect(screen.queryByRole('combobox', { name: '应用语言' })).not.toBeInTheDocument()
 })
 
-it('the_brand_shows_the_launcher_version_and_not_the_sas_one', async () => {
+it('the_sidebar_names_the_app_and_leaves_the_version_to_the_about_page', async () => {
   renderApp(makeView({ version: '9.9.9' }))
 
   await screen.findByRole('heading', { name: '项目' })
 
-  expect(screen.getByText('v9.9.9')).toBeInTheDocument()
-  expect(screen.queryByText('Windows · SAS 9.4')).not.toBeInTheDocument()
+  const sidebar = screen.getByRole('complementary')
+  expect(within(sidebar).getByText('SAS 启动管理器')).toBeInTheDocument()
+  expect(within(sidebar).queryByText(/^v\d/)).toBeNull()
 })
 
 it('scan_error_shows_a_banner_with_the_exe_picker', async () => {
