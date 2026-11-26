@@ -176,5 +176,10 @@
     "该项目的 SAS 会话仍在运行，请先关闭它再重新启动。",
     "This project's SAS session is still running. Close it before launching again."
   ],
+  "openLinkFailed": ["无法在浏览器中打开链接。", "Could not open the link in your browser."],
+  "releaseTagInvalid": [
+    "版本标签无效，无法打开发布页。",
+    "The release tag is invalid, so the release page cannot be opened."
+  ],
   "unexpected": ["操作未完成。", "The operation could not be completed."]
 }

@@ -685,6 +685,32 @@ fn open_path(path: &Path) -> Result<(), Issue> {
     Ok(())
 }
 
+/// The launcher's own pages, so no command ever takes a URL from the renderer.
+const HOME_PAGE: &str = "https://github.com/wtwang1998/sas-launcher";
+const ISSUES_PAGE: &str = "https://github.com/wtwang1998/sas-launcher/issues/new";
+
+fn open_url(url: &str) -> Result<(), Issue> {
+    Command::new("explorer.exe")
+        .arg(url)
+        .spawn()
+        .map_err(|error| Issue::with_detail("openLinkFailed", error))?;
+    Ok(())
+}
+
+/// A release page for one tag. Only the tag reaches the URL, so it is validated
+/// here: a renderer that could pass a path could pass a whole URL.
+fn release_url(tag: &str) -> Result<String, Issue> {
+    let valid = !tag.is_empty()
+        && tag.len() <= 32
+        && tag
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'));
+    if !valid {
+        return Err(Issue::with_detail("releaseTagInvalid", tag));
+    }
+    Ok(format!("{HOME_PAGE}/releases/tag/{tag}"))
+}
+
 fn with_app<T>(
     state: &AppState,
     action: impl FnOnce(&mut App) -> Result<T, Issue>,
@@ -1323,9 +1349,23 @@ async fn open_archive(state: State<'_, AppState>) -> Result<(), Issue> {
     })
 }
 
+#[tauri::command]
+async fn open_repository() -> Result<(), Issue> {
+    open_url(HOME_PAGE)
+}
+
+#[tauri::command]
+async fn open_issues() -> Result<(), Issue> {
+    open_url(ISSUES_PAGE)
+}
+
+#[tauri::command]
+async fn open_release(tag: String) -> Result<(), Issue> {
+    open_url(&release_url(&tag)?)
+}
+
 /// The one tray icon this app owns.
 const TRAY_ID: &str = "main";
-
 /// Reveal the main window, whether it is hidden in the tray or minimized.
 fn show_main_window(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
@@ -1510,7 +1550,10 @@ fn main() {
             clear_diagnostics,
             open_log,
             open_sasuser,
-            open_archive
+            open_archive,
+            open_repository,
+            open_issues,
+            open_release
         ])
         .run(tauri::generate_context!())
         .expect("Could not run SAS Launcher");
@@ -2634,5 +2677,24 @@ mod tests {
         assert_eq!(stored.name, "P", "the rename is rolled back too");
         assert_eq!(stored.profile.as_ref().unwrap().revision, original);
         drop(locked);
+    }
+
+    #[test]
+    fn release_pages_are_built_from_a_validated_tag() {
+        assert_eq!(
+            release_url("v0.4.0").unwrap(),
+            "https://github.com/wtwang1998/sas-launcher/releases/tag/v0.4.0"
+        );
+        assert_eq!(
+            release_url("v0.4.0-rc.1").unwrap(),
+            "https://github.com/wtwang1998/sas-launcher/releases/tag/v0.4.0-rc.1"
+        );
+        for rejected in ["", "v1/../2", "v1.0.0?x", "v1 0", "../../etc", "v1.0.0#"] {
+            assert_eq!(
+                release_url(rejected).unwrap_err().code,
+                "releaseTagInvalid",
+                "{rejected}"
+            );
+        }
     }
 }

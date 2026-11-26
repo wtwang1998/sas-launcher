@@ -177,6 +177,19 @@ it('commands_match_the_rust_handler_names', async () => {
       args: { id: 's1' },
     },
     { name: 'openArchive', run: () => api.openArchive(), cmd: 'open_archive', args: {} },
+    {
+      name: 'openRepository',
+      run: () => api.openRepository(),
+      cmd: 'open_repository',
+      args: {},
+    },
+    { name: 'openIssues', run: () => api.openIssues(), cmd: 'open_issues', args: {} },
+    {
+      name: 'openRelease',
+      run: () => api.openRelease('v0.4.0'),
+      cmd: 'open_release',
+      args: { tag: 'v0.4.0' },
+    },
   ]
 
   const wrappers = [
@@ -205,6 +218,9 @@ it('commands_match_the_rust_handler_names', async () => {
     'openLog',
     'openSasuser',
     'openArchive',
+    'openRepository',
+    'openIssues',
+    'openRelease',
   ]
   expect(Object.keys(api).sort()).toEqual([...wrappers].sort())
 

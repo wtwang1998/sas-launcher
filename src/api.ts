@@ -183,4 +183,7 @@ export const api = {
   openLog: (id: string) => invoke<void>('open_log', { id }),
   openSasuser: (id: string) => invoke<void>('open_sasuser', { id }),
   openArchive: () => invoke<void>('open_archive'),
+  openRepository: () => invoke<void>('open_repository'),
+  openIssues: () => invoke<void>('open_issues'),
+  openRelease: (tag: string) => invoke<void>('open_release', { tag }),
 }
