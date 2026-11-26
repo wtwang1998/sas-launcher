@@ -174,11 +174,6 @@
     "The selected SAS configuration is unavailable. Refresh and choose a configuration.",
     "找不到所選的 SAS 啟動組態，請重新整理後重新選擇。"
   ],
-  "stateUnavailable": [
-    "启动器内部出错，重开即可；项目与启动脚本不受影响。",
-    "The launcher hit an internal error. Reopening it is enough; your projects and startup scripts are untouched.",
-    "啟動器內部發生錯誤，重新開啟即可；專案與啟動指令碼不受影響。"
-  ],
   "invalidName": [
     "请输入 1 到 100 个字符的项目名称。",
     "Enter a project name of 1–100 characters.",

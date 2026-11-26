@@ -2343,13 +2343,22 @@ mod tests {
             }
             scanned += 1;
             let source = std::fs::read_to_string(&path).unwrap();
-            for marker in ["Issue::new(\"", "Issue::with_detail(\""] {
+            // The code is the first string argument, which may sit on the next line.
+            for marker in ["Issue::new(", "Issue::with_detail("] {
                 let mut rest = source.as_str();
                 while let Some(index) = rest.find(marker) {
                     let after = &rest[index + marker.len()..];
-                    if let Some(end) = after.find('"') {
-                        let code = &after[..end];
-                        if !code.is_empty() && !codes.iter().any(|known| known == code) {
+                    let trimmed = after.trim_start();
+                    if let Some(tail) = trimmed.strip_prefix('"')
+                        && let Some(end) = tail.find('"')
+                    {
+                        let code = &tail[..end];
+                        // The markers themselves are string literals in this file, so the
+                        // scan can land on one; every real code is plain alphanumeric.
+                        if !code.is_empty()
+                            && code.chars().all(|ch| ch.is_ascii_alphanumeric())
+                            && !codes.iter().any(|known| known == code)
+                        {
                             codes.push(code.to_owned());
                         }
                     }
@@ -2389,6 +2398,26 @@ mod tests {
                 assert!(!text.trim().is_empty(), "{code} has an empty translation");
             }
         }
+        // The other direction: copy for a code no module mentions is dead weight that the
+        // frontend fallback makes invisible. A code can also leave through a helper that
+        // returns the name rather than building an Issue, so any quoted mention counts.
+        let mut sources = String::new();
+        for entry in std::fs::read_dir(manifest.join("src")).unwrap().flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|extension| extension.to_str()) == Some("rs") {
+                sources.push_str(&std::fs::read_to_string(&path).unwrap());
+            }
+        }
+        let allowlisted = ["unexpected"];
+        let unreferenced: Vec<&String> = messages
+            .keys()
+            .filter(|code| !sources.contains(&format!("\"{code}\"")))
+            .filter(|code| !allowlisted.contains(&code.as_str()))
+            .collect();
+        assert!(
+            unreferenced.is_empty(),
+            "src/issue-messages.json ships codes that no Rust module mentions: {unreferenced:?}"
+        );
         // The messages file itself must stay usable for the frontend.
         assert!(messages.contains_key("sasMissing"));
         assert!(messages.contains_key("configUnavailable"));
