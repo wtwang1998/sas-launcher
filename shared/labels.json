@@ -1,0 +1,10 @@
+{
+  "config.defaultBaseLabel": ["默认配置", "Default configuration", "預設組態"],
+  "config.derivedName": [
+    "用户配置（衍生自 {base}）#{index}",
+    "User configuration (derived from {base}) #{index}",
+    "使用者組態（衍生自 {base}）#{index}"
+  ],
+  "tray.showWindow": ["显示窗口", "Show window", "顯示視窗"],
+  "tray.quit": ["退出", "Quit", "結束"]
+}

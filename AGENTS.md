@@ -94,7 +94,7 @@ docs/i18n.md            界面语言与安装器语言的约定、门禁与手�
 | 现象 | 处理 |
 |---|---|
 | `unexpected` 有文案但无生产者 | 它是前端未知码的兜底标题（`src/i18n/index.ts`），有意保留，别删 |
-| 默认配置名生成在 `configuration.rs` 与 `src/lib/config.ts` 各一份，后者无 UI 调用 | 改一处必须同时改另一处，或先合并 |
+| 默认配置名生成在 `configuration.rs` 与 `src/lib/config.ts` 各一份 | 文案模板已统一到 `shared/labels.json`（Rust `include_str!`、前端 import），但两份实现仍在；前端的 `defaultConfigName` 没有 UI 调用，改逻辑仍要同时改两处 |
 | `biome.json` 关掉了 `noDescendingSpecificity` 与 4 个文件上的 4 条 a11y 规则 | 修需人工验视觉/键盘，原因见 `overrides` |
 | MSYS 下 git 直接 exec husky 钩子报 Permission denied | 用 `git -c core.hooksPath=` 提交，再手动 `npx commitlint --from HEAD~1 --to HEAD` |
 

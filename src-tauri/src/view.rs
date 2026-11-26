@@ -293,14 +293,15 @@ fn user_view(app: &App, config: &UserConfig) -> ConfigView {
 }
 
 fn base_label(app: &App, base: &ConfigBase) -> String {
+    let language = app.store.settings.language.resolve(&app.system_language);
     match base {
-        ConfigBase::Default => configuration::DEFAULT_BASE_LABEL.into(),
+        ConfigBase::Default => configuration::default_base_label(language),
         ConfigBase::BuiltIn { code } => code.clone(),
         ConfigBase::User { id } => app
             .store
             .configuration(*id)
             .map(|config| config.name.clone())
-            .unwrap_or_else(|| configuration::DEFAULT_BASE_LABEL.into()),
+            .unwrap_or_else(|| configuration::default_base_label(language)),
     }
 }
 

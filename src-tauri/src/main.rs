@@ -5,6 +5,7 @@ mod configuration;
 mod diagnostics;
 mod discovery;
 mod issue;
+mod labels;
 mod language;
 mod process;
 mod profile;
@@ -344,14 +345,15 @@ impl App {
     }
 
     fn base_label(&self, base: &ConfigBase) -> String {
+        let language = self.store.settings.language.resolve(&self.system_language);
         match base {
-            ConfigBase::Default => "默认配置".into(),
+            ConfigBase::Default => configuration::default_base_label(language),
             ConfigBase::BuiltIn { code } => code.clone(),
             ConfigBase::User { id } => self
                 .store
                 .configuration(*id)
                 .map(|config| config.name.clone())
-                .unwrap_or_else(|| "默认配置".into()),
+                .unwrap_or_else(|| configuration::default_base_label(language)),
         }
     }
 
@@ -365,6 +367,7 @@ impl App {
         let name = match name {
             Some(name) => validate_configuration_name(&name)?,
             None => configuration::default_config_name(
+                self.store.settings.language.resolve(&self.system_language),
                 &self.base_label(base),
                 self.store.configurations(),
             ),
@@ -932,7 +935,7 @@ async fn set_language(
             .update(|settings| settings.language = preference)?;
         Ok((app.view(), tray_labels(app)))
     })?;
-    refresh_tray_menu(&handle, labels);
+    refresh_tray_menu(&handle, &labels);
     Ok(view)
 }
 
@@ -1375,23 +1378,23 @@ fn show_main_window(app: &AppHandle) {
     }
 }
 
-/// Native menu labels cannot use the TypeScript dictionary, so they are
-/// resolved here from the same language preference.
-fn tray_labels(app: &App) -> (&'static str, &'static str) {
-    match app.store.settings.language.resolve(&app.system_language) {
-        "zh-Hans" => ("显示窗口", "退出"),
-        "zh-Hant" => ("顯示視窗", "結束"),
-        _ => ("Show window", "Quit"),
-    }
+/// Native menu labels cannot come from the frontend catalogue, so they are read from
+/// shared/labels.json through the same language preference the window uses.
+fn tray_labels(app: &App) -> (String, String) {
+    let language = app.store.settings.language.resolve(&app.system_language);
+    (
+        labels::text(language, "tray.showWindow"),
+        labels::text(language, "tray.quit"),
+    )
 }
 
-fn tray_menu(app: &AppHandle, labels: (&str, &str)) -> tauri::Result<Menu<tauri::Wry>> {
-    let show = MenuItem::with_id(app, "show", labels.0, true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", labels.1, true, None::<&str>)?;
+fn tray_menu(app: &AppHandle, labels: &(String, String)) -> tauri::Result<Menu<tauri::Wry>> {
+    let show = MenuItem::with_id(app, "show", &labels.0, true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", &labels.1, true, None::<&str>)?;
     Menu::with_items(app, &[&show, &quit])
 }
 
-fn refresh_tray_menu(app: &AppHandle, labels: (&str, &str)) {
+fn refresh_tray_menu(app: &AppHandle, labels: &(String, String)) {
     if let Some(tray) = app.tray_by_id(TRAY_ID)
         && let Ok(menu) = tray_menu(app, labels)
     {
@@ -1467,9 +1470,9 @@ fn main() {
                 let _ = window.hide();
             }
             let labels = with_app(&app.state::<AppState>(), |app| Ok(tray_labels(app)))
-                .unwrap_or(("Show window", "Quit"));
+                .unwrap_or_else(|_| ("Show window".to_owned(), "Quit".to_owned()));
             if let Some(icon) = app.default_window_icon().cloned() {
-                let menu = tray_menu(app.handle(), labels)?;
+                let menu = tray_menu(app.handle(), &labels)?;
                 TrayIconBuilder::with_id(TRAY_ID)
                     .icon(icon)
                     .tooltip("SAS Launcher")
@@ -1798,6 +1801,10 @@ mod tests {
             "u8",
         );
         let mut app = app_with_install(temp.path(), &exe);
+        // The generated name follows the interface language, so pin it before deriving.
+        app.store
+            .update(|settings| settings.language = LanguagePreference::ZhHans)
+            .unwrap();
         let factory = discovery::factory_cfg_for(&exe, "u8").unwrap();
         let profile = temp.path().join("profile");
         std::fs::create_dir_all(&profile).unwrap();

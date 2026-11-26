@@ -32,6 +32,17 @@ describe('default configuration names', () => {
       '用户配置（衍生自 磐升瑞祥配置）#1',
     )
   })
+
+  it('a_generated_name_follows_the_interface_language', () => {
+    expect(defaultConfigName('u8', [], 'en')).toBe('User configuration (derived from u8) #1')
+    expect(defaultConfigName('u8', [], 'zh-Hant')).toBe('使用者組態（衍生自 u8）#1')
+    // A name created under another language still occupies its number.
+    const existing = ['User configuration (derived from u8) #1']
+    expect(defaultConfigName('u8', existing, 'zh-Hans')).toBe('用户配置（衍生自 u8）#2')
+    expect(defaultConfigName('u8', ['用户配置（衍生自 u8）#1'], 'en')).toBe(
+      'User configuration (derived from u8) #2',
+    )
+  })
 })
 
 describe('encoding/locale combination state', () => {

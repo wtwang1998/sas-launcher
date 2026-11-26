@@ -8,6 +8,7 @@ import {
   type Project,
   sameRef,
 } from '../api'
+import sharedLabels from '../../shared/labels.json'
 import type { MessageKey, Translator } from '../i18n'
 import { joinList } from './format'
 
@@ -54,12 +55,34 @@ export function sortConfigs(configs: Config[]): Config[] {
   return [...users, ...builtIns]
 }
 
-/** `用户配置（衍生自 <source>）#n`, where n is the smallest free index for that source. */
-export function defaultConfigName(baseLabel: string, existingNames: readonly string[]): string {
+/** One template for a generated configuration name, shared with the Rust side. */
+const derivedNameTemplates: Record<Language, string> = {
+  'zh-Hans': sharedLabels['config.derivedName'][0],
+  en: sharedLabels['config.derivedName'][1],
+  'zh-Hant': sharedLabels['config.derivedName'][2],
+}
+
+function renderDerivedName(template: string, baseLabel: string, index: number): string {
+  return template.replace('{base}', baseLabel).replace('{index}', String(index))
+}
+
+/**
+ * `用户配置（衍生自 <source>）#n`, where n is the smallest free index for that source.
+ * A name written under another interface language still holds its number, which is why
+ * every language's rendering is checked.
+ */
+export function defaultConfigName(
+  baseLabel: string,
+  existingNames: readonly string[],
+  language: Language = 'zh-Hans',
+): string {
   const taken = new Set(existingNames)
+  const templates = Object.values(derivedNameTemplates)
   let index = 1
-  while (taken.has(`用户配置（衍生自 ${baseLabel}）#${index}`)) index += 1
-  return `用户配置（衍生自 ${baseLabel}）#${index}`
+  while (templates.some((template) => taken.has(renderDerivedName(template, baseLabel, index)))) {
+    index += 1
+  }
+  return renderDerivedName(derivedNameTemplates[language], baseLabel, index)
 }
 
 export type OptionCheck = { status: PresetStatus; warning: MessageKey | null }

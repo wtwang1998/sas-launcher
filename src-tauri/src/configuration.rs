@@ -1,6 +1,7 @@
 use crate::{
     discovery::BuiltIn,
     issue::Issue,
+    labels,
     store::{ConfigRef, Preset, UserConfig},
     view::ConfigView,
 };
@@ -11,8 +12,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-const DEFAULT_NAME_PREFIX: &str = "用户配置（衍生自 ";
-pub const DEFAULT_BASE_LABEL: &str = "默认配置";
+pub fn default_base_label(language: &str) -> String {
+    labels::text(language, "config.defaultBaseLabel")
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -22,22 +24,21 @@ pub enum PresetStatus {
     Unverified,
 }
 
-pub fn default_config_name(base_label: &str, existing: &[UserConfig]) -> String {
-    let prefix = format!("{DEFAULT_NAME_PREFIX}{base_label}）#");
-    let mut used = Vec::new();
-    for config in existing {
-        if let Some(rest) = config.name.strip_prefix(&prefix)
-            && let Ok(number) = rest.parse::<u32>()
-            && number > 0
-        {
-            used.push(number);
-        }
-    }
+pub fn default_config_name(language: &str, base_label: &str, existing: &[UserConfig]) -> String {
+    let taken: Vec<&str> = existing.iter().map(|config| config.name.as_str()).collect();
     let mut number = 1;
-    while used.contains(&number) {
+    loop {
+        // A name created under another interface language still holds its number, so the
+        // smallest free index is the first one no language's rendering occupies.
+        let used = labels::LANGUAGES.iter().any(|other| {
+            let candidate = labels::derived_config_name(other, base_label, number);
+            taken.contains(&candidate.as_str())
+        });
+        if !used {
+            return labels::derived_config_name(language, base_label, number);
+        }
         number += 1;
     }
-    format!("{prefix}{number}")
 }
 
 /// Exactly three CRLF lines, the last one newline-terminated. The factory cfg
@@ -351,24 +352,39 @@ mod tests {
             profile_revision: None,
             factory: PathBuf::from("sasv9.cfg"),
         };
-        assert_eq!(default_config_name("u8", &[]), "用户配置（衍生自 u8）#1");
+        assert_eq!(
+            default_config_name("zh-Hans", "u8", &[]),
+            "用户配置（衍生自 u8）#1"
+        );
         let existing = vec![
             make("用户配置（衍生自 u8）#1"),
             make("用户配置（衍生自 u8）#2"),
             make("别的名字"),
         ];
         assert_eq!(
-            default_config_name("u8", &existing),
+            default_config_name("zh-Hans", "u8", &existing),
             "用户配置（衍生自 u8）#3"
+        );
+        // A name created in another interface language keeps its number.
+        assert_eq!(
+            default_config_name("en", "u8", &existing),
+            "User configuration (derived from u8) #3"
+        );
+        assert_eq!(
+            default_config_name("zh-Hant", "u8", &[]),
+            "使用者組態（衍生自 u8）#1"
         );
         let gap = vec![
             make("用户配置（衍生自 u8）#1"),
             make("用户配置（衍生自 u8）#3"),
         ];
-        assert_eq!(default_config_name("u8", &gap), "用户配置（衍生自 u8）#2");
+        assert_eq!(
+            default_config_name("zh-Hans", "u8", &gap),
+            "用户配置（衍生自 u8）#2"
+        );
         // A different source restarts at #1.
         assert_eq!(
-            default_config_name("zh", &existing),
+            default_config_name("zh-Hans", "zh", &existing),
             "用户配置（衍生自 zh）#1"
         );
     }
