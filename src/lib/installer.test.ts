@@ -53,21 +53,21 @@ it('the_installer_only_offers_languages_tauri_translates', () => {
   expect(nsis.languages).toContain('TradChinese')
 })
 
-it('the_install_hook_has_copy_for_the_languages_it_offers', () => {
+it('the_install_hook_has_copy_for_the_languages_it_authors', () => {
   const hook = read('/src-tauri/windows/preserve-install-location.nsh')
   // makensis runs with -INPUTCHARSET UTF8, so the hook must stay UTF-8 without a BOM.
   expect(hook.charCodeAt(0)).not.toBe(0xfeff)
 
-  const entries = hook
+  // LangString cannot be used here: the hook is included before the language table loads,
+  // and "command LangString not valid in Section" is what makensis says when it is tried.
+  const commands = hook
     .split('\n')
-    .filter((line: string) => line.includes('LangString LauncherFolderChanged'))
-  expect(entries).toHaveLength(3)
-  for (const language of ['LANG_ENGLISH', 'LANG_SIMPCHINESE', 'LANG_TRADCHINESE']) {
-    expect(
-      entries.some((line: string) => line.includes(`{${language}}`)),
-      `the hook has no copy for ${language}`,
-    ).toBe(true)
-  }
-  // A two-way $LANGUAGE branch would send every other installer language to English.
-  expect(hook).not.toContain('$LANGUAGE =')
+    .map((line: string) => line.trim())
+    .filter((line: string) => line !== '' && !line.startsWith(';'))
+  expect(commands.filter((line: string) => line.startsWith('LangString'))).toEqual([])
+  expect(hook).toContain('{LANG_SIMPCHINESE}')
+  expect(hook).toContain('{LANG_TRADCHINESE}')
+  expect(hook, 'english is the fallback for every other installer language').toContain(
+    'Use the original installation folder: ',
+  )
 })
