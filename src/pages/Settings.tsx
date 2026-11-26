@@ -5,6 +5,7 @@ import { Switch } from '../components/Switch'
 import { localeLanguageName } from '../lib/config'
 import type { Notice } from '../lib/notice'
 import { startMinimizedActive } from '../lib/settings'
+import { languageNames } from '../i18n'
 import { useI18n } from '../i18n/provider'
 
 export type SettingsProps = {
@@ -89,9 +90,15 @@ export function Settings({
               onChange={(event) => onLanguage(event.target.value as Preference)}
             >
               <option value="system">{t('settings.system')}</option>
-              <option value="zh-Hans">{t('settings.languageZhHans')}</option>
-              <option value="zh-Hant">{t('settings.languageZhHant')}</option>
-              <option value="en">{t('settings.languageEnglish')}</option>
+              <option value="zh-Hans" lang="zh-Hans">
+                {languageNames['zh-Hans']}
+              </option>
+              <option value="zh-Hant" lang="zh-Hant">
+                {languageNames['zh-Hant']}
+              </option>
+              <option value="en" lang="en">
+                {languageNames.en}
+              </option>
             </select>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest'
 import baseline from './coverage-baseline.json'
 import { messages as en, notes } from './en'
+import { languageNames } from './index'
 import { messages as zhHans } from './zh-Hans'
 import { messages as zhHant } from './zh-Hant'
 
@@ -80,5 +81,12 @@ it('every_translator_note_names_a_key_the_source_has', () => {
   const keys = new Set(Object.keys(en))
   for (const key of Object.keys(notes)) {
     expect(keys.has(key as keyof typeof en), `note for unknown key ${key}`).toBe(true)
+  }
+})
+
+it('names_each_interface_language_in_its_own_words', () => {
+  for (const [language, name] of Object.entries(languageNames)) {
+    const own = new Intl.DisplayNames([language], { type: 'language' }).of(language)
+    expect(name, `${language} should read the way CLDR names it in itself`).toBe(own)
   }
 })

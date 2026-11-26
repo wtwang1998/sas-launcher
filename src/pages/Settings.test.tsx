@@ -38,7 +38,7 @@ it('traditional_chinese_is_offered_and_sent_to_the_backend', async () => {
 
   await user.click(await screen.findByRole('button', { name: '设置' }))
   const languagePicker = screen.getByRole('combobox', { name: '应用语言' })
-  expect(within(languagePicker).getByRole('option', { name: '繁体中文' })).toBeInTheDocument()
+  expect(within(languagePicker).getByRole('option', { name: '繁體中文' })).toBeInTheDocument()
 
   await user.selectOptions(languagePicker, 'zh-Hant')
 
@@ -209,4 +209,55 @@ it('a_failed_switch_reports_inside_its_own_group', async () => {
   expect(alert.closest('.settings-group')).not.toBeNull()
   expect(alert.closest('.panel')?.textContent).toContain('关闭时最小化到托盘')
   expect(document.querySelector('.content > .banner')).toBeNull()
+})
+
+it('names_each_language_in_its_own_words', async () => {
+  const cases = [
+    {
+      language: 'zh-Hans',
+      navigation: '主导航',
+      settings: '设置',
+      picker: '应用语言',
+      system: '跟随系统',
+    },
+    {
+      language: 'zh-Hant',
+      navigation: '主要導覽',
+      settings: '設定',
+      picker: '應用程式語言',
+      system: '跟隨系統',
+    },
+    {
+      language: 'en',
+      navigation: 'Main navigation',
+      settings: 'Settings',
+      picker: 'App language',
+      system: 'Follow System',
+    },
+  ] as const
+
+  for (const one of cases) {
+    const user = userEvent.setup()
+    const { unmount } = renderApp(
+      makeView({ language: one.language, languagePreference: one.language }),
+    )
+
+    const navigation = await screen.findByRole('navigation', { name: one.navigation })
+    await user.click(within(navigation).getByRole('button', { name: one.settings }))
+
+    const picker = await screen.findByRole('combobox', { name: one.picker })
+    const labels = within(picker)
+      .getAllByRole('option')
+      .map((option) => option.textContent)
+    expect(labels, `language options in a ${one.language} interface`).toEqual([
+      one.system,
+      '简体中文',
+      '繁體中文',
+      'English',
+    ])
+    const traditional = within(picker).getByRole('option', { name: '繁體中文' })
+    expect(traditional.getAttribute('lang'), 'a name should carry its own language').toBe('zh-Hant')
+
+    unmount()
+  }
 })

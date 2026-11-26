@@ -15,6 +15,16 @@ const catalogs: Record<Language, Partial<Record<MessageKey, string>>> = {
   'zh-Hant': zhHant,
 }
 
+/**
+ * Each interface language named in its own words, the way CLDR names it. These are names,
+ * not copy: they never change with the interface language, so they are not message keys.
+ */
+export const languageNames = {
+  'zh-Hans': '简体中文',
+  'zh-Hant': '繁體中文',
+  en: 'English',
+} as const satisfies Record<Language, string>
+
 /** The index of a language inside a `[zh-Hans, en, zh-Hant]` catalog entry. */
 const issueIndex: Record<Language, number> = { 'zh-Hans': 0, en: 1, 'zh-Hant': 2 }
 
