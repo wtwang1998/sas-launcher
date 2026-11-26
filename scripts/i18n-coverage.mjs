@@ -10,10 +10,13 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const catalogs = { 'zh-Hans': 'src/i18n/zh-Hans.ts', 'zh-Hant': 'src/i18n/zh-Hant.ts' }
 const baselinePath = join(root, 'src/i18n/coverage-baseline.json')
 
-const keysOf = (path) =>
-  [...readFileSync(path, 'utf8').matchAll(/^ {2}'([a-z][A-Za-z]*\.[A-Za-z]+)':/gm)].map(
-    (match) => match[1],
-  )
+// Only the message object counts: the file also holds translator notes, whose keys are
+// formatted the same way and must not inflate or dilute the percentage.
+const keysOf = (path) => {
+  const source = readFileSync(path, 'utf8')
+  const block = /export const messages[^=]*= \{([\s\S]*?)\n\}/.exec(source)?.[1] ?? ''
+  return [...block.matchAll(/^ {2}'([a-z][A-Za-z]*\.[A-Za-z]+)':/gm)].map((match) => match[1])
+}
 
 const source = keysOf(join(root, 'src/i18n/en.ts'))
 const report = {}
