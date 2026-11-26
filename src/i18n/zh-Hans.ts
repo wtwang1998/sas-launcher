@@ -12,6 +12,7 @@ export const messages: Partial<Record<MessageKey, string>> = {
   'nav.sessionsHelp': '查看会话状态、解析链与真实启动参数。',
   'settings.language': '应用语言',
   'settings.languageZhHans': '简体中文',
+  'settings.languageZhHant': '繁体中文',
   'settings.languageEnglish': 'English',
   'settings.system': '跟随系统',
   'nav.settings': '设置',

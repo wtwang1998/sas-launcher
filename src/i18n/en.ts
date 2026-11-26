@@ -12,6 +12,7 @@ export const messages = {
   'nav.sessionsHelp': 'Review session status, resolution chains and real launch arguments.',
   'settings.language': 'App language',
   'settings.languageZhHans': 'Simplified Chinese',
+  'settings.languageZhHant': 'Traditional Chinese',
   'settings.languageEnglish': 'English',
   'settings.system': 'Follow Windows',
   'nav.settings': 'Settings',

@@ -32,6 +32,28 @@ it('changing_the_language_from_settings_calls_set_language', async () => {
   })
 })
 
+it('traditional_chinese_is_offered_and_sent_to_the_backend', async () => {
+  const user = userEvent.setup()
+  const { backend } = renderApp(makeView())
+
+  await user.click(await screen.findByRole('button', { name: '设置' }))
+  const languagePicker = screen.getByRole('combobox', { name: '应用语言' })
+  expect(within(languagePicker).getByRole('option', { name: '繁体中文' })).toBeInTheDocument()
+
+  await user.selectOptions(languagePicker, 'zh-Hant')
+
+  expect(backend.calls.find((call) => call.cmd === 'set_language')?.args).toMatchObject({
+    preference: 'zh-Hant',
+  })
+})
+
+it('a_traditional_interface_renders_its_own_copy', async () => {
+  renderApp(makeView({ language: 'zh-Hant' }))
+
+  expect(await screen.findByRole('heading', { name: '專案' })).toBeInTheDocument()
+  expect(screen.getByRole('navigation', { name: '主要導覽' })).toBeInTheDocument()
+})
+
 it('saving_an_edited_path_pins_the_installation', async () => {
   const user = userEvent.setup()
   const { backend } = renderApp(makeView(), {

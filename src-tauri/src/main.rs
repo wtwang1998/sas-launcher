@@ -1380,6 +1380,7 @@ fn show_main_window(app: &AppHandle) {
 fn tray_labels(app: &App) -> (&'static str, &'static str) {
     match app.store.settings.language.resolve(&app.system_language) {
         "zh-Hans" => ("显示窗口", "退出"),
+        "zh-Hant" => ("顯示視窗", "結束"),
         _ => ("Show window", "Quit"),
     }
 }

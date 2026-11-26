@@ -15,7 +15,7 @@ export function formatArgv(argv: readonly string[]): string {
  * conjunction pattern inserts 和/及. These labels are compact (`界面设置、环境设置`), so the
  * separator stays explicit per language instead of being inferred.
  */
-const separators: Record<Language, string> = { 'zh-Hans': '、', en: ', ' }
+const separators: Record<Language, string> = { 'zh-Hans': '、', 'zh-Hant': '、', en: ', ' }
 
 /** Join a compact list of already translated labels. */
 export function joinList(language: Language, items: readonly string[]): string {
@@ -36,7 +36,8 @@ export function formatModified(language: Language, millis: number): string {
 
 /** One rendering for every timestamp: 24-hour in both languages, never AM/PM. */
 function dateTime(language: Language, millis: number): string {
-  return new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'zh-CN', {
+  const tag = language === 'en' ? 'en-US' : language === 'zh-Hant' ? 'zh-TW' : 'zh-CN'
+  return new Intl.DateTimeFormat(tag, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

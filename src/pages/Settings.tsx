@@ -92,6 +92,7 @@ export function Settings({
             >
               <option value="system">{t('settings.system')}</option>
               <option value="zh-Hans">{t('settings.languageZhHans')}</option>
+              <option value="zh-Hant">{t('settings.languageZhHant')}</option>
               <option value="en">{t('settings.languageEnglish')}</option>
             </select>
           </div>
