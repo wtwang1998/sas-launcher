@@ -103,7 +103,7 @@ Projects, configurations and diagnostics live in `%LOCALAPPDATA%\com.saslauncher
 **Settings** collects the app-wide switches; each one applies immediately, without a save button.
 
 - **Theme** — follow Windows, or force dark or light. The palette is one `light-dark()` pair per token, so the title bar, native selects and scrollbars follow the choice; this needs a current WebView2 runtime.
-- **App language** — Simplified Chinese, English, or follow Windows.
+- **App language** — Simplified Chinese, Traditional Chinese, English, or follow Windows. The installer has its own 23 interface languages and remembers the choice.
 - **SAS executable path** — shows the detected `sas.exe`; type a path, pick one, or use **Auto-detect** to drop a manual choice and scan again.
 - **Start at login** — writes the per-user `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` entry, quoted so paths with spaces work.
 - **Start minimized in the tray** — only the login launch starts hidden, and the row appears once **Start at login** is on. Its value survives turning that switch off, so re-enabling restores the old behaviour.
