@@ -3,7 +3,7 @@
 Run several SAS 9.4 projects side by side, each with its own session environment.
 
 ![platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20x64-0078D4)
-![latest release](https://img.shields.io/github/v/release/wtwang1998/sas-launcher)
+![latest release](https://img.shields.io/github/v/release/wtwang1998/sas-launcher?include_prereleases)
 ![downloads](https://img.shields.io/github/downloads/wtwang1998/sas-launcher/total)
 ![license](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)
 [![CI](https://github.com/wtwang1998/sas-launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/wtwang1998/sas-launcher/actions/workflows/ci.yml)

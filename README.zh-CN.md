@@ -3,7 +3,7 @@
 在同一台机器上并行运行多个 SAS 9.4 项目，每个项目一套独立的会话环境。
 
 ![平台](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20x64-0078D4)
-![最新版本](https://img.shields.io/github/v/release/wtwang1998/sas-launcher)
+![最新版本](https://img.shields.io/github/v/release/wtwang1998/sas-launcher?include_prereleases)
 ![下载量](https://img.shields.io/github/downloads/wtwang1998/sas-launcher/total)
 ![许可证](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)
 [![CI](https://github.com/wtwang1998/sas-launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/wtwang1998/sas-launcher/actions/workflows/ci.yml)
