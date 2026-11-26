@@ -50,9 +50,21 @@ Remove it from this template on the day the installer is signed.
 
 回退：<怎么退回上一版，数据怎么恢复>
 
-### 本次变更
+### 新增
 
-- <一条一个用户可感知的变化，最多 6 条>
+- <一条一个用户可感知的新功能>
+
+### 优化
+
+- <一条一个用户可感知的改进>
+
+### 修复
+
+- <一条一个用户可感知的修复>
+
+### 其他改动
+
+- <用户看不见但值得记录的改动，如重构、测试、CI、文档；同类合并成一条>
 
 ### 已知限制
 
@@ -78,9 +90,21 @@ Installer: `SAS-Launcher-<version>-x64-Setup.exe`
 
 Rolling back: <how to go back, and how the data is recovered>
 
-### In this release
+### Added
 
-- <one user-visible change per bullet, at most 6>
+- <one user-visible new capability per bullet>
+
+### Improved
+
+- <one user-visible improvement per bullet>
+
+### Fixed
+
+- <one user-visible fix per bullet>
+
+### Other changes
+
+- <invisible but worth recording, such as refactors, tests, ci, docs; merge same-kind items>
 
 ### Known limitations
 
@@ -122,8 +146,9 @@ The full commit list is at the end.
   the release page already prints the version as its title.
 - Wrap flags, paths, issue codes and file names in backticks. No emoji, no
   colour, no tables: the release page is narrow on mobile.
-- At most 6 change bullets and 4 limitation bullets per half; the full detail
-  belongs in the collapsed commit list.
+- Group the change bullets into four sections, added, improved, fixed and
+  other changes, with one change per bullet. The full detail belongs in the
+  collapsed commit list.
 - Keep `**Full Changelog**` visible and the commit list collapsed in
   `<details>`.
 - Both halves follow the same order: warning, installer identity, install,
