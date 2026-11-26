@@ -45,6 +45,15 @@ jobs:
           npm install --package-lock-only --ignore-scripts
           git diff --exit-code -- package-lock.json
       - run: npm ci
+      # The tag is immutable once pushed, so every version source has to
+      # agree before the first Release run: v0.3.0's bump left
+      # package-lock.json on the previous version and CI caught it only
+      # afterwards.
+      - name: every version source agrees
+        shell: bash
+        run: |
+          version=$(node -p 'require("./package.json").version')
+          npm run version:check -- "v$version"
       - run: npm run format:check:web
       - run: npm run lint
       - run: npm run typecheck

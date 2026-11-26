@@ -60,8 +60,8 @@ Tests live at five seams:
    user sees and what the app submits, never internal state.
 3. The IPC contract in `src/api.test.ts` — command names and argument keys.
 4. Rust modules — `#[cfg(test)] mod tests` with real `tempfile` directories.
-5. The release guard in `scripts/` — keeps the tag and the three version
-   fields honest.
+5. The release guard in `scripts/` — keeps the tag and every version
+   source honest.
 
 Do not introduce traits or mock file systems to make something testable. The
 existing tests use real files, real temporary directories and, where the code
@@ -96,14 +96,15 @@ installed and say in the pull request what you ran and what you saw.
 
 Maintainers only. A release starts with a tag:
 
-1. Bump the version in `package.json`, `src-tauri/Cargo.toml` and
-   `src-tauri/tauri.conf.json` in one commit on `main`.
+1. Bump the version everywhere it is written — `package.json`,
+   `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and
+   `src-tauri/tauri.conf.json` — in one commit on `main`.
 2. Write `docs/release-notes/v<version>.md` from
    `docs/release-notes-template.md` and commit it with the bump. The workflow
    publishes that body as the draft, and the file name must match the tag.
 3. Tag that commit `v<version>` and push the tag.
-4. The `Release` workflow refuses to build unless the tag matches all three
-   files, then uploads the installer to a **draft** release. A tag without a
+4. The `Release` workflow refuses to build unless the tag matches every
+   version source, then uploads the installer to a **draft** release. A tag without a
    notes file still builds: it falls back to `--generate-notes`, which lists
    pull requests, and `main` receives none, so that body is empty.
 5. Install the draft on a clean Windows machine, check the upgrade from the

@@ -1,4 +1,4 @@
-// Fails a release run when the pushed tag and the three manifests disagree.
+// Fails a release run when the pushed tag and every version source disagree.
 // The tag is the only input that cannot be edited after the release exists, so
 // nothing here guesses a winner: any mismatch stops the build.
 import { readFileSync } from 'node:fs'
@@ -7,10 +7,15 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
+// v0.3.0 failed CI because the bump missed package-lock.json: the manifests
+// agreed with the tag while the lock still named the previous version.
 const SOURCES = [
-  ['package.json', 'packageJson'],
-  ['src-tauri/Cargo.toml', 'cargo'],
-  ['src-tauri/tauri.conf.json', 'tauriConf'],
+  ['packageJson', 'package.json'],
+  ['lockRoot', 'package-lock.json (root)'],
+  ['lockPackage', 'package-lock.json (packages[""])'],
+  ['cargo', 'src-tauri/Cargo.toml'],
+  ['cargoLock', 'src-tauri/Cargo.lock (sas-launcher)'],
+  ['tauriConf', 'src-tauri/tauri.conf.json'],
 ]
 
 export function parseReleaseTag(tag) {
@@ -33,6 +38,25 @@ export function readCargoVersion(manifest) {
   return null
 }
 
+export function readCargoLockVersion(lock) {
+  let packageName = null
+  for (const raw of lock.split(/\r?\n/)) {
+    const line = raw.trim()
+    if (line.startsWith('[')) {
+      packageName = null
+      continue
+    }
+    const name = /^name\s*=\s*"([^"]+)"/.exec(line)
+    if (name) {
+      packageName = name[1]
+      continue
+    }
+    const version = /^version\s*=\s*"([^"]+)"/.exec(line)
+    if (version && packageName === 'sas-launcher') return version[1]
+  }
+  return null
+}
+
 export function checkReleaseVersion(tag, versions) {
   const version = parseReleaseTag(tag)
   if (!version) {
@@ -44,10 +68,10 @@ export function checkReleaseVersion(tag, versions) {
   }
 
   const problems = []
-  for (const [file, key] of SOURCES) {
+  for (const [key, where] of SOURCES) {
     const actual = versions[key]
     if (actual !== version) {
-      problems.push(`${file} is ${actual ?? 'missing'}, tag says ${version} (${tag})`)
+      problems.push(`${where} is ${actual ?? 'missing'}, tag says ${version} (${tag})`)
     }
   }
   return { ok: problems.length === 0, version, problems }
@@ -55,9 +79,13 @@ export function checkReleaseVersion(tag, versions) {
 
 function readVersions() {
   const read = (path) => readFileSync(resolve(ROOT, path), 'utf8')
+  const lock = JSON.parse(read('package-lock.json'))
   return {
     packageJson: JSON.parse(read('package.json')).version,
+    lockRoot: lock.version,
+    lockPackage: lock.packages?.['']?.version,
     cargo: readCargoVersion(read('src-tauri/Cargo.toml')),
+    cargoLock: readCargoLockVersion(read('src-tauri/Cargo.lock')),
     tauriConf: JSON.parse(read('src-tauri/tauri.conf.json')).version,
   }
 }
@@ -67,7 +95,7 @@ function main() {
   const result = checkReleaseVersion(tag, readVersions())
   if (result.ok) {
     console.log(
-      `release ${tag}: package.json, Cargo.toml and tauri.conf.json all say ${result.version}`,
+      `release ${tag}: package.json, package-lock.json, Cargo.toml, Cargo.lock and tauri.conf.json all say ${result.version}`,
     )
     return
   }
