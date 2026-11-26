@@ -1,6 +1,6 @@
 {
   "productName": "SAS Launcher",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "identifier": "com.saslauncher.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",

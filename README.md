@@ -87,7 +87,7 @@ Each of them becomes the same block, which is also what the button writes. `&SAS
 
 ## Install
 
-1. Download `SAS-Launcher-0.3.0-x64-Setup.exe` from [Releases](https://github.com/wtwang1998/sas-launcher/releases).
+1. Download `SAS-Launcher-0.4.0-x64-Setup.exe` from [Releases](https://github.com/wtwang1998/sas-launcher/releases).
 2. The installer installs for the current user into `%LOCALAPPDATA%\SAS Launcher`; no administrator rights are needed.
 3. Upgrades and uninstalls reuse that folder.
 
