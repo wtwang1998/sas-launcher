@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import baseline from './coverage-baseline.json'
-import { messages as en } from './en'
+import { messages as en, notes } from './en'
 import { messages as zhHans } from './zh-Hans'
 import { messages as zhHant } from './zh-Hant'
 
@@ -68,5 +68,12 @@ it('no_language_drops_below_its_recorded_coverage', () => {
       translated,
       `${language} lost coverage (${translated}/${total}); missing: ${missing.join(', ')}`,
     ).toBeGreaterThanOrEqual(floor)
+  }
+})
+
+it('every_translator_note_names_a_key_the_source_has', () => {
+  const keys = new Set(Object.keys(en))
+  for (const key of Object.keys(notes)) {
+    expect(keys.has(key as keyof typeof en), `note for unknown key ${key}`).toBe(true)
   }
 })

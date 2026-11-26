@@ -256,6 +256,25 @@ export const messages = {
 export type MessageKey = keyof typeof messages
 
 /**
+ * Context for the keys a translator can misread. Not rendered: it keeps the ambiguity
+ * next to the sentence instead of in someone's memory.
+ */
+export const notes: Partial<Record<MessageKey, string>> = {
+  'config.derivedFrom': 'A configuration copied from another one; 衍生 means derived, not deleted.',
+  'config.presetCombination':
+    'The encoding/locale pair a configuration starts with, not a UI preset.',
+  'config.unnamedConfiguration': 'A configuration the user created without a name yet.',
+  'session.chainNone': 'Nothing was used here; it is not an error state.',
+  'session.chainProfile': 'The SAS user-folder layers that were copied into this session.',
+  'session.profileIncomplete': 'Settings files the snapshot still lacks; saving fills them in.',
+  'project.startupExposesPath': 'Exposes the startup file path through a SAS macro variable.',
+  'project.startupNeedsMigrationHint':
+    'Explains why an old script that reads SAS_EXECFILEPATH fails.',
+  'settings.systemResolved':
+    'The language Windows itself is set to; shown only for the system choice.',
+}
+
+/**
  * Context for the keys a translator can misread. Not rendered: it is here so the ambiguity
  * is written down next to the sentence instead of in someone's memory.
  */
