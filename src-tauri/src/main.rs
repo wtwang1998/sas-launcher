@@ -1198,9 +1198,9 @@ impl App {
             .ok_or_else(|| Issue::new("startupFileMissing"))?;
         let bytes = std::fs::read(&path)
             .map_err(|error| Issue::with_detail("startupFileMissing", error))?;
-        let source = String::from_utf8(bytes)
-            .map_err(|_| Issue::with_detail("startupNotUtf8", path.display().to_string()))?;
-        let migrated = crate::startup::migrate(&source).map_err(|error| match error {
+        // Byte-level: the script may be GBK, and decoding it as UTF-8 would
+        // replace its Chinese folder names before writing it back.
+        let migrated = crate::startup::migrate_bytes(&bytes).map_err(|error| match error {
             crate::startup::MigrateError::NothingToDo => {
                 Issue::with_detail("startupAlreadyMigrated", path.display().to_string())
             }
@@ -2060,7 +2060,10 @@ mod tests {
         let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
         let mut app = app_with_install(temp.path(), &exe);
         let setup = temp.path().join("setup.sas");
-        let migrated = crate::startup::migrate("%let DIR = %sysget(SAS_EXECFILEPATH);\n").unwrap();
+        let migrated = String::from_utf8(
+            crate::startup::migrate_bytes(b"%let DIR = %sysget(SAS_EXECFILEPATH);\n").unwrap(),
+        )
+        .unwrap();
         std::fs::write(&setup, &migrated).unwrap();
         app.save_project(
             None,
@@ -2121,6 +2124,51 @@ mod tests {
         assert_eq!(
             guard.as_ref().err().map(|issue| issue.code),
             Some("internal")
+        );
+    }
+
+    #[test]
+    fn migrating_a_gbk_script_keeps_its_bytes_and_its_backup() {
+        let temp = tempfile::tempdir().unwrap();
+        let exe = install_fixture(temp.path(), &[("en", "wlatin1", "en_US")], "en");
+        let mut app = app_with_install(temp.path(), &exe);
+        let setup = temp.path().join("setup.sas");
+        // "统计分析" in GBK, as an older project stores it.
+        let chinese: [u8; 8] = [0xCD, 0xB3, 0xBC, 0xC6, 0xB7, 0xD6, 0xCE, 0xF6];
+        let mut original = b"%let DIR_STAT = C:\\04 ".to_vec();
+        original.extend_from_slice(&chinese);
+        original.extend_from_slice(b";\r\n%let DIR = %sysget(SAS_EXECFILEPATH);\r\n");
+        std::fs::write(&setup, &original).unwrap();
+        app.save_project(
+            None,
+            "P".into(),
+            None,
+            None,
+            None,
+            Some(setup.clone()),
+            false,
+        )
+        .unwrap();
+        let id = app.store.projects()[0].id;
+
+        app.migrate_startup_file(id).unwrap();
+
+        let migrated = std::fs::read(&setup).unwrap();
+        assert!(
+            migrated
+                .windows(chinese.len())
+                .any(|window| window == chinese),
+            "the gbk bytes survive the rewrite"
+        );
+        assert!(
+            migrated
+                .windows(40)
+                .any(|window| window.starts_with(b"%if %symexist(SASLAUNCHER_STARTUP_FI")),
+            "the guard block is inserted"
+        );
+        assert_eq!(
+            std::fs::read(temp.path().join("setup.sas.bak")).unwrap(),
+            original
         );
     }
 

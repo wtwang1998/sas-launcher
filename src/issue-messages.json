@@ -58,10 +58,6 @@
     "这个启动文件在迁移能处理的位置之外还引用了 SAS_EXECFILEPATH，未做任何改动。请手工改成读 SASLAUNCHER_STARTUP_FILE。",
     "This startup script reads SAS_EXECFILEPATH somewhere the migration does not rewrite, so nothing was changed. Edit it by hand to read SASLAUNCHER_STARTUP_FILE."
   ],
-  "startupNotUtf8": [
-    "这个启动文件不是 UTF-8 编码，未做任何改动。请转成 UTF-8 后再迁移，或手工修改。",
-    "This startup script is not UTF-8, so nothing was changed. Convert it to UTF-8 and try again, or edit it by hand."
-  ],
   "startupWrite": [
     "无法写入启动文件，未做任何改动。请检查该文件是否只读或被占用。",
     "Could not write the startup script, so nothing was changed. Check whether the file is read-only or open elsewhere."

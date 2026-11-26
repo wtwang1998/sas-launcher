@@ -229,7 +229,7 @@ fn project_view(app: &App, project: &Project) -> ProjectView {
             .startup_file
             .as_ref()
             .and_then(|path| std::fs::read(path).ok())
-            .is_some_and(|bytes| crate::startup::needs_migration(&String::from_utf8_lossy(&bytes))),
+            .is_some_and(|bytes| crate::startup::needs_migration_bytes(&bytes)),
         profile: project.profile.as_ref().map(|profile| ProjectProfileView {
             origin: profile.origin.clone(),
             layers: profile.layers,

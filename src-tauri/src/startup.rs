@@ -10,6 +10,8 @@
 /// The macro variable a migrated script reads.
 pub const PATH_VAR: &str = "SASLAUNCHER_STARTUP_FILE";
 const OLD: &str = "SAS_EXECFILEPATH";
+const OLD_CALL: &[u8] = b"%sysget(SAS_EXECFILEPATH);";
+const BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum MigrateError {
@@ -19,95 +21,168 @@ pub enum MigrateError {
     Unsupported,
 }
 
-/// Whether the script still relies on the variable the session cannot provide.
-pub fn needs_migration(contents: &str) -> bool {
-    let upper = contents.to_ascii_uppercase();
-    upper.contains(OLD) && !upper.contains(PATH_VAR)
+fn contains_ignore_ascii_case(haystack: &[u8], needle: &[u8]) -> bool {
+    haystack
+        .windows(needle.len())
+        .any(|window| window.eq_ignore_ascii_case(needle))
 }
 
-/// `%let <name> = %sysget(SAS_EXECFILEPATH);` in any spacing or case.
-fn assignment_name(line: &str) -> Option<&str> {
-    let trimmed = line.trim();
-    // Step by characters, not bytes: a Chinese comment can put byte 4 inside a
-    // multi-byte character and `&trimmed[..4]` would panic on it.
-    if !trimmed.get(..4)?.eq_ignore_ascii_case("%let") {
+fn trim_ascii(bytes: &[u8]) -> &[u8] {
+    let start = bytes
+        .iter()
+        .position(|byte| !byte.is_ascii_whitespace())
+        .unwrap_or(bytes.len());
+    let end = bytes
+        .iter()
+        .rposition(|byte| !byte.is_ascii_whitespace())
+        .map_or(start, |index| index + 1);
+    &bytes[start..end]
+}
+
+/// The same check on bytes, for scripts that may not be UTF-8.
+pub fn needs_migration_bytes(contents: &[u8]) -> bool {
+    contains_ignore_ascii_case(contents, OLD.as_bytes())
+        && !contains_ignore_ascii_case(contents, PATH_VAR.as_bytes())
+}
+
+/// `%let <name> = %sysget(SAS_EXECFILEPATH);` in any spacing or case, on bytes:
+/// the file may be GBK, so nothing is decoded.
+fn assignment_name(line: &[u8]) -> Option<&[u8]> {
+    let trimmed = trim_ascii(line);
+    if trimmed.len() < 4 || !trimmed[..4].eq_ignore_ascii_case(b"%let") {
         return None;
     }
-    let (name, value) = trimmed[4..].split_once('=')?;
-    let name = name.trim();
+    let rest = &trimmed[4..];
+    let equal = rest.iter().position(|byte| *byte == b'=')?;
+    let name = trim_ascii(&rest[..equal]);
     if name.is_empty()
         || !name
-            .chars()
-            .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+            .iter()
+            .all(|byte| byte.is_ascii_alphanumeric() || *byte == b'_')
     {
         return None;
     }
-    value
-        .trim()
-        .eq_ignore_ascii_case("%sysget(SAS_EXECFILEPATH);")
+    trim_ascii(&rest[equal + 1..])
+        .eq_ignore_ascii_case(OLD_CALL)
         .then_some(name)
 }
 
-fn block(name: &str, indent: &str, eol: &str) -> String {
-    let inner = format!("{indent}    ");
-    [
-        format!("{indent}%if %symexist({PATH_VAR}) %then %do;"),
-        format!("{inner}%let {name} = &{PATH_VAR};"),
-        format!("{indent}%end;"),
-        format!("{indent}%else %do;"),
-        format!("{inner}%let {name} = %sysget({OLD});"),
-        format!("{indent}%end;"),
-    ]
-    .join(eol)
+fn push(out: &mut Vec<u8>, parts: &[&[u8]], eol: &[u8]) {
+    for part in parts {
+        out.extend_from_slice(part);
+    }
+    out.extend_from_slice(eol);
+}
+
+fn block(name: &[u8], indent: &[u8], eol: &[u8]) -> Vec<u8> {
+    let mut inner = indent.to_vec();
+    inner.extend_from_slice(b"    ");
+    let mut out = Vec::new();
+    push(
+        &mut out,
+        &[
+            indent,
+            b"%if %symexist(",
+            PATH_VAR.as_bytes(),
+            b") %then %do;",
+        ],
+        eol,
+    );
+    push(
+        &mut out,
+        &[&inner, b"%let ", name, b" = &", PATH_VAR.as_bytes(), b";"],
+        eol,
+    );
+    push(&mut out, &[indent, b"%end;"], eol);
+    push(&mut out, &[indent, b"%else %do;"], eol);
+    push(
+        &mut out,
+        &[
+            &inner,
+            b"%let ",
+            name,
+            b" = %sysget(",
+            OLD.as_bytes(),
+            b");",
+        ],
+        eol,
+    );
+    push(&mut out, &[indent, b"%end;"], b"");
+    out
 }
 
 /// Rewrites the known self-location assignments, or explains why it will not.
-pub fn migrate(contents: &str) -> Result<String, MigrateError> {
-    if !needs_migration(contents) {
+///
+/// Works on bytes on purpose: the script may be GBK, and decoding it as UTF-8
+/// would replace every Chinese folder name with U+FFFD before writing it back.
+/// Everything inserted here is ASCII, so the rest of the file is passed through
+/// exactly as it was.
+pub fn migrate_bytes(contents: &[u8]) -> Result<Vec<u8>, MigrateError> {
+    if !needs_migration_bytes(contents) {
         return Err(MigrateError::NothingToDo);
     }
     // A byte-order mark is not whitespace, so it would hide the first `%let`
     // from the scan. Split it off and put it back untouched.
-    let (bom, body) = match contents.strip_prefix('\u{feff}') {
-        Some(rest) => ("\u{feff}", rest),
-        None => ("", contents),
+    let (bom, body) = match contents.strip_prefix(&BOM) {
+        Some(rest) => (&BOM[..], rest),
+        None => (&[][..], contents),
     };
-    let eol = if body.contains("\r\n") { "\r\n" } else { "\n" };
-    let mut out = String::with_capacity(body.len() + 256);
+    let eol: &[u8] = if body.windows(2).any(|window| window == b"\r\n") {
+        b"\r\n"
+    } else {
+        b"\n"
+    };
+    let mut out = Vec::with_capacity(body.len() + 256);
     let mut replaced = 0;
-    for line in body.split_inclusive('\n') {
-        let (body, ending) = match line.strip_suffix("\r\n") {
-            Some(body) => (body, "\r\n"),
-            None => match line.strip_suffix('\n') {
-                Some(body) => (body, "\n"),
-                None => (line, ""),
+    for line in body.split_inclusive(|byte| *byte == b'\n') {
+        let (content, ending) = match line.strip_suffix(b"\n") {
+            Some(rest) => match rest.strip_suffix(b"\r") {
+                Some(rest) => (rest, b"\r\n".as_slice()),
+                None => (rest, b"\n".as_slice()),
             },
+            None => (line, b"".as_slice()),
         };
-        match assignment_name(body) {
+        match assignment_name(content) {
             Some(name) => {
-                let indent = &body[..body.len() - body.trim_start().len()];
-                out.push_str(&block(name, indent, eol));
-                out.push_str(ending);
+                let indent_len = content
+                    .iter()
+                    .take_while(|byte| byte.is_ascii_whitespace())
+                    .count();
+                out.extend_from_slice(&block(name, &content[..indent_len], eol));
+                out.extend_from_slice(ending);
                 replaced += 1;
             }
             None => {
-                if body.to_ascii_uppercase().contains(OLD) {
+                if contains_ignore_ascii_case(content, OLD.as_bytes()) {
                     // Refuse instead of half-fixing the script.
                     return Err(MigrateError::Unsupported);
                 }
-                out.push_str(line);
+                out.extend_from_slice(line);
             }
         }
     }
     if replaced == 0 {
         return Err(MigrateError::NothingToDo);
     }
-    Ok(format!("{bom}{out}"))
+    let mut result = Vec::with_capacity(bom.len() + out.len());
+    result.extend_from_slice(bom);
+    result.extend_from_slice(&out);
+    Ok(result)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // The production entry points work on bytes; these two keep the tests
+    // written against text.
+    fn needs_migration(text: &str) -> bool {
+        needs_migration_bytes(text.as_bytes())
+    }
+
+    fn migrate(text: &str) -> Result<String, MigrateError> {
+        migrate_bytes(text.as_bytes()).map(|bytes| String::from_utf8(bytes).unwrap())
+    }
 
     #[test]
     fn migrates_every_shape_a_hand_written_assignment_takes() {
@@ -197,6 +272,47 @@ mod tests {
         );
         // Untouched lines keep their own endings, blank line included.
         assert!(migrated.ends_with("\r\n\r\n%put done;\n"), "{migrated}");
+    }
+
+    #[test]
+    fn migrates_a_gbk_script_without_touching_its_chinese() {
+        // "统计分析" as an older project stores it: GBK, not UTF-8.
+        let chinese: [u8; 8] = [0xCD, 0xB3, 0xBC, 0xC6, 0xB7, 0xD6, 0xCE, 0xF6];
+        let mut source = b"%let DIR_STAT = C:\\04 ".to_vec();
+        source.extend_from_slice(&chinese);
+        source.extend_from_slice(b";\r\n%let DIR = %sysget(SAS_EXECFILEPATH);\r\n");
+
+        let migrated = migrate_bytes(&source).expect("a gbk script migrates");
+
+        assert!(
+            migrated
+                .windows(chinese.len())
+                .any(|window| window == chinese),
+            "the gbk bytes are passed through untouched"
+        );
+        assert!(
+            migrated
+                .windows(40)
+                .any(|window| window.starts_with(b"%if %symexist(SASLAUNCHER_STARTUP_FI")),
+            "the guard block is inserted"
+        );
+        // Still decodable as GBK, i.e. the file kept its encoding.
+        assert!(migrated.windows(8).any(|window| window == chinese));
+    }
+
+    #[test]
+    fn refuses_a_gbk_script_that_reads_the_variable_elsewhere() {
+        let source = b"%let d = %substr(%sysget(SAS_EXECFILEPATH), 1, 3);\r\n";
+        assert_eq!(migrate_bytes(source), Err(MigrateError::Unsupported));
+    }
+
+    #[test]
+    fn the_text_entry_point_agrees_with_the_byte_one() {
+        let source = "%let A = %sysget(SAS_EXECFILEPATH);\r\n";
+        assert_eq!(
+            migrate(source).unwrap().into_bytes(),
+            migrate_bytes(source.as_bytes()).unwrap()
+        );
     }
 
     #[test]
