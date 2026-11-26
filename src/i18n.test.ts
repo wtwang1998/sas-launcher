@@ -1,22 +1,18 @@
 import { expect, it } from 'vitest'
-import { messages, translate } from './i18n'
-import issues from './issue-messages.json'
+import { translate } from './i18n'
+import { messages as en } from './i18n/en'
+import { messages as zhHans } from './i18n/zh-Hans'
 
-it('every_message_has_both_languages', () => {
-  for (const [key, value] of Object.entries(messages)) {
-    expect(Array.isArray(value), key).toBe(true)
-    expect(value, key).toHaveLength(2)
-    expect(typeof value[0], key).toBe('string')
-    expect(typeof value[1], key).toBe('string')
-    expect(value[0].trim(), `${key} (zh-Hans)`).not.toBe('')
-    expect(value[1].trim(), `${key} (en)`).not.toBe('')
+it('english_is_the_source_and_every_chinese_key_is_known', () => {
+  const keys = Object.keys(en)
+  expect(keys.length).toBeGreaterThan(200)
+  for (const key of keys) {
+    expect(en[key as keyof typeof en].trim(), `${key} (en)`).not.toBe('')
   }
 
-  for (const [code, value] of Object.entries(issues)) {
-    expect(value, code).toHaveLength(2)
-    expect(typeof value[0], code).toBe('string')
-    expect(value[0].trim(), `${code} (zh-Hans)`).not.toBe('')
-    expect(value[1].trim(), `${code} (en)`).not.toBe('')
+  for (const [key, value] of Object.entries(zhHans)) {
+    expect(keys.includes(key), `unknown key ${key}`).toBe(true)
+    expect(value.trim(), `${key} (zh-Hans)`).not.toBe('')
   }
 })
 
