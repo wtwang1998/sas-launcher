@@ -63,7 +63,7 @@ docs/i18n.md            界面语言与安装器语言的约定、门禁与手�
 | 让格式化改掉 CRLF | `biome.json` 的 `lineEnding: "crlf"` 与 `rustfmt.toml` 的 `newline_style = "Windows"` 不得改 |
 | 把 `profbak` / `folder` / `gng` / `parms` 加进 profile 白名单 | 前三个是 SAS 的回退副本与 ASSIST、Graph-N-Go 产品资源，`parms` 是别台机器写的 ASSIST 参数，都不是用户偏好；`profile.rs` 的注释写着排除理由 |
 
-已被测试锁死、无需在此重复：薄壳 cfg 恰好 3 行、启动参数顺序与 `-ENCODING`/`-LOCALE` 缺席、profile 白名单 4 个文件且分界面/环境/模板三层、项目偏好快照保留 2 版、诊断保留 20 条、运行中与待保存的设置会话不可被清空、Rust 发出的每个 issue 码都有三语文案、词典无未知/未用 key、译文占位符与英文源一致、非源语言覆盖率不低于 `src/i18n/coverage-baseline.json`。
+已被测试锁死、无需在此重复：薄壳 cfg 恰好 3 行、启动参数顺序与 `-ENCODING`/`-LOCALE` 缺席、profile 白名单 4 个文件且分界面/环境/模板三层、项目偏好快照保留 2 版、诊断保留 20 条、运行中与待保存的设置会话不可被清空、Rust 发出的每个 issue 码都有三语文案且没有无人发出的码、词典无未知/未用 key、译文占位符与英文源一致、非源语言覆盖率不低于 `src/i18n/coverage-baseline.json`。
 
 ## 测试
 
