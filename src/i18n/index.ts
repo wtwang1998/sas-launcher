@@ -62,6 +62,24 @@ export function translate(language: Language): Translator {
   return (key, values) => translateKey(language, key, values)
 }
 
+/** The messages that carry a singular and a plural variant. */
+export type PluralBase =
+  | 'quit.quitMessage'
+  | 'config.usedByProjects'
+  | 'profile.inheritUserFolderSummary'
+  | 'session.profileIncomplete'
+  | 'session.profileSeedValue'
+
+/**
+ * The variant a count selects: CLDR says English has one and other, Chinese only other.
+ * The choice comes from `Intl.PluralRules`, never from `count === 1`, so a language whose
+ * rules differ needs no code change.
+ */
+export function pluralKey(language: Language, base: PluralBase, count: number): MessageKey {
+  const category = new Intl.PluralRules(language).select(count) === 'one' ? 'one' : 'other'
+  return `${base}.${category}` as MessageKey
+}
+
 export function issueText(language: Language, error: unknown) {
   const catalog = issues as unknown as Record<string, [string, string, string?]>
   const known =

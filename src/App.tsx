@@ -25,7 +25,7 @@ import {
 } from './api'
 import { useConfirmation } from './components/confirmation'
 import { emptyProjectDraft, type ProjectDraft } from './components/ProjectForm'
-import { browserLanguage, issueText, type MessageKey, translate } from './i18n'
+import { browserLanguage, issueText, type MessageKey, pluralKey, translate } from './i18n'
 import { I18nProvider } from './i18n/provider'
 import type { Notice, NoticeTarget } from './lib/notice'
 import { onHostEvent } from './lib/host'
@@ -459,7 +459,7 @@ export function App() {
       const count = view?.sessions.filter((session) => session.status === 'running').length ?? 0
       confirm(
         t('quit.quitTitle'),
-        t('quit.quitMessage', { count }),
+        t(pluralKey(language, 'quit.quitMessage', count), { count }),
         t('quit.quitAction'),
         async () => {
           await api.quit()

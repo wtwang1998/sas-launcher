@@ -3,7 +3,8 @@ import type { ReactNode } from 'react'
 import type { Config, Project } from '../api'
 import { configLabel } from '../lib/config'
 import { Chips } from './Chips'
-import { useT } from '../i18n/provider'
+import { pluralKey } from '../i18n'
+import { useI18n } from '../i18n/provider'
 
 export function ProjectCard({
   project,
@@ -34,7 +35,7 @@ export function ProjectCard({
   notice?: ReactNode
   children?: ReactNode
 }) {
-  const t = useT()
+  const { language, t } = useI18n()
   return (
     <article className="panel project-card">
       <div className="project-summary">
@@ -64,7 +65,9 @@ export function ProjectCard({
           {project.note && <p className="project-note">{project.note}</p>}
           {project.profile && project.profile.missing > 0 && (
             <p className="project-note missing">
-              {t('session.profileIncomplete', { count: project.profile.missing })}
+              {t(pluralKey(language, 'session.profileIncomplete', project.profile.missing), {
+                count: project.profile.missing,
+              })}
             </p>
           )}
         </div>

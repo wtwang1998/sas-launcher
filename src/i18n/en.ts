@@ -38,8 +38,10 @@ export const messages = {
   'settings.closeToTray': 'Minimize to the tray on close',
   'settings.closeToTrayHint': 'The app keeps running in the tray after you close it.',
   'quit.quitTitle': 'Quit SAS Launcher?',
-  'quit.quitMessage':
-    '{count} SAS session(s) are still running. They keep running after you quit, but this app no longer manages them.',
+  'quit.quitMessage.one':
+    '{count} SAS session is still running. It keeps running after you quit, but this app no longer manages it.',
+  'quit.quitMessage.other':
+    '{count} SAS sessions are still running. They keep running after you quit, but this app no longer manages them.',
   'quit.quitAction': 'Quit',
   'app.discovering': 'Looking for SAS configurations…',
   'notice.closeError': 'Dismiss error',
@@ -99,7 +101,8 @@ export const messages = {
   'profile.inheritUserFolderHint':
     'Carry the layout, function keys and menus tuned in My SAS Files into this project',
   'profile.inheritUserFolderMissing': 'No user preference folder under My SAS Files',
-  'profile.inheritUserFolderSummary': 'Inherits {count} files · last changed {when}',
+  'profile.inheritUserFolderSummary.one': 'Inherits {count} file · last changed {when}',
+  'profile.inheritUserFolderSummary.other': 'Inherits {count} files · last changed {when}',
   'profile.inheritUserFolderEmpty': 'This folder holds no SAS settings files',
   'profile.inheritConfigSnapshotOption': 'Use the settings a configuration saved',
   'profile.inheritConfigSnapshotHint':
@@ -177,7 +180,8 @@ export const messages = {
   'config.optionPairMissing': 'Enter an encoding and a locale',
   'config.includesSettings': 'Has settings',
   'config.derivedFrom': 'Derived from {name}',
-  'config.usedByProjects': 'Used by {count} project(s)',
+  'config.usedByProjects.one': 'Used by {count} project',
+  'config.usedByProjects.other': 'Used by {count} projects',
   'config.unnamedConfiguration': 'Unnamed configuration',
   'config.deleteInUse': 'A configuration used by a project cannot be deleted',
   'project.returnToDraft': '← Back to the unfinished project',
@@ -201,13 +205,15 @@ export const messages = {
   'session.chainEncoding': 'Encoding',
   'session.chainLocale': 'Locale',
   'common.retry': 'Retry',
-  'session.profileIncomplete': 'Missing {count} settings files; saving fills them in',
+  'session.profileIncomplete.one': 'Missing {count} settings file; saving fills it in',
+  'session.profileIncomplete.other': 'Missing {count} settings files; saving fills them in',
   'session.chainSasuser': 'SASUSER',
   'session.chainProfile': 'Preference',
   'session.layerInterface': 'Interface settings',
   'session.layerEnvironment': 'Environment settings',
   'session.layerTemplates': 'ODS templates',
-  'session.profileSeedValue': '{layers} · {count} files',
+  'session.profileSeedValue.one': '{layers} · {count} file',
+  'session.profileSeedValue.other': '{layers} · {count} files',
   'session.chainLog': 'Log copy',
   'session.chainNone': 'Not used',
   'session.statusRunning': 'Running',
@@ -266,7 +272,8 @@ export const notes: Partial<Record<MessageKey, string>> = {
   'config.unnamedConfiguration': 'A configuration the user created without a name yet.',
   'session.chainNone': 'Nothing was used here; it is not an error state.',
   'session.chainProfile': 'The SAS user-folder layers that were copied into this session.',
-  'session.profileIncomplete': 'Settings files the snapshot still lacks; saving fills them in.',
+  'session.profileIncomplete.other':
+    'Settings files the snapshot still lacks; saving fills them in.',
   'project.startupExposesPath': 'Exposes the startup file path through a SAS macro variable.',
   'project.startupNeedsMigrationHint':
     'Explains why an old script that reads SAS_EXECFILEPATH fails.',

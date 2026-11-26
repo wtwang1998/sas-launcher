@@ -9,7 +9,7 @@ import {
   sameRef,
 } from '../api'
 import sharedLabels from '../../shared/labels.json'
-import type { MessageKey, Translator } from '../i18n'
+import { type MessageKey, pluralKey, type Translator } from '../i18n'
 import { joinList } from './format'
 
 /** Display name of a configuration: the user-given name, or the factory directory code. */
@@ -153,7 +153,7 @@ function preferenceValue(
     seed.layers.environment ? t('session.layerEnvironment') : null,
     seed.layers.templates ? t('session.layerTemplates') : null,
   ].filter((name): name is string => name !== null)
-  return t('session.profileSeedValue', {
+  return t(pluralKey(language, 'session.profileSeedValue', seed.files), {
     layers: joinList(language, layers),
     count: seed.files,
   })

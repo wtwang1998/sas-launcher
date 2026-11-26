@@ -54,7 +54,12 @@ it('every_source_key_is_used_somewhere', () => {
   for (const text of Object.values(sources)) {
     for (const match of text.matchAll(pattern)) used.add(match[0].slice(1, -1))
   }
-  const unused = Object.keys(en).filter((key) => !used.has(key))
+  const unused = Object.keys(en).filter((key) => {
+    if (used.has(key)) return false
+    // A plural variant is reached through its base, which is the literal in the source.
+    const base = key.replace(/\.(one|other)$/, '')
+    return !(base !== key && used.has(base))
+  })
   expect(unused, `unused message keys: ${unused.join(', ')}`).toEqual([])
 })
 

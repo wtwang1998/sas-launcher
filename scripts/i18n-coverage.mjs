@@ -15,7 +15,7 @@ const baselinePath = join(root, 'src/i18n/coverage-baseline.json')
 const keysOf = (path) => {
   const source = readFileSync(path, 'utf8')
   const block = /export const messages[^=]*= \{([\s\S]*?)\n\}/.exec(source)?.[1] ?? ''
-  return [...block.matchAll(/^ {2}'([a-z][A-Za-z]*\.[A-Za-z]+)':/gm)].map((match) => match[1])
+  return [...block.matchAll(/^ {2}'([a-z][A-Za-z]*(?:\.[A-Za-z]+)+)':/gm)].map((match) => match[1])
 }
 
 const source = keysOf(join(root, 'src/i18n/en.ts'))

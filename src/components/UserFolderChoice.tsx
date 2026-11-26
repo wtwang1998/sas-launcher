@@ -3,6 +3,7 @@ import type { Config, SasuserCandidate } from '../api'
 import { carriedCount, type ProfileDraft, samePath } from '../lib/profile'
 import { formatModified } from '../lib/format'
 import { Tooltip } from './Tooltip'
+import { pluralKey } from '../i18n'
 import { useI18n } from '../i18n/provider'
 
 type Kind = ProfileDraft['kind']
@@ -170,10 +171,17 @@ export function UserFolderChoice({
                 <p className="radio-hint" id={hintId}>
                   {carriedCount(chosen.present, value.layers) === 0
                     ? t('profile.inheritUserFolderEmpty')
-                    : t('profile.inheritUserFolderSummary', {
-                        count: carriedCount(chosen.present, value.layers),
-                        when: formatModified(language, chosen.modified),
-                      })}
+                    : t(
+                        pluralKey(
+                          language,
+                          'profile.inheritUserFolderSummary',
+                          carriedCount(chosen.present, value.layers),
+                        ),
+                        {
+                          count: carriedCount(chosen.present, value.layers),
+                          when: formatModified(language, chosen.modified),
+                        },
+                      )}
                 </p>
               )}
               {checked && card.kind === 'configSnapshot' && (

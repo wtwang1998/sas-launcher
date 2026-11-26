@@ -20,7 +20,7 @@ it('english_is_the_source_and_every_chinese_key_is_known', () => {
 it('placeholders_are_interpolated_in_both_languages', () => {
   expect(translate('zh-Hans')('config.derivedFrom', { name: 'u8' })).toBe('衍生自 u8')
   expect(translate('en')('config.derivedFrom', { name: 'u8' })).toBe('Derived from u8')
-  expect(translate('zh-Hans')('config.usedByProjects', { count: 1 })).toBe('被 1 个项目使用')
+  expect(translate('zh-Hans')('config.usedByProjects.other', { count: 1 })).toBe('被 1 个项目使用')
   expect(translate('en')('session.exitCodeValue', { code: 5 })).toBe('Exit code 5')
 })
 

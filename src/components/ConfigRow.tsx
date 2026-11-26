@@ -4,6 +4,7 @@ import type { Config, Session } from '../api'
 import { issueText } from '../i18n'
 import { configLabel, presetLabel } from '../lib/config'
 import { Chips } from './Chips'
+import { pluralKey } from '../i18n'
 import { useI18n } from '../i18n/provider'
 
 export type ConfigRowProps = {
@@ -76,7 +77,9 @@ export function ConfigRow({
             <span className="config-setup">{t('configurations.setupSessionRunning')}</span>
           )}
           {usage > 0 && (
-            <span className="config-usage">{t('config.usedByProjects', { count: usage })}</span>
+            <span className="config-usage">
+              {t(pluralKey(language, 'config.usedByProjects', usage), { count: usage })}
+            </span>
           )}
           {config.preset !== 'verified' && (
             <span className={`preset ${config.preset}`}>{presetLabel(t, config.preset)}</span>
