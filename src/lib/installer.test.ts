@@ -70,4 +70,15 @@ it('the_install_hook_has_copy_for_the_languages_it_authors', () => {
   expect(hook, 'english is the fallback for every other installer language').toContain(
     'Use the original installation folder: ',
   )
+
+  // The update flag is only set when the chosen folder already holds a copy, so gating on
+  // it lets a run aimed at an empty folder install a second copy and move the uninstall
+  // entry there. The registry is the record of the first installation.
+  // The "${...}" below is NSIS syntax, not a template placeholder, so it is put together at
+  // run time to keep the string-literal lint quiet.
+  const registryKey = `$${'{MANUPRODUCTKEY}'}`
+  expect(hook).toContain(registryKey)
+  expect(hook, 'the guard must not depend on the update flag').not.toContain('$UpdateMode')
+  // Refusing the second folder must not leave the empty one NSIS just created behind.
+  expect(hook).toContain('RMDir "$INSTDIR"')
 })
