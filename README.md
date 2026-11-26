@@ -46,6 +46,28 @@ SAS Launcher gives every project its own configuration and hands each launch a p
 - It is added to the site's autoexec chain with `-APPEND AUTOEXEC`, so an installation or company `autoexec.sas` still runs first. A missing file refuses the launch instead of opening a session with half its paths undefined.
 - Scripts that locate themselves can read `&SASLAUNCHER_STARTUP_FILE` when **Tell the session where the startup file is** is on. The launcher runs a tiny prelude before the project's file that defines it: SAS resets `SAS_EXECFILEPATH` while a windowed session starts, and a non-ASCII path cannot travel through an environment variable in a UTF-8 session, so the path is handed over as a macro variable instead. A script that reads only `%sysget(SAS_EXECFILEPATH)` is refused at launch rather than started with empty paths.
 - An existing initialization script written against `%sysget(SAS_EXECFILEPATH)` can be repaired from that refusal: **Migrate the startup script** rewrites the known assignment into a `%symexist` check, keeps the original next to it as `<name>.bak`, turns the option on and launches again. Nothing else in the file is touched; a script whose reference sits somewhere the rewrite does not handle is refused instead of being half-edited.
+- Scope: Windows SAS 9.4 Foundation, started here. The script joins the autoexec chain of the windowed session, so the same option has no effect on Enterprise Guide, SAS Studio, SAS Grid, or SAS on Linux and Unix. Nothing about a folder layout is assumed: the path is absolute, the file name is whatever the project points at, and the rewrite never decodes the file, so a GBK script comes back as GBK. A script that derives the project root from that path keeps its own idea of how deep the tree is; the migration does not touch that arithmetic.
+- The migration covers one idiom: a `%let` assignment whose right side is exactly `%sysget(SAS_EXECFILEPATH)`. Any other route is left alone: a script that finds itself through `&_SASPROGRAMFILE`, `%sysfunc(getoption(sysin))` or a path read from another file is neither rewritten nor flagged.
+
+Search the script for `SAS_EXECFILEPATH`, `_SASPROGRAMFILE` and `getoption(sysin)` to see which case it is:
+
+| In the startup script | What to do |
+| --- | --- |
+| `%let <name> = %sysget(SAS_EXECFILEPATH);` | press **Migrate the startup script** |
+| `&_SASPROGRAMFILE`, `%sysfunc(getoption(sysin))`, a path from another file | edit by hand, see below |
+| a hard-coded path, or no path at all | nothing; the script does not locate itself |
+
+Each of them becomes the same block, which is also what the button writes. `&SASLAUNCHER_STARTUP_FILE` holds the startup file's own path, the value `SAS_EXECFILEPATH` carries for a program submitted in a session:
+
+```sas
+%if %symexist(SASLAUNCHER_STARTUP_FILE) %then %do;
+    %let <name> = &SASLAUNCHER_STARTUP_FILE;
+%end;
+%else %do;
+    %let <name> = %sysget(SAS_EXECFILEPATH);  /* the original fallback */
+%end;
+```
+
 
 **Diagnostics you can act on**
 

@@ -46,6 +46,28 @@ SAS Launcher 给每个项目一份自己的配置，并为每次启动准备一�
 - 它通过 `-APPEND AUTOEXEC` 追加到站点 autoexec 链之后，安装目录或公司自己的 `autoexec.sas` 仍然先执行。文件不存在时直接拒绝启动，而不是开一个路径残缺的会话。
 - 打开「向会话提供启动文件路径」后，脚本里可以读 `&SASLAUNCHER_STARTUP_FILE`。启动器会在项目文件之前先跑一个极小的 prelude 定义它：SAS 在窗口会话启动阶段会重置 `SAS_EXECFILEPATH`，而非 ASCII 路径在 UTF-8 会话里也过不了环境变量这一层，所以路径改用宏变量交付。只读 `%sysget(SAS_EXECFILEPATH)` 的脚本会被拒绝启动，而不是带着空路径进来。
 - 已经按 `%sysget(SAS_EXECFILEPATH)` 写好的初始化脚本，可以直接从那次拒绝里修好：点「迁移启动文件」，启动器会把已知的赋值改写成 `%symexist` 判断、把原文件保留为 `<名称>.bak`、打开该开关并重新启动。文件里其他内容一律不动；引用位置不在改写范围内的脚本会被拒绝，而不是改一半。
+- 适用范围：Windows 上的 SAS 9.4 Foundation 会话，由本启动器启动。脚本挂在窗口会话的 autoexec 链上，因此这个选项对 Enterprise Guide、SAS Studio、SAS Grid 以及 Linux/Unix 上的 SAS 都没有作用。它也不假设项目的目录层级：路径由项目以绝对路径给出，文件名不限，改写不把文件解码成文本，GBK 脚本改完仍是 GBK。脚本若从路径推算项目根目录，层数是脚本自己的约定，迁移不动这段推算。
+- 迁移只认一种写法：`%let` 赋值，右侧整体是 `%sysget(SAS_EXECFILEPATH)`。其他定位方式它既不改也不提示，比如 `&_SASPROGRAMFILE`、`%sysfunc(getoption(sysin))`，或从别的文件读进来的路径。
+
+在脚本里搜 `SAS_EXECFILEPATH`、`_SASPROGRAMFILE`、`getoption(sysin)`，就能判断是哪种情况：
+
+| 启动脚本里的写法 | 处理方式 |
+| --- | --- |
+| `%let <名称> = %sysget(SAS_EXECFILEPATH);` | 点「迁移启动文件」 |
+| `&_SASPROGRAMFILE`、`%sysfunc(getoption(sysin))`、路径从另一个文件读入 | 照下面的样式手工改 |
+| 写死的路径，或脚本不定位自己 | 不用改 |
+
+这几种情况最终都是同一段代码，迁移按钮写出的就是它。`&SASLAUNCHER_STARTUP_FILE` 的值是启动文件自身的路径，等于在会话里提交一个程序时 `SAS_EXECFILEPATH` 的值：
+
+```sas
+%if %symexist(SASLAUNCHER_STARTUP_FILE) %then %do;
+    %let <名称> = &SASLAUNCHER_STARTUP_FILE;
+%end;
+%else %do;
+    %let <名称> = %sysget(SAS_EXECFILEPATH);  /* 原来的回退写法 */
+%end;
+```
+
 
 **能据以排查的诊断**
 
