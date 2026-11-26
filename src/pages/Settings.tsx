@@ -3,6 +3,7 @@ import type { Language, Preference, ThemePreference, View } from '../api'
 import { NoticeBanner } from '../components/Notice'
 import { Switch } from '../components/Switch'
 import type { Translator } from '../i18n'
+import { localeLanguageName } from '../lib/config'
 import type { Notice } from '../lib/notice'
 import { startMinimizedActive } from '../lib/settings'
 
@@ -97,6 +98,13 @@ export function Settings({
             </select>
           </div>
         </div>
+        {view.languagePreference === 'system' && (
+          <p className="setting-hint">
+            {t('settings.systemResolved', {
+              language: localeLanguageName(language, view.systemLanguage) ?? view.systemLanguage,
+            })}
+          </p>
+        )}
         {notice?.target === 'interface' && (
           <NoticeBanner
             notice={notice}

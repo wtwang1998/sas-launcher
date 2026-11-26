@@ -54,6 +54,22 @@ it('a_traditional_interface_renders_its_own_copy', async () => {
   expect(screen.getByRole('navigation', { name: '主要導覽' })).toBeInTheDocument()
 })
 
+it('following_windows_shows_which_language_it_resolves_to', async () => {
+  const user = userEvent.setup()
+  renderApp(makeView({ languagePreference: 'system', systemLanguage: 'zh-TW' }))
+
+  await user.click(await screen.findByRole('button', { name: '设置' }))
+  expect(screen.getByText('跟随系统（当前：繁体中文）')).toBeInTheDocument()
+})
+
+it('an_explicit_language_hides_the_resolved_system_language', async () => {
+  const user = userEvent.setup()
+  renderApp(makeView({ languagePreference: 'zh-Hans', systemLanguage: 'zh-TW' }))
+
+  await user.click(await screen.findByRole('button', { name: '设置' }))
+  expect(screen.queryByText(/跟随系统（当前/)).not.toBeInTheDocument()
+})
+
 it('saving_an_edited_path_pins_the_installation', async () => {
   const user = userEvent.setup()
   const { backend } = renderApp(makeView(), {

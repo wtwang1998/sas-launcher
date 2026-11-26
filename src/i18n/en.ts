@@ -28,6 +28,7 @@ export const messages = {
   'common.browse': 'Browse…',
   'common.autoDetect': 'Auto-detect',
   'settings.installationAutoDetected': 'Auto-detect restored.',
+  'settings.systemResolved': 'Following Windows — currently {language}',
   'settings.windowGroup': 'Startup and window',
   'settings.startup': 'Start at login',
   'settings.startupHint': 'Runs the launcher after you sign in to Windows.',
@@ -253,3 +254,8 @@ export const messages = {
 } as const satisfies Record<string, string>
 
 export type MessageKey = keyof typeof messages
+
+/**
+ * Context for the keys a translator can misread. Not rendered: it is here so the ambiguity
+ * is written down next to the sentence instead of in someone's memory.
+ */

@@ -28,6 +28,7 @@ export const messages: Partial<Record<MessageKey, string>> = {
   'common.browse': '瀏覽…',
   'common.autoDetect': '自動偵測',
   'settings.installationAutoDetected': '已恢復自動偵測。',
+  'settings.systemResolved': '跟隨系統（目前：{language}）',
   'settings.windowGroup': '啟動與視窗',
   'settings.startup': '登入時自動啟動',
   'settings.startupHint': '登入 Windows 後自動執行本程式。',
