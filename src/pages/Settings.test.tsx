@@ -54,6 +54,20 @@ it('a_traditional_interface_renders_its_own_copy', async () => {
   expect(screen.getByRole('navigation', { name: '主要導覽' })).toBeInTheDocument()
 })
 
+it('an_english_interface_renders_its_own_copy', async () => {
+  const user = userEvent.setup()
+  renderApp(makeView({ language: 'en', languagePreference: 'en' }))
+
+  const navigation = await screen.findByRole('navigation', { name: 'Main navigation' })
+  await user.click(within(navigation).getByRole('button', { name: 'Settings' }))
+
+  expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument()
+  expect(screen.getByRole('combobox', { name: 'App language' })).toHaveValue('en')
+  expect(screen.getByRole('textbox', { name: 'SAS executable path' })).toHaveValue(
+    'C:\\SAS\\sas.exe',
+  )
+})
+
 it('following_windows_shows_which_language_it_resolves_to', async () => {
   const user = userEvent.setup()
   renderApp(makeView({ languagePreference: 'system', systemLanguage: 'zh-TW' }))

@@ -112,6 +112,44 @@ it('referenced_configuration_cannot_be_deleted', async () => {
   expect(within(row as HTMLElement).getByRole('menuitem', { name: '删除配置' })).toBeDisabled()
 })
 
+it('an_english_interface_agrees_with_the_count', async () => {
+  const user = userEvent.setup()
+  const openEnglishList = async () => {
+    const navigation = await screen.findByRole('navigation', { name: 'Main navigation' })
+    await user.click(within(navigation).getByRole('button', { name: 'Configurations' }))
+    await screen.findByRole('heading', { name: 'Configurations' })
+  }
+  const project = (id: string, name: string) => ({
+    id,
+    name,
+    note: null,
+    config: { kind: 'user' as const, id: 'cfg-1' },
+    profile: null,
+    startupFile: null,
+    startupExposesPath: false,
+    startupNeedsMigration: false,
+  })
+  const view = (projects: ReturnType<typeof project>[]) =>
+    makeView({
+      language: 'en',
+      languagePreference: 'en',
+      configs: [userConfig('cfg-1', 'Mine', 'EUC-CN', 'zh_CN')],
+      projects,
+    })
+
+  const { unmount } = renderApp(view([project('p1', 'One')]))
+  await openEnglishList()
+  const single = (await screen.findByText('Mine')).closest('li')
+  expect(single).not.toBeNull()
+  expect(within(single as HTMLElement).getByText('Used by 1 project')).toBeInTheDocument()
+  unmount()
+
+  renderApp(view([project('p1', 'One'), project('p2', 'Two')]))
+  await openEnglishList()
+  const many = (await screen.findByText('Mine')).closest('li')
+  expect(within(many as HTMLElement).getByText('Used by 2 projects')).toBeInTheDocument()
+})
+
 it('setup_session_blocks_form_editing_and_offers_save_after_exit', async () => {
   const user = userEvent.setup()
   const config = userConfig('cfg-1', '我的配置', 'EUC-CN', 'zh_CN')
