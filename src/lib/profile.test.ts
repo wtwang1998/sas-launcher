@@ -1,12 +1,7 @@
 import { expect, it } from 'vitest'
 import type { Project, ProjectProfile } from '../api'
-import {
-  DEFAULT_LAYERS,
-  formatModified,
-  profileChoiceFor,
-  profileDraftFrom,
-  profileReady,
-} from './profile'
+import { DEFAULT_LAYERS, profileChoiceFor, profileDraftFrom, profileReady } from './profile'
+import { formatModified } from './format'
 
 const stored = (overrides: Partial<ProjectProfile> = {}): ProjectProfile => ({
   origin: { kind: 'sasUser', path: 'C:\\Users\\me\\Documents\\My SAS Files\\9.4' },

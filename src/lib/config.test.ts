@@ -7,7 +7,6 @@ import {
   configLabel,
   configReady,
   defaultConfigName,
-  formatStartedAt,
   localeLanguageName,
   optionSummary,
   optionsWarning,
@@ -15,6 +14,7 @@ import {
   sortConfigs,
   usageCount,
 } from './config'
+import { formatStartedAt } from './format'
 
 const zh = translate('zh-Hans')
 const en = translate('en')

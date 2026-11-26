@@ -364,11 +364,22 @@ export const messages = {
 export type MessageKey = keyof typeof messages
 export type Translator = (key: MessageKey, values?: Record<string, string | number>) => string
 
+/**
+ * One key in one language. The closure `translate` below and every hook built on it
+ * come through here, so a table-driven test can drive the same seam the UI uses.
+ */
+export function translateKey(
+  language: Language,
+  key: MessageKey,
+  values: Record<string, string | number> = {},
+): string {
+  return messages[key][language === 'en' ? 1 : 0].replace(/{(\w+)}/g, (_, name: string) =>
+    String(values[name] ?? ''),
+  )
+}
+
 export function translate(language: Language): Translator {
-  return (key, values = {}) =>
-    messages[key][language === 'en' ? 1 : 0].replace(/{(\w+)}/g, (_, name: string) =>
-      String(values[name] ?? ''),
-    )
+  return (key, values) => translateKey(language, key, values)
 }
 
 export function issueText(language: Language, error: unknown) {

@@ -9,6 +9,7 @@ import {
   sameRef,
 } from '../api'
 import type { MessageKey, Translator } from '../i18n'
+import { joinList } from './format'
 
 /** Display name of a configuration: the user-given name, or the factory directory code. */
 export function configLabel(t: Translator, config: Config): string {
@@ -109,21 +110,9 @@ function preferenceValue(
     seed.layers.templates ? t('layerTemplates') : null,
   ].filter((name): name is string => name !== null)
   return t('profileSeedValue', {
-    layers: layers.join(language === 'en' ? ', ' : '、'),
+    layers: joinList(language, layers),
     count: seed.files,
   })
-}
-
-export function formatStartedAt(ms: number, language: Language): string {
-  if (!Number.isFinite(ms) || ms <= 0) return '—'
-  return new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(new Date(ms))
 }
 
 /**

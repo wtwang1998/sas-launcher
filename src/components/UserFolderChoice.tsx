@@ -1,7 +1,8 @@
 import { type KeyboardEvent, useId, useRef } from 'react'
 import type { Config, Language, SasuserCandidate } from '../api'
 import type { Translator } from '../i18n'
-import { carriedCount, formatModified, type ProfileDraft, samePath } from '../lib/profile'
+import { carriedCount, type ProfileDraft, samePath } from '../lib/profile'
+import { formatModified } from '../lib/format'
 import { Tooltip } from './Tooltip'
 
 type Kind = ProfileDraft['kind']

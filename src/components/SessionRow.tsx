@@ -3,8 +3,8 @@ import { useId } from 'react'
 import type { Language, Session, SessionStage, SessionStatus } from '../api'
 import type { MessageKey, Translator } from '../i18n'
 import { issueText } from '../i18n'
-import { chainLines, formatStartedAt } from '../lib/config'
-import { formatArgv } from '../lib/format'
+import { chainLines } from '../lib/config'
+import { formatArgv, formatStartedAt } from '../lib/format'
 
 const statusKeys: Record<SessionStatus, MessageKey> = {
   running: 'statusRunning',

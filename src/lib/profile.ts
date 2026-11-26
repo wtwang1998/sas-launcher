@@ -1,5 +1,4 @@
 import type {
-  Language,
   LayerCounts,
   ProfileChoice,
   ProfileLayers,
@@ -80,18 +79,6 @@ export function profileReady(draft: ProfileDraft): boolean {
   if (draft.kind === 'sasUser') return draft.path.trim() !== ''
   if (draft.kind === 'configSnapshot') return draft.config.trim() !== ''
   return true
-}
-
-/** `将继承 4 个文件 … 修改于 …` needs the same wording on every platform. */
-export function formatModified(language: Language, millis: number): string {
-  if (!millis) return ''
-  return new Date(millis).toLocaleString(language === 'zh-Hans' ? 'zh-CN' : 'en-US', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 function sameOrigin(origin: ProfileOrigin | null, draft: ProfileDraft): boolean {
