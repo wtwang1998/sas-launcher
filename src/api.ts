@@ -118,6 +118,8 @@ export type View = {
   themePreference: ThemePreference
   closeToTray: boolean
   version: string
+  /** The commit this build came from, `-dirty` when the tree was modified. */
+  commit: string
   startMinimized: boolean
   autostart: boolean
 }

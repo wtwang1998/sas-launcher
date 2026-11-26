@@ -89,6 +89,7 @@ export function makeView(patch: Partial<View> = {}): View {
     themePreference: 'system',
     closeToTray: true,
     version: '0.2.0',
+    commit: '1feed56',
     startMinimized: false,
     autostart: false,
     ...patch,

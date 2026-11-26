@@ -39,6 +39,9 @@ jobs:
       # beforeBuildCommand runs `npm run build`; --bundles nsis produces the
       # currentUser installer configured in tauri.conf.json.
       - name: build the installer
+        env:
+          # A tag build has no tags in its checkout, so the commit is handed in.
+          SAS_LAUNCHER_COMMIT: ${{ github.sha }}
         run: npm run tauri build -- --bundles nsis
       - name: stage the installer
         shell: bash
