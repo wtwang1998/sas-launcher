@@ -31,11 +31,30 @@ function interpolate(template: string, values: Record<string, string | number>):
  * One key in one language. `translate` below and every hook built on it come through
  * here, so a table-driven test can drive the same seam the UI uses.
  */
+/**
+ * The dev-only pseudo locale: every message renders as its key, so a label that is still
+ * English, or one that outgrows its button, is visible without reading the catalogs.
+ */
+export function pseudoText(key: MessageKey, values: Record<string, string | number> = {}): string {
+  const args = Object.entries(values)
+    .map(([name, value]) => `${name}=${value}`)
+    .join(', ')
+  return args ? `[[${key} | ${args}]]` : `[[${key}]]`
+}
+
+/** `?pseudo=1` in a development build; never reachable in a packaged one. */
+function pseudoEnabled(): boolean {
+  const env = (import.meta as { env?: { DEV?: boolean } }).env
+  if (!env?.DEV || typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).has('pseudo')
+}
+
 export function translateKey(
   language: Language,
   key: MessageKey,
   values: Record<string, string | number> = {},
 ): string {
+  if (pseudoEnabled()) return pseudoText(key, values)
   return interpolate(text(language, key), values)
 }
 

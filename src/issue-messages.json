@@ -319,5 +319,10 @@
     "The release tag is invalid, so the release page cannot be opened.",
     "版本標籤無效，無法開啟發行頁面。"
   ],
+  "internal": [
+    "启动器内部出错，请重试。",
+    "The launcher hit an internal error. Try again.",
+    "啟動器內部發生錯誤，請重試。"
+  ],
   "unexpected": ["操作未完成。", "The operation could not be completed.", "操作未完成。"]
 }

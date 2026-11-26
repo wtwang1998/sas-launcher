@@ -2360,10 +2360,27 @@ mod tests {
             .iter()
             .filter(|code| !messages.contains_key(code.as_str()))
             .collect();
-        if !missing.is_empty() {
-            eprintln!(
-                "Issue codes emitted by Rust but missing from src/issue-messages.json: {missing:?}"
+        assert!(
+            missing.is_empty(),
+            "issue codes emitted by Rust but missing from src/issue-messages.json: {missing:?}"
+        );
+
+        // Every entry carries all three languages, so no interface falls back silently.
+        for (code, entry) in messages {
+            let columns = entry
+                .as_array()
+                .unwrap_or_else(|| panic!("{code} is not an array of translations"));
+            assert_eq!(
+                columns.len(),
+                3,
+                "{code} should hold zh-Hans, en and zh-Hant"
             );
+            for column in columns {
+                let text = column
+                    .as_str()
+                    .unwrap_or_else(|| panic!("{code} holds a non-string translation"));
+                assert!(!text.trim().is_empty(), "{code} has an empty translation");
+            }
         }
         // The messages file itself must stay usable for the frontend.
         assert!(messages.contains_key("sasMissing"));

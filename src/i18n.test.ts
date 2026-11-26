@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { translate } from './i18n'
+import { pseudoText, translate } from './i18n'
 import { messages as en } from './i18n/en'
 import { messages as zhHans } from './i18n/zh-Hans'
 import { messages as zhHant } from './i18n/zh-Hant'
@@ -33,4 +33,11 @@ it('traditional_chinese_knows_every_key_and_renders_its_own_copy', () => {
   }
   expect(translate('zh-Hant')('nav.projects')).toBe('專案')
   expect(translate('zh-Hant')('session.exitCodeValue', { code: 5 })).toBe('結束碼 5')
+})
+
+it('the_pseudo_locale_shows_the_key_instead_of_the_copy', () => {
+  expect(pseudoText('nav.projects')).toBe('[[nav.projects]]')
+  expect(pseudoText('session.exitCodeValue', { code: 5 })).toBe(
+    '[[session.exitCodeValue | code=5]]',
+  )
 })
