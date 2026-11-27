@@ -105,6 +105,9 @@ export function Settings({
               <option value="es" lang="es">
                 {languageNames.es}
               </option>
+              <option value="fr" lang="fr">
+                {languageNames.fr}
+              </option>
               <option value="ja" lang="ja">
                 {languageNames.ja}
               </option>

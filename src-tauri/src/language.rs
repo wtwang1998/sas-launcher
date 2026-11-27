@@ -15,6 +15,7 @@ pub enum LanguagePreference {
     Ko,
     De,
     Es,
+    Fr,
 }
 
 impl LanguagePreference {
@@ -27,10 +28,12 @@ impl LanguagePreference {
             Self::Ko => "ko",
             Self::De => "de",
             Self::Es => "es",
+            Self::Fr => "fr",
             Self::System if is_japanese(system) => "ja",
             Self::System if is_ko(system) => "ko",
             Self::System if is_de(system) => "de",
             Self::System if is_es(system) => "es",
+            Self::System if is_fr(system) => "fr",
             Self::System if is_traditional_chinese(system) => "zh-Hant",
             Self::System if is_simplified_chinese(system) => "zh-Hans",
             Self::System => "en",
@@ -56,6 +59,11 @@ fn is_de(language: &str) -> bool {
 fn is_es(language: &str) -> bool {
     let language = language.to_ascii_lowercase();
     language == "es" || language.starts_with("es-")
+}
+
+fn is_fr(language: &str) -> bool {
+    let language = language.to_ascii_lowercase();
+    language == "fr" || language.starts_with("fr-")
 }
 
 fn is_simplified_chinese(language: &str) -> bool {
@@ -120,6 +128,8 @@ mod tests {
         assert_eq!(LanguagePreference::System.resolve("de-AT"), "de");
         assert_eq!(LanguagePreference::System.resolve("es-ES"), "es");
         assert_eq!(LanguagePreference::System.resolve("es-419"), "es");
+        assert_eq!(LanguagePreference::System.resolve("fr-FR"), "fr");
+        assert_eq!(LanguagePreference::System.resolve("fr-CA"), "fr");
         assert_eq!(LanguagePreference::System.resolve("zh-TW"), "zh-Hant");
         assert_eq!(LanguagePreference::System.resolve("zh-HK"), "zh-Hant");
         assert_eq!(LanguagePreference::System.resolve("zh-Hant-TW"), "zh-Hant");
@@ -139,6 +149,7 @@ mod tests {
             LanguagePreference::Ko,
             LanguagePreference::De,
             LanguagePreference::Es,
+            LanguagePreference::Fr,
         ] {
             let tag = serde_json::to_string(&preference).unwrap();
             let back: LanguagePreference = serde_json::from_str(&tag).unwrap();

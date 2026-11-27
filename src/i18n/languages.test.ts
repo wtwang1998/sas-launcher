@@ -6,7 +6,7 @@ const languages = Object.keys(languageProfiles).sort()
 
 describe('language profiles', () => {
   it('covers exactly the interface languages', () => {
-    expect(languages).toEqual(['de', 'en', 'es', 'ja', 'ko', 'zh-Hans', 'zh-Hant'])
+    expect(languages).toEqual(['de', 'en', 'es', 'fr', 'ja', 'ko', 'zh-Hans', 'zh-Hant'])
   })
 
   it('names each language the way CLDR does', () => {

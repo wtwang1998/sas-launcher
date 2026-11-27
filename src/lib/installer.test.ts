@@ -58,6 +58,7 @@ const nsisNames: Record<Language, string> = {
   de: 'German',
   en: 'English',
   es: 'Spanish',
+  fr: 'French',
   ja: 'Japanese',
   ko: 'Korean',
   'zh-Hans': 'SimpChinese',

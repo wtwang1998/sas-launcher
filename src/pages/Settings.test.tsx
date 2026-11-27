@@ -262,6 +262,13 @@ it('names_each_language_in_its_own_words', async () => {
       picker: 'Idioma de la aplicación',
       system: 'Seguir el sistema',
     },
+    {
+      language: 'fr',
+      navigation: 'Navigation principale',
+      settings: 'Paramètres',
+      picker: 'Langue de l’application',
+      system: 'Suivre le système',
+    },
   ] as const
 
   for (const one of cases) {
@@ -284,11 +291,14 @@ it('names_each_language_in_its_own_words', async () => {
       'English',
       'Deutsch',
       'Español',
+      'Français',
       '日本語',
       '한국어',
     ])
     const traditional = within(picker).getByRole('option', { name: '繁體中文' })
     expect(traditional.getAttribute('lang'), 'a name should carry its own language').toBe('zh-Hant')
+    const frName = within(picker).getByRole('option', { name: 'Français' })
+    expect(frName.getAttribute('lang'), 'a name should carry its own language').toBe('fr')
     const esName = within(picker).getByRole('option', { name: 'Español' })
     expect(esName.getAttribute('lang'), 'a name should carry its own language').toBe('es')
     const deName = within(picker).getByRole('option', { name: 'Deutsch' })
