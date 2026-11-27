@@ -7,7 +7,7 @@ use std::{collections::HashMap, sync::OnceLock};
 const RAW: &str = include_str!("../../shared/labels.json");
 
 /// The languages the catalogue is written in; every key must have all of them.
-pub const LANGUAGES: [&str; 4] = ["zh-Hans", "en", "zh-Hant", "ja"];
+pub const LANGUAGES: [&str; 5] = ["zh-Hans", "en", "zh-Hant", "ja", "ko"];
 
 #[derive(Deserialize)]
 struct Catalog(HashMap<String, HashMap<String, String>>);

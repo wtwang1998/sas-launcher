@@ -57,6 +57,7 @@ it('the_installer_only_offers_languages_tauri_translates', () => {
 const nsisNames: Record<Language, string> = {
   en: 'English',
   ja: 'Japanese',
+  ko: 'Korean',
   'zh-Hans': 'SimpChinese',
   'zh-Hant': 'TradChinese',
 }

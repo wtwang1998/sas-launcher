@@ -40,6 +40,12 @@ export const languageProfiles = {
     listSeparator: ', ',
     collatorLocale: 'en',
   },
+  ko: {
+    endonym: '한국어',
+    dateTag: 'ko-KR',
+    listSeparator: ', ',
+    collatorLocale: 'ko',
+  },
   ja: {
     endonym: '日本語',
     dateTag: 'ja-JP',

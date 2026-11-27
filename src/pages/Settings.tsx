@@ -102,6 +102,9 @@ export function Settings({
               <option value="ja" lang="ja">
                 {languageNames.ja}
               </option>
+              <option value="ko" lang="ko">
+                {languageNames.ko}
+              </option>
             </select>
           </div>
         </div>

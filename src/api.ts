@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 
 export type Issue = { code: string; detail?: string }
-export type Language = 'en' | 'ja' | 'zh-Hans' | 'zh-Hant'
+export type Language = 'en' | 'ja' | 'zh-Hans' | 'zh-Hant' | 'ko'
 export type Preference = 'system' | Language
 export type ThemePreference = 'system' | 'dark' | 'light'
 export type PresetStatus = 'verified' | 'failed' | 'unverified'
