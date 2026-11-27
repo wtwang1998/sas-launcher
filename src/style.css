@@ -1,6 +1,11 @@
 @charset "UTF-8";
 
 :root {
+  /* 卡片内的字号只走这四档，避免层级由零散的像素值决定。 */
+  --fs-card: 14px;
+  --fs-entry: 13px;
+  --fs-evidence: 12px;
+  --fs-label: 11px;
   color-scheme: light dark;
   font:
     14px / 1.55 "Segoe UI Variable",
@@ -1699,7 +1704,8 @@ details[open] .disclosure {
   background: transparent;
   color: var(--text);
   text-align: left;
-  font-size: 13px;
+  /* 折叠行的基准字号，标题在上覆盖一档。 */
+  font-size: var(--fs-entry);
 }
 .session-toggle:hover {
   background: var(--hover-soft);
@@ -1711,13 +1717,14 @@ details[open] .disclosure {
   transform: rotate(90deg);
 }
 .session-name {
+  font-size: var(--fs-card);
   font-weight: 650;
   overflow-wrap: anywhere;
 }
 .session-status {
   border-radius: 5px;
   padding: 1px 6px;
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 640;
   color: var(--muted);
   background: var(--chip-bg);
@@ -1742,7 +1749,7 @@ details[open] .disclosure {
 .session-stage,
 .session-exit {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--fs-label);
   white-space: nowrap;
 }
 .session-actions {
@@ -1758,29 +1765,42 @@ details[open] .disclosure {
 }
 .session-detail h3 {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--fs-label);
+  font-weight: 650;
   color: var(--muted);
 }
+/* One grid for the whole list, so every value starts on the same edge: the
+   per-row grid it replaced sized each label column on its own. */
 .chain-list {
   display: grid;
-  gap: 3px;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 12px;
   margin: 0;
-  font-size: 12px;
+  font-size: var(--fs-evidence);
   color: var(--muted);
 }
 .chain-row {
-  display: grid;
-  grid-template-columns: fit-content(38%) minmax(0, 1fr);
-  gap: 8px;
+  display: contents;
+}
+.chain-row dt,
+.chain-row dd {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line-faint);
+}
+.chain-row:last-child dt,
+.chain-row:last-child dd {
+  border-bottom: 0;
 }
 .chain-row dt {
+  min-width: 56px;
+  font-size: var(--fs-label);
   font-weight: 640;
 }
 .chain-row dd {
   margin: 0;
   overflow-wrap: anywhere;
   font-family: Consolas, monospace;
-  font-size: 11px;
+  font-size: var(--fs-evidence);
 }
 .argv {
   display: block;
@@ -1789,7 +1809,7 @@ details[open] .disclosure {
   border-radius: 7px;
   background: var(--paper-soft);
   font:
-    11px / 1.6 Consolas,
+    var(--fs-evidence) / 1.6 Consolas,
     monospace;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -1797,7 +1817,141 @@ details[open] .disclosure {
 .session-meta {
   margin: 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--fs-label);
+}
+/* 折叠行上的 ERROR/WARNING 只提示、不可点：数目是第二层入口，先展开卡片。 */
+.session-hint {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: var(--fs-label);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* 两个计数各自是一个入口，但展开的是同一条按行号排序的时间线。 */
+.session-log-counts {
+  display: flex;
+  gap: 6px;
+  margin-top: -2px;
+}
+.log-chip {
+  min-height: 26px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: var(--fs-label);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.log-chip.error {
+  color: var(--danger-text);
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+}
+.log-chip.warning {
+  color: var(--warn-text);
+  background: var(--warn-chip);
+  border-color: var(--warn-border);
+}
+.log-chip.error[aria-pressed="true"] {
+  color: var(--paper);
+  border-color: var(--danger-text);
+  background: var(--danger-text);
+}
+.log-chip.warning[aria-pressed="true"] {
+  color: var(--paper);
+  border-color: var(--warn-text);
+  background: var(--warn-text);
+}
+.session-log {
+  display: grid;
+  gap: 6px;
+}
+.session-log-note,
+.session-log-empty {
+  margin: 0;
+  font-size: var(--fs-label);
+}
+.session-log-entries {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0;
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--line-faint);
+  border-radius: 7px;
+  background: var(--paper-soft);
+}
+.session-log-entry {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 8px;
+  font:
+    var(--fs-entry) / 1.55 Consolas,
+    monospace;
+}
+.session-log-entry + .session-log-entry {
+  border-top: 1px solid var(--line-faint);
+}
+.session-log-entry:focus-visible {
+  outline-offset: -2px;
+}
+.session-log-entry.error .session-log-line {
+  color: var(--danger-text);
+  font-weight: 650;
+}
+.session-log-entry.warning .session-log-line {
+  color: var(--warn-text);
+  font-weight: 650;
+}
+.session-log-line {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.session-log-text {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+/* Two classes deep on purpose: .button.small outranks a single class and
+   would otherwise force its own 32px floor and 9px side padding back on. */
+.session-log-entry .session-log-copy {
+  position: relative;
+  min-height: 24px;
+  height: 24px;
+  width: 24px;
+  padding: 0;
+  color: var(--muted);
+  border-color: transparent;
+  background: transparent;
+  opacity: 0.55;
+}
+/* Keep the glyph small enough to fit a tight row, but give it a 34px hit area. */
+.session-log-copy::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+}
+.session-log-copy:hover:not(:disabled),
+.session-log-copy:focus-visible {
+  color: var(--text);
+  border-color: var(--line);
+  background: var(--hover-soft);
+  opacity: 1;
+}
+/* 点了就换成对勾、失败了就换成警告：两块色只出现在被点的那一行。 */
+.session-log-entry .session-log-copy.copied {
+  color: var(--ok-text);
+  opacity: 1;
+}
+.session-log-entry .session-log-copy.failed {
+  color: var(--danger-text);
+  opacity: 1;
 }
 .banner.info {
   background: var(--info-bg);
@@ -1812,11 +1966,16 @@ details[open] .disclosure {
   .config-row-actions {
     margin-left: auto;
   }
-  .chain-row {
+  .chain-list {
     grid-template-columns: minmax(0, 1fr);
   }
   .chain-row dt {
+    padding-bottom: 0;
+    border-bottom: 0;
     font-weight: 650;
+  }
+  .chain-row dd {
+    padding-top: 0;
   }
 }
 

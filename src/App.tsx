@@ -622,6 +622,7 @@ export function App() {
                 onClear={clearDiagnostics}
                 onOpenLog={openLog}
                 onOpenSasuser={openSasuser}
+                onLoadLog={api.sessionLog}
               />
             )}
 

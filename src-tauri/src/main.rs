@@ -37,7 +37,7 @@ use tauri::{
 };
 use theme::ThemePreference;
 use uuid::Uuid;
-use view::{SessionView, View};
+use view::{SessionLogView, SessionView, View};
 
 /// A project whose SAS session is still running must not be launched twice: the
 /// two processes would share one sasuser folder and one set of logs.
@@ -672,6 +672,25 @@ impl App {
 
 fn is_regular_file(path: &Path) -> bool {
     std::fs::symlink_metadata(path).is_ok_and(|metadata| metadata.is_file())
+}
+
+/// Open Explorer at the folder that holds `path`, with the file selected.
+///
+/// A plain path launch hands the file to whatever app owns `.log`, which hides
+/// the neighbouring files the user is usually looking for; `/select,` opens
+/// the folder instead. Explorer always exits non-zero, so it is spawned, never waited on.
+fn reveal_file(path: &Path) -> Result<(), Issue> {
+    if !path.exists() {
+        return Err(Issue::with_detail(
+            "pathUnavailable",
+            path.display().to_string(),
+        ));
+    }
+    Command::new("explorer.exe")
+        .arg(format!("/select,{}", path.display()))
+        .spawn()
+        .map_err(|error| Issue::with_detail("spawnFailed", error))?;
+    Ok(())
 }
 
 fn open_path(path: &Path) -> Result<(), Issue> {
@@ -1332,7 +1351,23 @@ async fn clear_diagnostics(state: State<'_, AppState>) -> Result<View, Issue> {
 
 #[tauri::command]
 async fn open_log(state: State<'_, AppState>, id: Uuid) -> Result<(), Issue> {
-    with_app(&state, |app| open_path(&app.session_path(id, false)?))
+    with_app(&state, |app| reveal_file(&app.session_path(id, false)?))
+}
+
+#[tauri::command]
+async fn session_log(state: State<'_, AppState>, id: Uuid) -> Result<SessionLogView, Issue> {
+    with_app(&state, |app| {
+        let record = app
+            .sessions
+            .record(id)
+            .cloned()
+            .ok_or_else(|| Issue::new("pathUnavailable"))?;
+        let path = app.sessions.log_path(record.id);
+        // The session's own declared encoding decides how its log is decoded;
+        // guessing from the bytes is what produced mojibake in the first place.
+        let report = diagnostics::read_log(&path, record.encoding.as_deref());
+        Ok(SessionLogView::from(&report))
+    })
 }
 
 #[tauri::command]
@@ -1553,6 +1588,7 @@ fn main() {
             launch_batch,
             clear_diagnostics,
             open_log,
+            session_log,
             open_sasuser,
             open_archive,
             open_repository,

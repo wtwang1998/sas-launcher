@@ -1,6 +1,6 @@
 import { Activity, Eraser } from 'lucide-react'
 import { useState } from 'react'
-import type { View } from '../api'
+import type { LogSeverity, SessionLog, View } from '../api'
 import { NoticeBanner } from '../components/Notice'
 import { SessionRow } from '../components/SessionRow'
 import type { Notice } from '../lib/notice'
@@ -14,6 +14,7 @@ export type DiagnosticsProps = {
   onClear: () => Promise<void>
   onOpenLog: (id: string) => void
   onOpenSasuser: (id: string) => void
+  onLoadLog: (id: string) => Promise<SessionLog>
 }
 
 export function Diagnostics({
@@ -24,11 +25,51 @@ export function Diagnostics({
   onClear,
   onOpenLog,
   onOpenSasuser,
+  onLoadLog,
 }: DiagnosticsProps) {
   const t = useT()
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
+  const [logs, setLogs] = useState<Readonly<Record<string, SessionLog | 'loading'>>>({})
+  const [requested, setRequested] = useState<Readonly<Record<string, LogSeverity>>>({})
+
+  // The chips are switches: pressing the open one closes the list.
+  async function showLog(id: string, severity: LogSeverity) {
+    if (requested[id] === severity) {
+      closeLog(id)
+      return
+    }
+    setRequested((current) => ({ ...current, [id]: severity }))
+    if (logs[id] !== undefined && logs[id] !== 'loading') return
+    setLogs((current) => ({ ...current, [id]: 'loading' }))
+    try {
+      const report = await onLoadLog(id)
+      setLogs((current) => ({ ...current, [id]: report }))
+    } catch {
+      setLogs((current) => {
+        const next = { ...current }
+        delete next[id]
+        return next
+      })
+    }
+  }
+
+  // Dropping the report is deliberate: it is a snapshot of when the chip was
+  // pressed, and sas.log keeps growing underneath it.
+  function closeLog(id: string) {
+    setRequested((current) => {
+      const next = { ...current }
+      delete next[id]
+      return next
+    })
+    setLogs((current) => {
+      const next = { ...current }
+      delete next[id]
+      return next
+    })
+  }
 
   function toggle(id: string) {
+    if (expanded.has(id)) closeLog(id)
     setExpanded((current) => {
       const next = new Set(current)
       if (next.has(id)) next.delete(id)
@@ -74,9 +115,12 @@ export function Diagnostics({
               key={session.id}
               session={session}
               expanded={expanded.has(session.id)}
+              log={logs[session.id]}
+              requested={requested[session.id] ?? null}
               onToggle={() => toggle(session.id)}
               onOpenLog={() => onOpenLog(session.id)}
               onOpenSasuser={() => onOpenSasuser(session.id)}
+              onShowLog={(severity) => void showLog(session.id, severity)}
             />
           ))}
         </ul>

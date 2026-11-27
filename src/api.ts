@@ -97,6 +97,27 @@ export type Session = {
   hints: Issue[]
   failure: Issue | null
 }
+export type LogSeverity = 'error' | 'warning'
+/** A log that was never written and one that cannot be read are different answers. */
+export type LogState = 'ok' | 'missing' | 'unreadable'
+export type LogEntry = {
+  /** 1-based line number of the marker line. */
+  line: number
+  severity: LogSeverity
+  /** The entry verbatim; SAS' continuation lines are already folded in. */
+  text: string
+}
+export type SessionLog = {
+  state: LogState
+  errors: number
+  warnings: number
+  entries: LogEntry[]
+  /** The scan hit its cap, so the counts are a floor: `2000+`. */
+  truncated: boolean
+  scannedBytes: number
+}
+/** Mirrors `diagnostics::MAX_ENTRIES`: a truncated report lists only this many. */
+export const LOG_ENTRY_CAP = 2000
 export type BatchResult = {
   id: string
   name: string | null
@@ -181,6 +202,7 @@ export const api = {
   launchBatch: (ids: string[]) => invoke<BatchResult[]>('launch_batch', { ids }),
   clearDiagnostics: () => invoke<View>('clear_diagnostics'),
   openLog: (id: string) => invoke<void>('open_log', { id }),
+  sessionLog: (id: string) => invoke<SessionLog>('session_log', { id }),
   openSasuser: (id: string) => invoke<void>('open_sasuser', { id }),
   openArchive: () => invoke<void>('open_archive'),
   openRepository: () => invoke<void>('open_repository'),

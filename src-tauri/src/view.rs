@@ -81,6 +81,64 @@ pub struct ProfileSeedView {
     pub layers: Layers,
 }
 
+/// One `ERROR:`/`WARNING:` line from a session log, its continuation lines
+/// already folded in.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LogEntryView {
+    /// 1-based line number of the marker line, so the user can find it again.
+    pub line: u32,
+    pub severity: &'static str,
+    pub text: String,
+}
+
+/// What a session card shows once its log is asked for. Counts and entries
+/// come from one pass; `truncated` means the counts are a floor, not a total.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionLogView {
+    /// `ok`, `missing` or `unreadable` — a log that was never written and one
+    /// that cannot be read are different answers, and neither is zero rows.
+    pub state: &'static str,
+    pub errors: u32,
+    pub warnings: u32,
+    pub entries: Vec<LogEntryView>,
+    pub truncated: bool,
+    pub scanned_bytes: u64,
+}
+
+impl From<&diagnostics::LogReport> for SessionLogView {
+    fn from(report: &diagnostics::LogReport) -> Self {
+        use diagnostics::{LogState, Severity};
+
+        let state = match report.state {
+            LogState::Ok => "ok",
+            LogState::Missing => "missing",
+            LogState::Unreadable => "unreadable",
+        };
+        let entries = report
+            .entries
+            .iter()
+            .map(|entry| LogEntryView {
+                line: entry.line,
+                severity: match entry.severity {
+                    Severity::Error => "error",
+                    Severity::Warning => "warning",
+                },
+                text: entry.text.clone(),
+            })
+            .collect();
+        Self {
+            state,
+            errors: report.errors,
+            warnings: report.warnings,
+            entries,
+            truncated: report.truncated,
+            scanned_bytes: report.scanned_bytes,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionView {

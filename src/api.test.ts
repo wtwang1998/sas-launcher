@@ -170,6 +170,7 @@ it('commands_match_the_rust_handler_names', async () => {
       args: {},
     },
     { name: 'openLog', run: () => api.openLog('s1'), cmd: 'open_log', args: { id: 's1' } },
+    { name: 'sessionLog', run: () => api.sessionLog('s1'), cmd: 'session_log', args: { id: 's1' } },
     {
       name: 'openSasuser',
       run: () => api.openSasuser('s1'),
@@ -216,6 +217,7 @@ it('commands_match_the_rust_handler_names', async () => {
     'launchBatch',
     'clearDiagnostics',
     'openLog',
+    'sessionLog',
     'openSasuser',
     'openArchive',
     'openRepository',
