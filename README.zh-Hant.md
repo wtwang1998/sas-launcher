@@ -87,7 +87,7 @@ SAS Launcher 給每個專案一份自己的組態，並為每次啟動準備獨�
 
 ## 安裝
 
-1. 從 [Releases](https://github.com/wtwang1998/sas-launcher/releases) 下載 `SAS-Launcher-0.4.0-x64-Setup.exe`。
+1. 從 [Releases](https://github.com/wtwang1998/sas-launcher/releases) 下載 `SAS-Launcher-0.5.0-x64-Setup.exe`。
 2. 安裝程式只裝給目前使用者，落在 `%LOCALAPPDATA%\\SAS Launcher`，不需要系統管理員權限。
 3. 升級與解除安裝沿用該資料夾。
 

@@ -87,7 +87,7 @@ SAS Launcher はプロジェクトごとに独自の構成を用意し、起動�
 
 ## インストール
 
-1. [Releases](https://github.com/wtwang1998/sas-launcher/releases) から `SAS-Launcher-0.4.0-x64-Setup.exe` をダウンロードします。
+1. [Releases](https://github.com/wtwang1998/sas-launcher/releases) から `SAS-Launcher-0.5.0-x64-Setup.exe` をダウンロードします。
 2. インストーラーは現在のユーザーにだけインストールし、`%LOCALAPPDATA%\\SAS Launcher` に置きます。管理者権限は不要です。
 3. アップグレードとアンインストールもこのフォルダーを使います。
 

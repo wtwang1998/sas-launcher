@@ -87,7 +87,7 @@ SAS Launcher는 프로젝트마다 자체 구성을 주고, 실행할 때마다 
 
 ## 설치
 
-1. [Releases](https://github.com/wtwang1998/sas-launcher/releases)에서 `SAS-Launcher-0.4.0-x64-Setup.exe`를 내려받습니다.
+1. [Releases](https://github.com/wtwang1998/sas-launcher/releases)에서 `SAS-Launcher-0.5.0-x64-Setup.exe`를 내려받습니다.
 2. 설치 프로그램은 현재 사용자에게만 설치하고 `%LOCALAPPDATA%\\SAS Launcher`에 둡니다. 관리자 권한은 필요 없습니다.
 3. 업그레이드와 제거도 이 폴더를 사용합니다.
 

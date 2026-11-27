@@ -87,7 +87,7 @@ Alle Fälle enden im selben Code, und genau den schreibt die Schaltfläche. Der 
 
 ## Installation
 
-1. `SAS-Launcher-0.4.0-x64-Setup.exe` von den [Releases](https://github.com/wtwang1998/sas-launcher/releases) herunterladen.
+1. `SAS-Launcher-0.5.0-x64-Setup.exe` von den [Releases](https://github.com/wtwang1998/sas-launcher/releases) herunterladen.
 2. Das Setup installiert nur für den aktuellen Benutzer nach `%LOCALAPPDATA%\\SAS Launcher`; Administratorrechte sind nicht nötig.
 3. Upgrade und Deinstallation nutzen dieses Verzeichnis weiter.
 

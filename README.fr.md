@@ -87,7 +87,7 @@ Tous ces cas aboutissent au même code, et c’est exactement ce que la migratio
 
 ## Installation
 
-1. Télécharger `SAS-Launcher-0.4.0-x64-Setup.exe` depuis les [Releases](https://github.com/wtwang1998/sas-launcher/releases).
+1. Télécharger `SAS-Launcher-0.5.0-x64-Setup.exe` depuis les [Releases](https://github.com/wtwang1998/sas-launcher/releases).
 2. L’installateur n’installe que pour l’utilisateur courant, dans `%LOCALAPPDATA%\\SAS Launcher`, sans droits administrateur.
 3. La mise à jour et la désinstallation réutilisent ce dossier.
 
