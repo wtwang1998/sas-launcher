@@ -40,6 +40,12 @@ export const languageProfiles = {
     listSeparator: ', ',
     collatorLocale: 'en',
   },
+  es: {
+    endonym: 'Español',
+    dateTag: 'es-ES',
+    listSeparator: ', ',
+    collatorLocale: 'es',
+  },
   de: {
     endonym: 'Deutsch',
     dateTag: 'de-DE',

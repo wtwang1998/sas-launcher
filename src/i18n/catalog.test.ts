@@ -2,6 +2,7 @@ import { expect, it } from 'vitest'
 import issues from '../issue-messages.json'
 import baseline from './coverage-baseline.json'
 import { messages as en, notes } from './en'
+import { messages as es } from './es'
 import { messages as de } from './de'
 import { messages as ko } from './ko'
 import { languageNames } from './index'
@@ -9,7 +10,7 @@ import { messages as ja } from './ja'
 import { messages as zhHans } from './zh-Hans'
 import { messages as zhHant } from './zh-Hant'
 
-const catalogs = { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, de } as const
+const catalogs = { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, de, es } as const
 
 /** The `{name}` placeholders a message declares, independent of their order. */
 function placeholders(value: string): string[] {
@@ -90,8 +91,12 @@ it('every_translator_note_names_a_key_the_source_has', () => {
 
 it('names_each_interface_language_in_its_own_words', () => {
   for (const [language, name] of Object.entries(languageNames)) {
-    const own = new Intl.DisplayNames([language], { type: 'language' }).of(language)
-    expect(name, `${language} should read the way CLDR names it in itself`).toBe(own)
+    const own = new Intl.DisplayNames([language], { type: 'language' }).of(language) ?? ''
+    expect(own, `CLDR has no name for ${language}`).not.toBe('')
+    // CLDR lowercases some endonyms (Spanish spells itself espanol); a picker capitalizes it.
+    expect(name.toLowerCase(), `${language} should read the way CLDR names it in itself`).toBe(
+      own.toLowerCase(),
+    )
   }
 })
 

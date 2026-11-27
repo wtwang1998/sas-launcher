@@ -5,7 +5,8 @@
     "zh-Hant": "預設組態",
     "ja": "既定の構成",
     "ko": "기본 구성",
-    "de": "Standardkonfiguration"
+    "de": "Standardkonfiguration",
+    "es": "Configuración predeterminada"
   },
   "config.derivedName": {
     "zh-Hans": "用户配置（衍生自 {base}）#{index}",
@@ -13,7 +14,8 @@
     "zh-Hant": "使用者組態（衍生自 {base}）#{index}",
     "ja": "ユーザー構成（{base} から派生）#{index}",
     "ko": "사용자 구성({base}에서 파생) #{index}",
-    "de": "Benutzerkonfiguration (abgeleitet von {base}) #{index}"
+    "de": "Benutzerkonfiguration (abgeleitet von {base}) #{index}",
+    "es": "Configuración de usuario (derivada de {base}) #{index}"
   },
   "tray.showWindow": {
     "zh-Hans": "显示窗口",
@@ -21,7 +23,8 @@
     "zh-Hant": "顯示視窗",
     "ja": "ウィンドウを表示",
     "ko": "창 표시",
-    "de": "Fenster anzeigen"
+    "de": "Fenster anzeigen",
+    "es": "Mostrar ventana"
   },
   "tray.quit": {
     "zh-Hans": "退出",
@@ -29,6 +32,7 @@
     "zh-Hant": "結束",
     "ja": "終了",
     "ko": "종료",
-    "de": "Beenden"
+    "de": "Beenden",
+    "es": "Salir"
   }
 }

@@ -6,13 +6,17 @@ const languages = Object.keys(languageProfiles).sort()
 
 describe('language profiles', () => {
   it('covers exactly the interface languages', () => {
-    expect(languages).toEqual(['de', 'en', 'ja', 'ko', 'zh-Hans', 'zh-Hant'])
+    expect(languages).toEqual(['de', 'en', 'es', 'ja', 'ko', 'zh-Hans', 'zh-Hant'])
   })
 
   it('names each language the way CLDR does', () => {
     for (const language of languages) {
-      const endonym = new Intl.DisplayNames([language], { type: 'language' }).of(language)
-      expect(languageProfiles[language as Language].endonym).toBe(endonym)
+      const endonym = new Intl.DisplayNames([language], { type: 'language' }).of(language) ?? ''
+      expect(endonym, `CLDR has no name for ${language}`).not.toBe('')
+      // CLDR lowercases some endonyms (Spanish spells itself espanol); a picker capitalizes it.
+      expect(languageProfiles[language as Language].endonym.toLowerCase()).toBe(
+        endonym.toLowerCase(),
+      )
     }
   })
 
