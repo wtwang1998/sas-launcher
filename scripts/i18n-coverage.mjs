@@ -2,12 +2,20 @@
 // Reports how much of the English source each catalog covers, and fails when a
 // language drops below the percentage recorded in src/i18n/coverage-baseline.json.
 // `--update` rewrites that baseline, which is the deliberate way to accept a drop.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const catalogs = { 'zh-Hans': 'src/i18n/zh-Hans.ts', 'zh-Hant': 'src/i18n/zh-Hant.ts' }
+// Discovered rather than listed: a catalog this script does not know about would
+// otherwise be skipped silently and still report 100%.
+const catalogs = Object.fromEntries(
+  readdirSync(join(root, 'src/i18n'))
+    .filter((name) => name.endsWith('.ts') && name !== 'en.ts' && !name.endsWith('.test.ts'))
+    .map((name) => [name.slice(0, -3), join(root, 'src/i18n', name)])
+    .filter(([, path]) => /export const messages/.test(readFileSync(path, 'utf8')))
+    .sort(([a], [b]) => a.localeCompare(b)),
+)
 const baselinePath = join(root, 'src/i18n/coverage-baseline.json')
 
 // Only the message object counts: the file also holds translator notes, whose keys are
@@ -21,7 +29,7 @@ const keysOf = (path) => {
 const source = keysOf(join(root, 'src/i18n/en.ts'))
 const report = {}
 for (const [language, path] of Object.entries(catalogs)) {
-  const keys = new Set(keysOf(join(root, path)))
+  const keys = new Set(keysOf(path))
   const missing = source.filter((key) => !keys.has(key))
   report[language] = {
     total: source.length,

@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest'
+import type { Language } from '../api'
 
 /**
  * The NSIS languages tauri 2 ships copy for. A name outside this set makes the build
@@ -51,6 +52,22 @@ it('the_installer_only_offers_languages_tauri_translates', () => {
   expect(nsis.languages.filter((name: string) => !translatedLanguages.has(name))).toEqual([])
   expect(nsis.languages).toContain('SimpChinese')
   expect(nsis.languages).toContain('TradChinese')
+})
+
+const nsisNames: Record<Language, string> = {
+  en: 'English',
+  ja: 'Japanese',
+  'zh-Hans': 'SimpChinese',
+  'zh-Hant': 'TradChinese',
+}
+
+it('speaks every interface language in the installer too', () => {
+  const config = JSON.parse(read('/src-tauri/tauri.conf.json'))
+  const offered = new Set(config.bundle.windows.nsis.languages as string[])
+
+  for (const [language, name] of Object.entries(nsisNames)) {
+    expect(offered.has(name), `${language} has no installer language (${name})`).toBe(true)
+  }
 })
 
 it('the_install_hook_has_copy_for_the_languages_it_authors', () => {

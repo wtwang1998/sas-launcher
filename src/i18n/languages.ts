@@ -40,4 +40,10 @@ export const languageProfiles = {
     listSeparator: ', ',
     collatorLocale: 'en',
   },
+  ja: {
+    endonym: '日本語',
+    dateTag: 'ja-JP',
+    listSeparator: '、',
+    collatorLocale: 'ja',
+  },
 } as const satisfies Record<Language, LanguageProfile>

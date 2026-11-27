@@ -11,6 +11,7 @@ pub enum LanguagePreference {
     ZhHans,
     #[serde(rename = "zh-Hant")]
     ZhHant,
+    Ja,
 }
 
 impl LanguagePreference {
@@ -19,11 +20,18 @@ impl LanguagePreference {
             Self::ZhHans => "zh-Hans",
             Self::ZhHant => "zh-Hant",
             Self::En => "en",
+            Self::Ja => "ja",
+            Self::System if is_japanese(system) => "ja",
             Self::System if is_traditional_chinese(system) => "zh-Hant",
             Self::System if is_simplified_chinese(system) => "zh-Hans",
             Self::System => "en",
         }
     }
+}
+
+fn is_japanese(language: &str) -> bool {
+    let language = language.to_ascii_lowercase();
+    matches!(language.as_str(), "ja" | "jp") || language.starts_with("ja-")
 }
 
 fn is_simplified_chinese(language: &str) -> bool {
@@ -82,6 +90,8 @@ mod tests {
         assert_eq!(LanguagePreference::System.resolve("zh-CN"), "zh-Hans");
         assert_eq!(LanguagePreference::System.resolve("en-GB"), "en");
         assert_eq!(LanguagePreference::System.resolve("de-DE"), "en");
+        assert_eq!(LanguagePreference::System.resolve("ja-JP"), "ja");
+        assert_eq!(LanguagePreference::System.resolve("ja"), "ja");
         assert_eq!(LanguagePreference::System.resolve("zh-TW"), "zh-Hant");
         assert_eq!(LanguagePreference::System.resolve("zh-HK"), "zh-Hant");
         assert_eq!(LanguagePreference::System.resolve("zh-Hant-TW"), "zh-Hant");
@@ -97,6 +107,7 @@ mod tests {
             LanguagePreference::En,
             LanguagePreference::ZhHans,
             LanguagePreference::ZhHant,
+            LanguagePreference::Ja,
         ] {
             let tag = serde_json::to_string(&preference).unwrap();
             let back: LanguagePreference = serde_json::from_str(&tag).unwrap();

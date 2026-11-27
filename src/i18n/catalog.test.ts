@@ -3,10 +3,11 @@ import issues from '../issue-messages.json'
 import baseline from './coverage-baseline.json'
 import { messages as en, notes } from './en'
 import { languageNames } from './index'
+import { messages as ja } from './ja'
 import { messages as zhHans } from './zh-Hans'
 import { messages as zhHant } from './zh-Hant'
 
-const catalogs = { 'zh-Hans': zhHans, 'zh-Hant': zhHant } as const
+const catalogs = { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja } as const
 
 /** The `{name}` placeholders a message declares, independent of their order. */
 function placeholders(value: string): string[] {
