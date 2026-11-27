@@ -10,6 +10,7 @@ import {
 } from '../api'
 import sharedLabels from '../../shared/labels.json'
 import { type MessageKey, pluralKey, type Translator } from '../i18n'
+import { languageProfiles } from '../i18n/languages'
 import { joinList } from './format'
 
 /** Display name of a configuration: the user-given name, or the factory directory code. */
@@ -33,11 +34,19 @@ export function presetLabel(t: Translator, preset: PresetStatus): string {
  * One collator per interface language: Simplified Chinese orders Han by pinyin, Traditional
  * by its own convention, English by its own. Needing a language here is the point — a fixed
  * collator made the list order Chinese no matter which language the window was showing.
+ * Built on demand and kept, because `Intl.Collator` construction is the expensive part.
  */
-const collators: Record<Language, Intl.Collator> = {
-  'zh-Hans': new Intl.Collator('zh-Hans', { numeric: true, sensitivity: 'base' }),
-  'zh-Hant': new Intl.Collator('zh-Hant', { numeric: true, sensitivity: 'base' }),
-  en: new Intl.Collator('en', { numeric: true, sensitivity: 'base' }),
+const collators = new Map<Language, Intl.Collator>()
+
+function collator(language: Language): Intl.Collator {
+  const kept = collators.get(language)
+  if (kept) return kept
+  const made = new Intl.Collator(languageProfiles[language].collatorLocale, {
+    numeric: true,
+    sensitivity: 'base',
+  })
+  collators.set(language, made)
+  return made
 }
 
 /** Sort key: the display name, falling back to the factory code, unnamed last. */
@@ -48,7 +57,7 @@ function sortName(config: Config): string {
 }
 
 function byName(configs: Config[], language: Language): Config[] {
-  return [...configs].sort((a, b) => collators[language].compare(sortName(a), sortName(b)))
+  return [...configs].sort((a, b) => collator(language).compare(sortName(a), sortName(b)))
 }
 
 export function groupConfigs(

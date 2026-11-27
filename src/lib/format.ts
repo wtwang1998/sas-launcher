@@ -1,4 +1,5 @@
 import type { Language } from '../api'
+import { languageProfiles } from '../i18n/languages'
 
 /** Quote one OS argument the way Windows shows it in a command line. */
 export function quoteArgument(value: string): string {
@@ -13,13 +14,12 @@ export function formatArgv(argv: readonly string[]): string {
 /**
  * CLDR gives the zh `Intl.ListFormat` unit pattern no separator at all ("ABC"), and its
  * conjunction pattern inserts 和/及. These labels are compact (`界面设置、环境设置`), so the
- * separator stays explicit per language instead of being inferred.
+ * separator stays explicit per language, in `languageProfiles`.
  */
-const separators: Record<Language, string> = { 'zh-Hans': '、', 'zh-Hant': '、', en: ', ' }
 
 /** Join a compact list of already translated labels. */
 export function joinList(language: Language, items: readonly string[]): string {
-  return items.join(separators[language])
+  return items.join(languageProfiles[language].listSeparator)
 }
 
 /** `2026/01/02 17:05`; a missing or out-of-range stamp renders as `—`. */
@@ -34,10 +34,9 @@ export function formatModified(language: Language, millis: number): string {
   return dateTime(language, millis)
 }
 
-/** One rendering for every timestamp: 24-hour in both languages, never AM/PM. */
+/** One rendering for every timestamp: 24-hour in every language, never AM/PM. */
 function dateTime(language: Language, millis: number): string {
-  const tag = language === 'en' ? 'en-US' : language === 'zh-Hant' ? 'zh-TW' : 'zh-CN'
-  return new Intl.DateTimeFormat(tag, {
+  return new Intl.DateTimeFormat(languageProfiles[language].dateTag, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

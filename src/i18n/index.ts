@@ -3,10 +3,7 @@ import issues from '../issue-messages.json'
 import { messages as en, type MessageKey } from './en'
 import { messages as zhHans } from './zh-Hans'
 import { messages as zhHant } from './zh-Hant'
-
-export type { MessageKey }
-
-export type Translator = (key: MessageKey, values?: Record<string, string | number>) => string
+import { languageProfiles } from './languages'
 
 /** One catalog per language. English is the source, so the other languages are partial. */
 const catalogs: Record<Language, Partial<Record<MessageKey, string>>> = {
@@ -15,15 +12,17 @@ const catalogs: Record<Language, Partial<Record<MessageKey, string>>> = {
   'zh-Hant': zhHant,
 }
 
+export type { MessageKey }
+
+export type Translator = (key: MessageKey, values?: Record<string, string | number>) => string
+
 /**
  * Each interface language named in its own words, the way CLDR names it. These are names,
- * not copy: they never change with the interface language, so they are not message keys.
+ * not copy, so they live in the language profile instead of the catalogs.
  */
-export const languageNames = {
-  'zh-Hans': '简体中文',
-  'zh-Hant': '繁體中文',
-  en: 'English',
-} as const satisfies Record<Language, string>
+export const languageNames = Object.fromEntries(
+  Object.entries(languageProfiles).map(([language, profile]) => [language, profile.endonym]),
+) as Record<Language, string>
 
 /** The index of a language inside a `[zh-Hans, en, zh-Hant]` catalog entry. */
 const issueIndex: Record<Language, number> = { 'zh-Hans': 0, en: 1, 'zh-Hant': 2 }
