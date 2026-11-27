@@ -8,7 +8,7 @@ Run several SAS 9.4 projects side by side, each with its own session environment
 ![license](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)
 [![CI](https://github.com/wtwang1998/sas-launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/wtwang1998/sas-launcher/actions/workflows/ci.yml)
 
-**English** | [简体中文](./README.zh-CN.md)
+**English** | [简体中文](./README.zh-CN.md) | [繁體中文](./README.zh-Hant.md) | [日本語](./README.ja.md) | [한국어](./README.ko.md) | [Deutsch](./README.de.md) | [Français](./README.fr.md) | [Español](./README.es.md)
 
 ## Why
 

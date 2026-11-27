@@ -8,7 +8,7 @@
 ![许可证](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)
 [![CI](https://github.com/wtwang1998/sas-launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/wtwang1998/sas-launcher/actions/workflows/ci.yml)
 
-[English](./README.md) | **简体中文**
+[English](./README.md) | **简体中文** | [繁體中文](./README.zh-Hant.md) | [日本語](./README.ja.md) | [한국어](./README.ko.md) | [Deutsch](./README.de.md) | [Français](./README.fr.md) | [Español](./README.es.md)
 
 ## 为什么
 
@@ -61,10 +61,10 @@ SAS Launcher 给每个项目一份自己的配置，并为每次启动准备一�
 
 ```sas
 %if %symexist(SASLAUNCHER_STARTUP_FILE) %then %do;
-    %let <名称> = &SASLAUNCHER_STARTUP_FILE;
+    %let <name> = &SASLAUNCHER_STARTUP_FILE;
 %end;
 %else %do;
-    %let <名称> = %sysget(SAS_EXECFILEPATH);  /* 原来的回退写法 */
+    %let <name> = %sysget(SAS_EXECFILEPATH);  /* the original fallback */
 %end;
 ```
 
