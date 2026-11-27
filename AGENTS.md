@@ -32,7 +32,7 @@ npm run i18n:coverage             # 各语言覆盖率与缺失 key；`-- --upda
 ## 目录地图
 
 ```text
-src/                    React 外壳：App.tsx（路由 + 2.8s 轮询）、api.ts（唯一的 invoke 封装）、i18n/（英文事实源 + 三语言词典 + 不变量测试）
+src/                    React 外壳：App.tsx（路由 + 2.8s 轮询）、api.ts（唯一的 invoke 封装）、i18n/（英文事实源 + 八份词典、languages.ts 的每语言常量、不变量测试）
 src/pages/              三个页面；只接收 props 与回调，不 import api
 src/components/         可复用控件：自绘 listbox、确认对话框、表单字段
 src/lib/                纯函数：标签、排序、默认名、argv 引号 —— 必须可表驱动测试
@@ -40,7 +40,7 @@ src/test/               harness.tsx（mockIPC 假后端 + renderApp）、fixture
 src-tauri/src/          Rust：main.rs 命令层 / store.rs 持久化 / session.rs 会话 / view.rs DTO
 src-tauri/capabilities/ 窗口权限白名单
 src-tauri/windows/      NSIS 安装钩子（preserve-install-location.nsh）
-scripts/                发布版本校验与 i18n 覆盖率（Node，配 vitest 表驱动测试）
+scripts/                发布版本校验、i18n 覆盖率与 README 结构守卫（Node，配 vitest 表驱动测试）
 docs/images/            README 截图（真机拍摄）
 docs/i18n.md            界面语言与安装器语言的约定、门禁与手工验收清单
 ```
@@ -63,7 +63,7 @@ docs/i18n.md            界面语言与安装器语言的约定、门禁与手�
 | 让格式化改掉 CRLF | `biome.json` 的 `lineEnding: "crlf"` 与 `rustfmt.toml` 的 `newline_style = "Windows"` 不得改 |
 | 把 `profbak` / `folder` / `gng` / `parms` 加进 profile 白名单 | 前三个是 SAS 的回退副本与 ASSIST、Graph-N-Go 产品资源，`parms` 是别台机器写的 ASSIST 参数，都不是用户偏好；`profile.rs` 的注释写着排除理由 |
 
-已被测试锁死、无需在此重复：薄壳 cfg 恰好 3 行、启动参数顺序与 `-ENCODING`/`-LOCALE` 缺席、profile 白名单 4 个文件且分界面/环境/模板三层、项目偏好快照保留 2 版、诊断保留 20 条、运行中与待保存的设置会话不可被清空、Rust 发出的每个 issue 码都有三语文案且没有无人发出的码、词典无未知/未用 key、译文占位符与英文源一致、非源语言覆盖率不低于 `src/i18n/coverage-baseline.json`。
+已被测试锁死、无需在此重复：薄壳 cfg 恰好 3 行、启动参数顺序与 `-ENCODING`/`-LOCALE` 缺席、profile 白名单 4 个文件且分界面/环境/模板三层、项目偏好快照保留 2 版、诊断保留 20 条、运行中与待保存的设置会话不可被清空、Rust 发出的每个 issue 码都有八语文案且没有无人发出的码、词典无未知/未用 key、译文占位符与英文源一致、各语言覆盖率不低于 `src/i18n/coverage-baseline.json`、八份 README 的结构与切换器一致。
 
 ## 测试
 
@@ -79,7 +79,7 @@ docs/i18n.md            界面语言与安装器语言的约定、门禁与手�
 - conventional commits，英文祈使句；`body-max-line-length` 为 100，commitlint 会拦。
 - 一次逻辑变更一次 commit；格式化与行为改动分开提交。
 - 不加 AI 署名或 `Co-authored-by` trailer。
-- `README.md` 与 `README.zh-CN.md` 必须同一次改动里一起改；两者冲突时以 `README.md` 为准。
+- 八份 README（`README.md` 与 `.zh-CN`/`.zh-Hant`/`.ja`/`.ko`/`.de`/`.fr`/`.es`）的结构由 `npm run check`（`scripts/readme-languages.test.mjs`）守：标题与代码块逐字一致、切换器列全八项。改散文时同批更新受影响的语言；冲突以 `README.md` 为准。
 - commitlint 现在也在 CI 里跑：本地钩子被绕过（见 Known gaps 的 MSYS 条目）不等于通过。
 
 ## CI
