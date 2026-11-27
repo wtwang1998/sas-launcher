@@ -248,6 +248,13 @@ it('names_each_language_in_its_own_words', async () => {
       picker: '앱 언어',
       system: '시스템 따르기',
     },
+    {
+      language: 'de',
+      navigation: 'Hauptnavigation',
+      settings: 'Einstellungen',
+      picker: 'App-Sprache',
+      system: 'Systemeinstellung folgen',
+    },
   ] as const
 
   for (const one of cases) {
@@ -268,11 +275,14 @@ it('names_each_language_in_its_own_words', async () => {
       '简体中文',
       '繁體中文',
       'English',
+      'Deutsch',
       '日本語',
       '한국어',
     ])
     const traditional = within(picker).getByRole('option', { name: '繁體中文' })
     expect(traditional.getAttribute('lang'), 'a name should carry its own language').toBe('zh-Hant')
+    const deName = within(picker).getByRole('option', { name: 'Deutsch' })
+    expect(deName.getAttribute('lang'), 'a name should carry its own language').toBe('de')
     const koName = within(picker).getByRole('option', { name: '한국어' })
     expect(koName.getAttribute('lang'), 'a name should carry its own language').toBe('ko')
     const japanese = within(picker).getByRole('option', { name: '日本語' })

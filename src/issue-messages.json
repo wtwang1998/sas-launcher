@@ -4,482 +4,551 @@
     "en": "Could not update the start-at-login setting.",
     "zh-Hant": "無法更新開機自動啟動設定。",
     "ja": "ログイン時の自動起動設定を更新できませんでした。",
-    "ko": "로그인 시 자동 시작 설정을 업데이트하지 못했습니다."
+    "ko": "로그인 시 자동 시작 설정을 업데이트하지 못했습니다.",
+    "de": "Die Einstellungen für den Start bei der Anmeldung konnten nicht aktualisiert werden."
   },
   "autostartPath": {
     "zh-Hans": "无法解析程序自身的路径，开机自启动暂不可用。",
     "en": "Could not resolve the launcher's own path, so start-at-login is unavailable.",
     "zh-Hant": "無法解析程式自身路徑，開機自動啟動暫不可用。",
     "ja": "ランチャー自身のパスを解決できないため、自動起動を利用できません。",
-    "ko": "런처 자체 경로를 확인할 수 없어 자동 시작을 사용할 수 없습니다."
+    "ko": "런처 자체 경로를 확인할 수 없어 자동 시작을 사용할 수 없습니다.",
+    "de": "Der eigene Pfad des Launchers lässt sich nicht ermitteln, daher steht der Start bei der Anmeldung nicht zur Verfügung."
   },
   "configurationWrite": {
     "zh-Hans": "无法保存启动配置文件。",
     "en": "Could not save the launch configuration file.",
     "zh-Hant": "無法儲存啟動組態檔。",
     "ja": "起動構成ファイルを保存できませんでした。",
-    "ko": "시작 구성 파일을 저장하지 못했습니다."
+    "ko": "시작 구성 파일을 저장하지 못했습니다.",
+    "de": "Die Startkonfigurationsdatei konnte nicht geschrieben werden."
   },
   "rootConfigRead": {
     "zh-Hans": "无法读取 SAS 根目录的 sasv9.cfg。",
     "en": "Could not read sasv9.cfg in the SAS root folder.",
     "zh-Hant": "無法讀取 SAS 根目錄的 sasv9.cfg。",
     "ja": "SAS ルートフォルダーの sasv9.cfg を読み取れませんでした。",
-    "ko": "SAS 루트 폴더의 sasv9.cfg를 읽지 못했습니다."
+    "ko": "SAS 루트 폴더의 sasv9.cfg를 읽지 못했습니다.",
+    "de": "Die sasv9.cfg im SAS-Stammordner konnte nicht gelesen werden."
   },
   "defaultConfigPointerMissing": {
     "zh-Hans": "SAS 根配置没有指向有效的默认 NLS 配置。",
     "en": "The SAS root configuration does not point to a valid default NLS configuration.",
     "zh-Hant": "SAS 根組態沒有指向有效的預設 NLS 組態。",
     "ja": "SAS ルート構成が有効な既定の NLS 構成を指していません。",
-    "ko": "SAS 루트 구성이 기본 NLS 구성을 가리키지 않습니다."
+    "ko": "SAS 루트 구성이 기본 NLS 구성을 가리키지 않습니다.",
+    "de": "Die SAS-Stammkonfiguration verweist auf keine gültige Standard-NLS-Konfiguration."
   },
   "defaultConfigUnavailable": {
     "zh-Hans": "SAS 默认配置指向的文件不可用。",
     "en": "The file referenced by the SAS default configuration is unavailable.",
     "zh-Hant": "SAS 預設組態指向的檔案不可用。",
     "ja": "SAS の既定構成が参照するファイルを利用できません。",
-    "ko": "SAS 기본 구성이 참조하는 파일을 사용할 수 없습니다."
+    "ko": "SAS 기본 구성이 참조하는 파일을 사용할 수 없습니다.",
+    "de": "Die von der SAS-Standardkonfiguration referenzierte Datei ist nicht verfügbar."
   },
   "invalidLocaleEncoding": {
     "zh-Hans": "区域或编码格式无效，请使用如 zh_CN、EUC-CN 的写法。",
     "en": "The locale or encoding format is invalid. Use forms such as zh_CN and EUC-CN.",
     "zh-Hant": "地區或編碼格式無效，請使用如 zh_CN、EUC-CN 的寫法。",
     "ja": "ロケールまたはエンコーディングの形式が不正です。zh_CN や EUC-CN のような形式で入力してください。",
-    "ko": "로캘 또는 인코딩 형식이 올바르지 않습니다. zh_CN, EUC-CN 같은 형식을 사용하세요."
+    "ko": "로캘 또는 인코딩 형식이 올바르지 않습니다. zh_CN, EUC-CN 같은 형식을 사용하세요.",
+    "de": "Die Locale- oder Kodierungsangabe hat ein ungültiges Format. Verwenden Sie Formen wie zh_CN oder EUC-CN."
   },
   "invalidProjectNote": {
     "zh-Hans": "备注最多 2000 个字符，且不能包含控制字符。",
     "en": "Use up to 2,000 characters and omit control characters in the notes.",
     "zh-Hant": "備註最多 2000 個字元，且不能包含控制字元。",
     "ja": "メモは 2,000 文字以内で、制御文字を含めないでください。",
-    "ko": "메모는 2,000자 이내여야 하며 제어 문자를 포함할 수 없습니다."
+    "ko": "메모는 2,000자 이내여야 하며 제어 문자를 포함할 수 없습니다.",
+    "de": "Notizen dürfen höchstens 2.000 Zeichen lang sein und keine Steuerzeichen enthalten."
   },
   "configurationFileMissing": {
     "zh-Hans": "启动配置文件不可用，请编辑或重新创建此配置。",
     "en": "The configuration file is unavailable. Edit or recreate this configuration.",
     "zh-Hant": "啟動組態檔不可用，請編輯或重新建立此組態。",
     "ja": "構成ファイルを利用できません。この構成を編集するか再作成してください。",
-    "ko": "구성 파일을 사용할 수 없습니다. 이 구성을 편집하거나 다시 만드세요."
+    "ko": "구성 파일을 사용할 수 없습니다. 이 구성을 편집하거나 다시 만드세요.",
+    "de": "Die Konfigurationsdatei ist nicht verfügbar. Bearbeiten Sie diese Konfiguration oder erstellen Sie sie neu."
   },
   "configurationBaseMissing": {
     "zh-Hans": "原厂基础配置不可用，请重新选择。",
     "en": "The factory base configuration is unavailable. Choose another one.",
     "zh-Hant": "原廠基礎組態不可用，請重新選擇。",
     "ja": "工場出荷の基本構成を利用できません。別の構成を選んでください。",
-    "ko": "공장 기본 구성을 사용할 수 없습니다. 다른 구성을 선택하세요."
+    "ko": "공장 기본 구성을 사용할 수 없습니다. 다른 구성을 선택하세요.",
+    "de": "Die werksseitige Basiskonfiguration ist nicht verfügbar. Wählen Sie eine andere Konfiguration."
   },
   "managedConfigurationMissing": {
     "zh-Hans": "用户配置不存在。",
     "en": "The user configuration does not exist.",
     "zh-Hant": "使用者組態不存在。",
     "ja": "ユーザー構成が存在しません。",
-    "ko": "사용자 구성을 찾지 못했습니다."
+    "ko": "사용자 구성을 찾지 못했습니다.",
+    "de": "Die Benutzerkonfiguration wurde nicht gefunden."
   },
   "startupFileMissing": {
     "zh-Hans": "项目的启动代码文件不存在，请重新选择文件后再启动。",
     "en": "The project's startup code file is missing. Choose a file again before launching.",
     "zh-Hant": "專案的啟動程式碼檔案不存在，請重新選擇檔案後再啟動。",
     "ja": "プロジェクトの起動コードファイルが見つかりません。起動前にファイルを選び直してください。",
-    "ko": "프로젝트의 시작 코드 파일이 없습니다. 시작하기 전에 파일을 다시 선택하세요."
+    "ko": "프로젝트의 시작 코드 파일이 없습니다. 시작하기 전에 파일을 다시 선택하세요.",
+    "de": "Die Startcodedatei des Projekts fehlt. Wählen Sie sie vor dem Start erneut aus."
   },
   "startupFileNotAbsolute": {
     "zh-Hans": "启动代码文件需要一个绝对路径。",
     "en": "The startup code file needs an absolute path.",
     "zh-Hant": "啟動程式碼檔案需要絕對路徑。",
     "ja": "起動コードファイルには絶対パスが必要です。",
-    "ko": "시작 코드 파일은 절대 경로여야 합니다."
+    "ko": "시작 코드 파일은 절대 경로여야 합니다.",
+    "de": "Die Startcodedatei muss ein absoluter Pfad sein."
   },
   "startupNeedsPath": {
     "zh-Hans": "该启动脚本读取 SASLAUNCHER_STARTUP_FILE，请勾选「向会话提供启动文件路径」，或改成写死路径。",
     "en": "The startup script reads SASLAUNCHER_STARTUP_FILE. Turn on \"tell the session where the startup file is\", or hard-code the path instead.",
     "zh-Hant": "該啟動指令碼讀取 SASLAUNCHER_STARTUP_FILE，請勾選「向工作階段提供啟動檔案路徑」，或改成寫死路徑。",
     "ja": "起動スクリプトが SASLAUNCHER_STARTUP_FILE を参照しています。「セッションに起動ファイルの場所を伝える」をオンにするか、パスを直接書き込んでください。",
-    "ko": "이 시작 스크립트는 SASLAUNCHER_STARTUP_FILE을 읽습니다. \"세션에 시작 파일 위치 알리기\"를 켜거나 경로를 직접 지정하세요."
+    "ko": "이 시작 스크립트는 SASLAUNCHER_STARTUP_FILE을 읽습니다. \"세션에 시작 파일 위치 알리기\"를 켜거나 경로를 직접 지정하세요.",
+    "de": "Dieses Startskript liest SASLAUNCHER_STARTUP_FILE. Aktivieren Sie \"Der Sitzung mitteilen, wo die Startdatei liegt\" oder schreiben Sie den Pfad direkt hinein."
   },
   "startupNeedsMacro": {
     "zh-Hans": "自动执行时读不到 SAS_EXECFILEPATH（SAS 在窗口启动阶段会重置它）。请让脚本优先读 SASLAUNCHER_STARTUP_FILE，或写死路径。",
     "en": "SAS_EXECFILEPATH is empty when the script runs as an autoexec file, because SAS resets it during a windowed start. Make the script read SASLAUNCHER_STARTUP_FILE first, or hard-code the path.",
     "zh-Hant": "自動執行時讀不到 SAS_EXECFILEPATH（SAS 在視窗啟動階段會重設它）。請讓指令碼優先讀取 SASLAUNCHER_STARTUP_FILE，或寫死路徑。",
     "ja": "ウィンドウ付き起動では SAS が SAS_EXECFILEPATH をリセットするため、Autoexec として実行すると空になります。スクリプトを SASLAUNCHER_STARTUP_FILE 参照にするか、パスを直接書き込んでください。",
-    "ko": "창 모드로 시작하면 SAS가 실행 전에 SAS_EXECFILEPATH를 설정하므로 Autoexec에서는 이 값이 비어 있습니다. 스크립트가 SASLAUNCHER_STARTUP_FILE을 읽게 하거나 경로를 직접 지정하세요."
+    "ko": "창 모드로 시작하면 SAS가 실행 전에 SAS_EXECFILEPATH를 설정하므로 Autoexec에서는 이 값이 비어 있습니다. 스크립트가 SASLAUNCHER_STARTUP_FILE을 읽게 하거나 경로를 직접 지정하세요.",
+    "de": "SAS setzt SAS_EXECFILEPATH vor dem Start im Fenstermodus, daher ist der Wert bei Autoexec leer. Lassen Sie das Skript SASLAUNCHER_STARTUP_FILE lesen oder schreiben Sie den Pfad direkt hinein."
   },
   "startupAlreadyMigrated": {
     "zh-Hans": "这个启动文件已经改好了，不需要再次迁移。",
     "en": "This startup script is already migrated.",
     "zh-Hant": "這個啟動檔案已經改好了，不需要再次移轉。",
     "ja": "この起動スクリプトはすでに移行済みです。",
-    "ko": "이 시작 스크립트는 이미 마이그레이션되었습니다."
+    "ko": "이 시작 스크립트는 이미 마이그레이션되었습니다.",
+    "de": "Dieses Startskript wurde bereits migriert."
   },
   "startupMigrateUnsupported": {
     "zh-Hans": "这个启动文件在迁移能改的位置之外还引用了 SAS_EXECFILEPATH，未做任何改动。迁移只认「%let 赋值里右侧就是 %sysget(SAS_EXECFILEPATH)」这一种写法；用 &_SASPROGRAMFILE、%sysfunc(getoption(sysin)) 或别的来源定位自己的脚本，也要手工改成读 SASLAUNCHER_STARTUP_FILE。",
     "en": "This startup script reads SAS_EXECFILEPATH somewhere the migration does not rewrite, so nothing was changed. It recognises one idiom only: a %let assignment whose right side is exactly %sysget(SAS_EXECFILEPATH). A script that locates itself through &_SASPROGRAMFILE, %sysfunc(getoption(sysin)) or another source needs the same hand edit: read SASLAUNCHER_STARTUP_FILE instead.",
     "zh-Hant": "這個啟動檔案在移轉能改的位置之外還引用了 SAS_EXECFILEPATH，未做任何變更。移轉只認「%let 賦值裡右側就是 %sysget(SAS_EXECFILEPATH)」這一種寫法；用 &_SASPROGRAMFILE、%sysfunc(getoption(sysin)) 或其他來源定位自己的指令碼，也要手動改成讀取 SASLAUNCHER_STARTUP_FILE。",
     "ja": "この起動スクリプトは移行が書き換えない箇所で SAS_EXECFILEPATH を参照しているため、何も変更していません。認識する書き方は 1 つだけです: 右辺がちょうど %sysget(SAS_EXECFILEPATH) である %let 代入。&_SASPROGRAMFILE や %sysfunc(getoption(sysin)) など別の方法で自身の場所を求めるスクリプトは、同じように手で SASLAUNCHER_STARTUP_FILE を参照する必要があります。",
-    "ko": "이 시작 스크립트는 마이그레이션이 고칠 수 없는 방식으로 SAS_EXECFILEPATH를 읽으므로 아무것도 변경하지 않았습니다. 인식하는 방식은 한 가지뿐입니다: 오른쪽이 정확히 %sysget(SAS_EXECFILEPATH)인 %let 대입. &_SASPROGRAMFILE 또는 %sysfunc(getoption(sysin)) 등으로 자기 위치를 찾는 스크립트는 같은 방식으로 SASLAUNCHER_STARTUP_FILE을 직접 읽도록 고쳐야 합니다."
+    "ko": "이 시작 스크립트는 마이그레이션이 고칠 수 없는 방식으로 SAS_EXECFILEPATH를 읽으므로 아무것도 변경하지 않았습니다. 인식하는 방식은 한 가지뿐입니다: 오른쪽이 정확히 %sysget(SAS_EXECFILEPATH)인 %let 대입. &_SASPROGRAMFILE 또는 %sysfunc(getoption(sysin)) 등으로 자기 위치를 찾는 스크립트는 같은 방식으로 SASLAUNCHER_STARTUP_FILE을 직접 읽도록 고쳐야 합니다.",
+    "de": "Dieses Startskript liest SAS_EXECFILEPATH an einer Stelle, die die Migration nicht korrigiert, daher wurde nichts geändert. Sie erkennt nur eine Form: eine %let-Zuweisung, deren rechte Seite genau %sysget(SAS_EXECFILEPATH) ist. Skripte, die ihren eigenen Speicherort über &_SASPROGRAMFILE oder %sysfunc(getoption(sysin)) ermitteln, müssen SASLAUNCHER_STARTUP_FILE auf demselben Weg selbst lesen."
   },
   "startupWrite": {
     "zh-Hans": "无法写入启动文件，未做任何改动。请检查该文件是否只读或被占用。",
     "en": "Could not write the startup script, so nothing was changed. Check whether the file is read-only or open elsewhere.",
     "zh-Hant": "無法寫入啟動檔案，未做任何變更。請檢查該檔案是否唯讀或被占用。",
     "ja": "起動スクリプトを書き込めなかったため、何も変更していません。読み取り専用か、他の場所で開かれていないか確認してください。",
-    "ko": "시작 스크립트를 쓰지 못해 아무것도 변경하지 않았습니다. 읽기 전용인지 다른 프로그램에서 열려 있는지 확인하세요."
+    "ko": "시작 스크립트를 쓰지 못해 아무것도 변경하지 않았습니다. 읽기 전용인지 다른 프로그램에서 열려 있는지 확인하세요.",
+    "de": "Das Startskript konnte nicht geschrieben werden, daher wurde nichts geändert. Prüfen Sie, ob es schreibgeschützt oder in einem anderen Programm geöffnet ist."
   },
   "configurationSetupActive": {
     "zh-Hans": "请先关闭 SAS 设置会话并保存或丢弃本次设置。",
     "en": "Close the SAS settings session and save or discard its changes first.",
     "zh-Hant": "請先關閉 SAS 設定工作階段並儲存或捨棄本次設定。",
     "ja": "先に SAS 設定セッションを閉じ、変更を保存するか破棄してください。",
-    "ko": "먼저 SAS 설정 세션을 닫고 변경 사항을 저장하거나 버리세요."
+    "ko": "먼저 SAS 설정 세션을 닫고 변경 사항을 저장하거나 버리세요.",
+    "de": "Schließen Sie zuerst die SAS-Einstellungssitzung und speichern oder verwerfen Sie Ihre Änderungen."
   },
   "configurationInUse": {
     "zh-Hans": "请先为引用此配置的项目改选启动配置。",
     "en": "Choose a different launch configuration for the projects using this configuration first.",
     "zh-Hant": "請先為引用此組態的專案改選啟動組態。",
     "ja": "この構成を使用しているプロジェクトの起動構成を先に変更してください。",
-    "ko": "이 구성을 사용하는 프로젝트의 시작 구성을 먼저 바꾸세요."
+    "ko": "이 구성을 사용하는 프로젝트의 시작 구성을 먼저 바꾸세요.",
+    "de": "Wechseln Sie zuerst die Startkonfiguration der Projekte, die diese Konfiguration verwenden."
   },
   "invalidConfigurationName": {
     "zh-Hans": "配置名称最多 100 字，且不能包含控制字符。",
     "en": "Use up to 100 characters and omit control characters for the configuration name.",
     "zh-Hant": "組態名稱最多 100 個字元，且不能包含控制字元。",
     "ja": "構成名は 100 文字以内で、制御文字を含めないでください。",
-    "ko": "구성 이름은 100자 이내여야 하며 제어 문자를 포함할 수 없습니다."
+    "ko": "구성 이름은 100자 이내여야 하며 제어 문자를 포함할 수 없습니다.",
+    "de": "Konfigurationsnamen dürfen höchstens 100 Zeichen lang sein und keine Steuerzeichen enthalten."
   },
   "profileNotFile": {
     "zh-Hans": "SAS 设置项不是普通文件。",
     "en": "The SAS settings entry is not a regular file.",
     "zh-Hant": "SAS 設定項不是一般檔案。",
     "ja": "SAS 設定の項目が通常のファイルではありません。",
-    "ko": "SAS 설정 항목이 일반 파일이 아닙니다."
+    "ko": "SAS 설정 항목이 일반 파일이 아닙니다.",
+    "de": "Ein SAS-Einstellungseintrag ist keine reguläre Datei."
   },
   "profileRead": {
     "zh-Hans": "无法读取 SAS 设置文件。",
     "en": "Could not read a SAS settings file.",
     "zh-Hant": "無法讀取 SAS 設定檔。",
     "ja": "SAS 設定ファイルを読み取れませんでした。",
-    "ko": "SAS 설정 파일을 읽지 못했습니다."
+    "ko": "SAS 설정 파일을 읽지 못했습니다.",
+    "de": "Die SAS-Einstellungsdateien konnten nicht gelesen werden."
   },
   "profileLocked": {
     "zh-Hans": "无法打开 SAS 设置文件。请关闭正在使用该目录的 SAS 后重试。",
     "en": "Could not open a SAS settings file. Close SAS sessions using that folder, then try again.",
     "zh-Hant": "無法開啟 SAS 設定檔。請關閉正在使用該資料夾的 SAS 後重試。",
     "ja": "SAS 設定ファイルを開けませんでした。そのフォルダーを使っている SAS セッションを閉じてから再試行してください。",
-    "ko": "SAS 설정 파일을 열지 못했습니다. 해당 폴더를 쓰는 SAS 세션을 닫고 다시 시도하세요."
+    "ko": "SAS 설정 파일을 열지 못했습니다. 해당 폴더를 쓰는 SAS 세션을 닫고 다시 시도하세요.",
+    "de": "Die SAS-Einstellungsdateien konnten nicht geöffnet werden. Schließen Sie die SAS-Sitzungen, die diesen Ordner nutzen, und versuchen Sie es erneut."
   },
   "profileEmpty": {
     "zh-Hans": "这个目录里没有可保存的 SAS 个人设置。请先打开 SAS 调整设置。",
     "en": "This folder contains no SAS personal settings. Adjust settings in SAS first.",
     "zh-Hant": "這個資料夾裡沒有可儲存的 SAS 個人設定。請先開啟 SAS 調整設定。",
     "ja": "このフォルダーには SAS の個人設定がありません。先に SAS で設定を調整してください。",
-    "ko": "이 폴더에는 SAS 개인 설정이 없습니다. 먼저 SAS에서 설정을 조정하세요."
+    "ko": "이 폴더에는 SAS 개인 설정이 없습니다. 먼저 SAS에서 설정을 조정하세요.",
+    "de": "Dieser Ordner enthält keine SAS-Benutzereinstellungen. Passen Sie zuerst die Einstellungen in SAS an."
   },
   "profileSourceEmpty": {
     "zh-Hans": "这个文件夹里没有 SAS 设置文件。换一个文件夹，或选择「不使用已有偏好」。",
     "en": "This folder holds no SAS settings files. Pick another folder, or start without preferences.",
     "zh-Hant": "這個資料夾裡沒有 SAS 設定檔。換一個資料夾，或選擇「不使用既有偏好」。",
     "ja": "このフォルダーには SAS 設定ファイルがありません。別のフォルダーを選ぶか、設定なしで起動してください。",
-    "ko": "이 폴더에는 SAS 설정 파일이 없습니다. 다른 폴더를 고르거나 기본 설정 없이 시작하세요."
+    "ko": "이 폴더에는 SAS 설정 파일이 없습니다. 다른 폴더를 고르거나 기본 설정 없이 시작하세요.",
+    "de": "Dieser Ordner enthält keine SAS-Einstellungsdateien. Wählen Sie einen anderen Ordner oder starten Sie ohne Voreinstellungen."
   },
   "profileSnapshotEmpty": {
     "zh-Hans": "这个配置还没有保存过设置。先在配置管理里打开 SAS 调整设置并保存一次。",
     "en": "This configuration has no saved settings yet. Open SAS to adjust settings from the configurations page and save once.",
     "zh-Hant": "這個組態還沒有儲存過設定。先在組態管理裡開啟 SAS 調整設定並儲存一次。",
     "ja": "この構成には保存された設定がまだありません。構成ページから SAS を開いて設定を調整し、一度保存してください。",
-    "ko": "이 구성에는 아직 저장된 설정이 없습니다. 구성 페이지에서 SAS를 열어 설정을 조정하고 한 번 저장하세요."
+    "ko": "이 구성에는 아직 저장된 설정이 없습니다. 구성 페이지에서 SAS를 열어 설정을 조정하고 한 번 저장하세요.",
+    "de": "Diese Konfiguration hat noch keine gespeicherten Einstellungen. Öffnen Sie SAS auf der Seite Konfigurationen, passen Sie die Einstellungen an und speichern Sie einmal."
   },
   "profileInterfaceMissing": {
     "zh-Hans": "这个文件夹里没有 SAS 的界面设置文件（窗口布局、功能键、菜单）。换一个文件夹。",
     "en": "This folder holds no SAS interface settings (window layout, function keys, menus). Pick another folder.",
     "zh-Hant": "這個資料夾裡沒有 SAS 的介面設定檔（視窗配置、功能鍵、功能表）。換一個資料夾。",
     "ja": "このフォルダーには SAS のインターフェース設定 (ウィンドウレイアウト、ファンクションキー、メニュー) がありません。別のフォルダーを選んでください。",
-    "ko": "이 폴더에는 SAS 인터페이스 설정(창 레이아웃, 기능 키, 메뉴)이 없습니다. 다른 폴더를 고르세요."
+    "ko": "이 폴더에는 SAS 인터페이스 설정(창 레이아웃, 기능 키, 메뉴)이 없습니다. 다른 폴더를 고르세요.",
+    "de": "In diesem Ordner fehlen die SAS-Oberflächeneinstellungen (Fensterlayout, Funktionstasten, Menüs). Wählen Sie einen anderen Ordner."
   },
   "profileEnvironmentMissing": {
     "zh-Hans": "你勾选了「环境」，但这个文件夹里没有对应的设置文件。取消勾选「环境」，或换一个文件夹。",
     "en": "You ticked Environment, but this folder holds no matching settings file. Clear that tick or pick another folder.",
     "zh-Hant": "你勾選了「環境」，但這個資料夾裡沒有對應的設定檔。取消勾選「環境」，或換一個資料夾。",
     "ja": "環境にチェックを入れましたが、対応する設定ファイルがこのフォルダーにありません。チェックを外すか、別のフォルダーを選んでください。",
-    "ko": "환경을 선택했지만 해당 설정 파일이 이 폴더에 없습니다. 선택을 해제하거나 다른 폴더를 고르세요."
+    "ko": "환경을 선택했지만 해당 설정 파일이 이 폴더에 없습니다. 선택을 해제하거나 다른 폴더를 고르세요.",
+    "de": "Sie haben die Umgebung gewählt, aber ihre Einstellungsdatei fehlt in diesem Ordner. Heben Sie die Auswahl auf oder wählen Sie einen anderen Ordner."
   },
   "profileTemplatesMissing": {
     "zh-Hans": "你勾选了「ODS 模板与样式」，但这个文件夹里没有对应的文件。取消勾选，或换一个文件夹。",
     "en": "You ticked ODS templates and styles, but this folder holds no matching file. Clear that tick or pick another folder.",
     "zh-Hant": "你勾選了「ODS 範本與樣式」，但這個資料夾裡沒有對應的檔案。取消勾選，或換一個資料夾。",
     "ja": "ODS テンプレートとスタイルにチェックを入れましたが、対応するファイルがこのフォルダーにありません。チェックを外すか、別のフォルダーを選んでください。",
-    "ko": "ODS 템플릿과 스타일을 선택했지만 해당 파일이 이 폴더에 없습니다. 선택을 해제하거나 다른 폴더를 고르세요."
+    "ko": "ODS 템플릿과 스타일을 선택했지만 해당 파일이 이 폴더에 없습니다. 선택을 해제하거나 다른 폴더를 고르세요.",
+    "de": "Sie haben ODS-Vorlagen und -Stile gewählt, aber die Dateien fehlen in diesem Ordner. Heben Sie die Auswahl auf oder wählen Sie einen anderen Ordner."
   },
   "profileCreate": {
     "zh-Hans": "无法创建 SAS 设置文件。",
     "en": "Could not create the SAS settings file.",
     "zh-Hant": "無法建立 SAS 設定檔。",
     "ja": "SAS 設定ファイルを作成できませんでした。",
-    "ko": "SAS 설정 파일을 만들지 못했습니다."
+    "ko": "SAS 설정 파일을 만들지 못했습니다.",
+    "de": "Die SAS-Einstellungsdateien konnten nicht erstellt werden."
   },
   "profileCopy": {
     "zh-Hans": "无法复制 SAS 设置文件。",
     "en": "Could not copy the SAS settings file.",
     "zh-Hant": "無法複製 SAS 設定檔。",
     "ja": "SAS 設定ファイルをコピーできませんでした。",
-    "ko": "SAS 설정 파일을 복사하지 못했습니다."
+    "ko": "SAS 설정 파일을 복사하지 못했습니다.",
+    "de": "Die SAS-Einstellungsdateien konnten nicht kopiert werden."
   },
   "profileNotWritable": {
     "zh-Hans": "SAS 用户目录不可写。",
     "en": "The SAS user folder is not writable.",
     "zh-Hant": "SAS 使用者資料夾不可寫入。",
     "ja": "SAS ユーザーフォルダーに書き込めません。",
-    "ko": "SAS 사용자 폴더에 쓸 수 없습니다."
+    "ko": "SAS 사용자 폴더에 쓸 수 없습니다.",
+    "de": "In den SAS-Benutzerordner kann nicht geschrieben werden."
   },
   "sasMissing": {
     "zh-Hans": "未找到 SAS 9.4。请选择已安装的 sas.exe。",
     "en": "SAS 9.4 was not found. Select the installed sas.exe.",
     "zh-Hant": "未找到 SAS 9.4。請選擇已安裝的 sas.exe。",
     "ja": "SAS 9.4 が見つかりません。インストール済みの sas.exe を選択してください。",
-    "ko": "SAS 9.4를 찾지 못했습니다. 설치된 sas.exe를 선택하세요."
+    "ko": "SAS 9.4를 찾지 못했습니다. 설치된 sas.exe를 선택하세요.",
+    "de": "SAS 9.4 wurde nicht gefunden. Wählen Sie die installierte sas.exe."
   },
   "configUnavailable": {
     "zh-Hans": "找不到所选的 SAS 启动配置，请刷新后重新选择。",
     "en": "The selected SAS configuration is unavailable. Refresh and choose a configuration.",
     "zh-Hant": "找不到所選的 SAS 啟動組態，請重新整理後重新選擇。",
     "ja": "選択した SAS 構成を利用できません。更新して構成を選び直してください。",
-    "ko": "선택한 SAS 구성을 사용할 수 없습니다. 새로 고친 뒤 구성을 다시 선택하세요."
+    "ko": "선택한 SAS 구성을 사용할 수 없습니다. 새로 고친 뒤 구성을 다시 선택하세요.",
+    "de": "Die gewählte SAS-Konfiguration ist nicht verfügbar. Laden Sie sie neu und wählen Sie die Konfiguration erneut."
   },
   "invalidName": {
     "zh-Hans": "请输入 1 到 100 个字符的项目名称。",
     "en": "Enter a project name of 1–100 characters.",
     "zh-Hant": "請輸入 1 到 100 個字元的專案名稱。",
     "ja": "プロジェクト名は 1〜100 文字で入力してください。",
-    "ko": "프로젝트 이름을 1–100자로 입력하세요."
+    "ko": "프로젝트 이름을 1–100자로 입력하세요.",
+    "de": "Geben Sie einen Projektnamen mit 1–100 Zeichen ein."
   },
   "projectMissing": {
     "zh-Hans": "这个项目已经不存在。",
     "en": "This project no longer exists.",
     "zh-Hant": "這個專案已經不存在。",
     "ja": "このプロジェクトはすでに存在しません。",
-    "ko": "이 프로젝트는 더 이상 없습니다."
+    "ko": "이 프로젝트는 더 이상 없습니다.",
+    "de": "Dieses Projekt gibt es nicht mehr."
   },
   "dataPath": {
     "zh-Hans": "无法定位应用数据目录。",
     "en": "Could not find the application data folder.",
     "zh-Hant": "無法定位應用程式資料夾。",
     "ja": "アプリのデータフォルダーが見つかりませんでした。",
-    "ko": "앱 데이터 폴더를 찾지 못했습니다."
+    "ko": "앱 데이터 폴더를 찾지 못했습니다.",
+    "de": "Der App-Datenordner wurde nicht gefunden."
   },
   "pathUnavailable": {
     "zh-Hans": "路径不可用。",
     "en": "The path is unavailable.",
     "zh-Hant": "路徑不可用。",
     "ja": "パスを利用できません。",
-    "ko": "경로를 사용할 수 없습니다."
+    "ko": "경로를 사용할 수 없습니다.",
+    "de": "Der Pfad ist nicht verfügbar."
   },
   "invalidExe": {
     "zh-Hans": "请选择已安装的 SAS 9.4 程序 sas.exe。",
     "en": "Select the installed SAS 9.4 executable, sas.exe.",
     "zh-Hant": "請選擇已安裝的 SAS 9.4 程式 sas.exe。",
     "ja": "インストール済みの SAS 9.4 実行ファイル sas.exe を選択してください。",
-    "ko": "설치된 SAS 9.4 실행 파일 sas.exe를 선택하세요."
+    "ko": "설치된 SAS 9.4 실행 파일 sas.exe를 선택하세요.",
+    "de": "Wählen Sie die installierte SAS-9.4-Programmdatei sas.exe."
   },
   "exeAccess": {
     "zh-Hans": "无法访问 SAS 程序。",
     "en": "Could not access the SAS executable.",
     "zh-Hant": "無法存取 SAS 程式。",
     "ja": "SAS 実行ファイルにアクセスできませんでした。",
-    "ko": "SAS 실행 파일에 접근하지 못했습니다."
+    "ko": "SAS 실행 파일에 접근하지 못했습니다.",
+    "de": "Auf die SAS-Programmdatei konnte nicht zugegriffen werden."
   },
   "configDirectory": {
     "zh-Hans": "无法读取启动配置目录。",
     "en": "Could not read the SAS configuration folder.",
     "zh-Hant": "無法讀取啟動組態資料夾。",
     "ja": "SAS 構成フォルダーを読み取れませんでした。",
-    "ko": "SAS 구성 폴더를 읽지 못했습니다."
+    "ko": "SAS 구성 폴더를 읽지 못했습니다.",
+    "de": "Der SAS-Konfigurationsordner konnte nicht gelesen werden."
   },
   "configEntry": {
     "zh-Hans": "无法读取启动配置。",
     "en": "Could not read an entry in the SAS configuration folder.",
     "zh-Hant": "無法讀取啟動組態。",
     "ja": "SAS 構成フォルダーの項目を読み取れませんでした。",
-    "ko": "SAS 구성 폴더의 항목을 읽지 못했습니다."
+    "ko": "SAS 구성 폴더의 항목을 읽지 못했습니다.",
+    "de": "Ein Eintrag im SAS-Konfigurationsordner konnte nicht gelesen werden."
   },
   "noConfigs": {
     "zh-Hans": "此目录中未找到 sasv9.cfg 配置。",
     "en": "No sasv9.cfg configurations were found in this folder.",
     "zh-Hant": "此資料夾中未找到 sasv9.cfg 組態。",
     "ja": "このフォルダーに sasv9.cfg 構成が見つかりません。",
-    "ko": "이 폴더에서 sasv9.cfg 구성을 찾지 못했습니다."
+    "ko": "이 폴더에서 sasv9.cfg 구성을 찾지 못했습니다.",
+    "de": "In diesem Ordner wurden keine sasv9.cfg-Konfigurationen gefunden."
   },
   "configRead": {
     "zh-Hans": "无法读取配置文件。",
     "en": "Could not read the SAS configuration file.",
     "zh-Hant": "無法讀取組態檔。",
     "ja": "SAS 構成ファイルを読み取れませんでした。",
-    "ko": "SAS 구성 파일을 읽지 못했습니다."
+    "ko": "SAS 구성 파일을 읽지 못했습니다.",
+    "de": "Die SAS-Konfigurationsdatei konnte nicht gelesen werden."
   },
   "encodingUnknown": {
     "zh-Hans": "配置未声明可识别的 ENCODING。",
     "en": "The configuration does not declare a recognized ENCODING.",
     "zh-Hant": "組態未宣告可辨識的 ENCODING。",
     "ja": "構成に認識できる ENCODING が宣言されていません。",
-    "ko": "구성에 인식할 수 있는 ENCODING이 없습니다."
+    "ko": "구성에 인식할 수 있는 ENCODING이 없습니다.",
+    "de": "Die Konfiguration enthält keine erkennbare ENCODING-Angabe."
   },
   "utf16Incomplete": {
     "zh-Hans": "配置文件的 UTF-16 内容不完整。",
     "en": "The configuration file contains incomplete UTF-16.",
     "zh-Hant": "組態檔的 UTF-16 內容不完整。",
     "ja": "構成ファイルの UTF-16 が不完全です。",
-    "ko": "구성 파일의 UTF-16이 불완전합니다."
+    "ko": "구성 파일의 UTF-16이 불완전합니다.",
+    "de": "Die UTF-16-Angabe in der Konfigurationsdatei ist unvollständig."
   },
   "configDecode": {
     "zh-Hans": "无法读取配置文件编码。",
     "en": "Could not decode the SAS configuration file.",
     "zh-Hant": "無法讀取組態檔編碼。",
     "ja": "SAS 構成ファイルをデコードできませんでした。",
-    "ko": "SAS 구성 파일을 디코딩하지 못했습니다."
+    "ko": "SAS 구성 파일을 디코딩하지 못했습니다.",
+    "de": "Die SAS-Konfigurationsdatei konnte nicht dekodiert werden."
   },
   "configTooLarge": {
     "zh-Hans": "配置文件过大。",
     "en": "The configuration file is too large.",
     "zh-Hant": "組態檔過大。",
     "ja": "構成ファイルが大きすぎます。",
-    "ko": "구성 파일이 너무 큽니다."
+    "ko": "구성 파일이 너무 큽니다.",
+    "de": "Die Konfigurationsdatei ist zu groß."
   },
   "spawnFailed": {
     "zh-Hans": "无法启动 SAS。",
     "en": "Could not start SAS.",
     "zh-Hant": "無法啟動 SAS。",
     "ja": "SAS を起動できませんでした。",
-    "ko": "SAS를 시작하지 못했습니다."
+    "ko": "SAS를 시작하지 못했습니다.",
+    "de": "SAS konnte nicht gestartet werden."
   },
   "sessionDirectory": {
     "zh-Hans": "会话目录不可用。",
     "en": "The session folder is unavailable.",
     "zh-Hant": "工作階段資料夾不可用。",
     "ja": "セッションフォルダーを利用できません。",
-    "ko": "세션 폴더를 사용할 수 없습니다."
+    "ko": "세션 폴더를 사용할 수 없습니다.",
+    "de": "Der Sitzungsordner ist nicht verfügbar."
   },
   "sessionCreate": {
     "zh-Hans": "无法创建独立会话。",
     "en": "Could not create an isolated session.",
     "zh-Hant": "無法建立獨立工作階段。",
     "ja": "分離されたセッションを作成できませんでした。",
-    "ko": "분리된 세션을 만들지 못했습니다."
+    "ko": "분리된 세션을 만들지 못했습니다.",
+    "de": "Die getrennte Sitzung konnte nicht erstellt werden."
   },
   "sessionProfileCreate": {
     "zh-Hans": "无法创建 SAS 用户目录。",
     "en": "Could not create the SAS user folder.",
     "zh-Hant": "無法建立 SAS 使用者資料夾。",
     "ja": "SAS ユーザーフォルダーを作成できませんでした。",
-    "ko": "SAS 사용자 폴더를 만들지 못했습니다."
+    "ko": "SAS 사용자 폴더를 만들지 못했습니다.",
+    "de": "Der SAS-Benutzerordner konnte nicht erstellt werden."
   },
   "sessionRecord": {
     "zh-Hans": "无法记录独立会话。",
     "en": "Could not save the session record.",
     "zh-Hant": "無法記錄獨立工作階段。",
     "ja": "セッション記録を保存できませんでした。",
-    "ko": "세션 기록을 저장하지 못했습니다."
+    "ko": "세션 기록을 저장하지 못했습니다.",
+    "de": "Die Sitzungsaufzeichnung konnte nicht gespeichert werden."
   },
   "sasExit": {
     "zh-Hans": "SAS 异常退出。",
     "en": "SAS exited with an error.",
     "zh-Hant": "SAS 異常結束。",
     "ja": "SAS がエラーで終了しました。",
-    "ko": "SAS가 오류로 종료되었습니다."
+    "ko": "SAS가 오류로 종료되었습니다.",
+    "de": "SAS wurde mit einem Fehler beendet."
   },
   "setupMissing": {
     "zh-Hans": "没有找到这次设置会话。",
     "en": "This settings session was not found.",
     "zh-Hant": "沒有找到這次設定工作階段。",
     "ja": "この設定セッションが見つかりません。",
-    "ko": "이 설정 세션을 찾지 못했습니다."
+    "ko": "이 설정 세션을 찾지 못했습니다.",
+    "de": "Diese Einstellungssitzung wurde nicht gefunden."
   },
   "setupRunning": {
     "zh-Hans": "请先关闭设置 SAS 的窗口。",
     "en": "Close the SAS settings window before continuing.",
     "zh-Hant": "請先關閉設定 SAS 的視窗。",
     "ja": "続行する前に SAS 設定ウィンドウを閉じてください。",
-    "ko": "계속하려면 SAS 설정 창을 닫으세요."
+    "ko": "계속하려면 SAS 설정 창을 닫으세요.",
+    "de": "Schließen Sie das SAS-Einstellungsfenster, bevor Sie fortfahren."
   },
   "setupFailed": {
     "zh-Hans": "SAS 异常退出。请丢弃这次设置并重新打开 SAS。",
     "en": "SAS exited with an error. Discard these settings and reopen SAS.",
     "zh-Hant": "SAS 異常結束。請捨棄這次設定並重新開啟 SAS。",
     "ja": "SAS がエラーで終了しました。この設定を破棄して SAS を開き直してください。",
-    "ko": "SAS가 오류로 종료되었습니다. 이 설정을 버리고 SAS를 다시 여세요."
+    "ko": "SAS가 오류로 종료되었습니다. 이 설정을 버리고 SAS를 다시 여세요.",
+    "de": "SAS wurde mit einem Fehler beendet. Verwerfen Sie diese Einstellungen und öffnen Sie SAS erneut."
   },
   "setupDirectory": {
     "zh-Hans": "设置会话目录不可用。",
     "en": "The settings session folder is unavailable.",
     "zh-Hant": "設定工作階段資料夾不可用。",
     "ja": "設定セッションのフォルダーを利用できません。",
-    "ko": "설정 세션 폴더를 사용할 수 없습니다."
+    "ko": "설정 세션 폴더를 사용할 수 없습니다.",
+    "de": "Der Ordner der Einstellungssitzung ist nicht verfügbar."
   },
   "dataCreate": {
     "zh-Hans": "无法创建应用数据目录。",
     "en": "Could not create the application data folder.",
     "zh-Hant": "無法建立應用程式資料夾。",
     "ja": "アプリのデータフォルダーを作成できませんでした。",
-    "ko": "앱 데이터 폴더를 만들지 못했습니다."
+    "ko": "앱 데이터 폴더를 만들지 못했습니다.",
+    "de": "Der App-Datenordner konnte nicht erstellt werden."
   },
   "dataReparse": {
     "zh-Hans": "应用数据目录不能是重解析点。",
     "en": "The application data folder cannot be a reparse point.",
     "zh-Hant": "應用程式資料夾不能是重解析點。",
     "ja": "アプリのデータフォルダーをリパースポイントにすることはできません。",
-    "ko": "앱 데이터 폴더는 리프스 포인트일 수 없습니다."
+    "ko": "앱 데이터 폴더는 리프스 포인트일 수 없습니다.",
+    "de": "Der App-Datenordner darf kein Reparse-Point sein."
   },
   "settingsRead": {
     "zh-Hans": "无法读取保存的项目与配置。",
     "en": "Could not read saved projects and configurations.",
     "zh-Hant": "無法讀取儲存的專案與組態。",
     "ja": "保存されたプロジェクトと構成を読み取れませんでした。",
-    "ko": "저장된 프로젝트와 구성을 읽지 못했습니다."
+    "ko": "저장된 프로젝트와 구성을 읽지 못했습니다.",
+    "de": "Die gespeicherten Projekte und Konfigurationen konnten nicht gelesen werden."
   },
   "settingsWrite": {
     "zh-Hans": "无法保存应用设置。",
     "en": "Could not save application settings.",
     "zh-Hant": "無法儲存應用程式設定。",
     "ja": "アプリ設定を保存できませんでした。",
-    "ko": "앱 설정을 저장하지 못했습니다."
+    "ko": "앱 설정을 저장하지 못했습니다.",
+    "de": "Die App-Einstellungen konnten nicht gespeichert werden."
   },
   "batchRunning": {
     "zh-Hans": "项目已在运行。",
     "en": "The project is already running.",
     "zh-Hant": "專案已在執行。",
     "ja": "このプロジェクトはすでに実行中です。",
-    "ko": "이 프로젝트는 이미 실행 중입니다."
+    "ko": "이 프로젝트는 이미 실행 중입니다.",
+    "de": "Dieses Projekt läuft bereits."
   },
   "projectRunning": {
     "zh-Hans": "该项目的 SAS 会话仍在运行，请先关闭它再重新启动。",
     "en": "This project's SAS session is still running. Close it before launching again.",
     "zh-Hant": "該專案的 SAS 工作階段仍在執行，請先關閉它再重新啟動。",
     "ja": "このプロジェクトの SAS セッションがまだ実行中です。閉じてから再度起動してください。",
-    "ko": "이 프로젝트의 SAS 세션이 아직 실행 중입니다. 닫은 뒤 다시 시작하세요."
+    "ko": "이 프로젝트의 SAS 세션이 아직 실행 중입니다. 닫은 뒤 다시 시작하세요.",
+    "de": "Die SAS-Sitzung des Projekts läuft noch. Schließen Sie sie und starten Sie erneut."
   },
   "openLinkFailed": {
     "zh-Hans": "无法在浏览器中打开链接。",
     "en": "Could not open the link in your browser.",
     "zh-Hant": "無法在瀏覽器中開啟連結。",
     "ja": "ブラウザーでリンクを開けませんでした。",
-    "ko": "브라우저에서 링크를 열지 못했습니다."
+    "ko": "브라우저에서 링크를 열지 못했습니다.",
+    "de": "Der Link konnte nicht im Browser geöffnet werden."
   },
   "releaseTagInvalid": {
     "zh-Hans": "版本标签无效，无法打开发布页。",
     "en": "The release tag is invalid, so the release page cannot be opened.",
     "zh-Hant": "版本標籤無效，無法開啟發行頁面。",
     "ja": "リリースタグが不正なため、リリースページを開けません。",
-    "ko": "릴리스 태그가 올바르지 않아 릴리스 페이지를 열 수 없습니다."
+    "ko": "릴리스 태그가 올바르지 않아 릴리스 페이지를 열 수 없습니다.",
+    "de": "Das Release-Tag ist ungültig, daher kann die Release-Seite nicht geöffnet werden."
   },
   "internal": {
     "zh-Hans": "启动器内部出错，请重试。",
     "en": "The launcher hit an internal error. Try again.",
     "zh-Hant": "啟動器內部發生錯誤，請重試。",
     "ja": "内部エラーが発生しました。再試行してください。",
-    "ko": "내부 오류가 발생했습니다. 다시 시도하세요."
+    "ko": "내부 오류가 발생했습니다. 다시 시도하세요.",
+    "de": "Ein interner Fehler ist aufgetreten. Versuchen Sie es erneut."
   },
   "unexpected": {
     "zh-Hans": "操作未完成。",
     "en": "The operation could not be completed.",
     "zh-Hant": "操作未完成。",
     "ja": "操作を完了できませんでした。",
-    "ko": "작업을 완료할 수 없습니다."
+    "ko": "작업을 완료할 수 없습니다.",
+    "de": "Der Vorgang konnte nicht abgeschlossen werden."
   }
 }

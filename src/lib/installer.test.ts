@@ -55,6 +55,7 @@ it('the_installer_only_offers_languages_tauri_translates', () => {
 })
 
 const nsisNames: Record<Language, string> = {
+  de: 'German',
   en: 'English',
   ja: 'Japanese',
   ko: 'Korean',

@@ -13,6 +13,7 @@ pub enum LanguagePreference {
     ZhHant,
     Ja,
     Ko,
+    De,
 }
 
 impl LanguagePreference {
@@ -23,8 +24,10 @@ impl LanguagePreference {
             Self::En => "en",
             Self::Ja => "ja",
             Self::Ko => "ko",
+            Self::De => "de",
             Self::System if is_japanese(system) => "ja",
             Self::System if is_ko(system) => "ko",
+            Self::System if is_de(system) => "de",
             Self::System if is_traditional_chinese(system) => "zh-Hant",
             Self::System if is_simplified_chinese(system) => "zh-Hans",
             Self::System => "en",
@@ -40,6 +43,11 @@ fn is_japanese(language: &str) -> bool {
 fn is_ko(language: &str) -> bool {
     let language = language.to_ascii_lowercase();
     language == "ko" || language.starts_with("ko-")
+}
+
+fn is_de(language: &str) -> bool {
+    let language = language.to_ascii_lowercase();
+    language == "de" || language.starts_with("de-")
 }
 
 fn is_simplified_chinese(language: &str) -> bool {
@@ -97,10 +105,11 @@ mod tests {
     fn system_language_and_explicit_preferences_are_independent() {
         assert_eq!(LanguagePreference::System.resolve("zh-CN"), "zh-Hans");
         assert_eq!(LanguagePreference::System.resolve("en-GB"), "en");
-        assert_eq!(LanguagePreference::System.resolve("de-DE"), "en");
+        assert_eq!(LanguagePreference::System.resolve("de-DE"), "de");
         assert_eq!(LanguagePreference::System.resolve("ja-JP"), "ja");
         assert_eq!(LanguagePreference::System.resolve("ja"), "ja");
         assert_eq!(LanguagePreference::System.resolve("ko-KR"), "ko");
+        assert_eq!(LanguagePreference::System.resolve("de-AT"), "de");
         assert_eq!(LanguagePreference::System.resolve("zh-TW"), "zh-Hant");
         assert_eq!(LanguagePreference::System.resolve("zh-HK"), "zh-Hant");
         assert_eq!(LanguagePreference::System.resolve("zh-Hant-TW"), "zh-Hant");
@@ -118,6 +127,7 @@ mod tests {
             LanguagePreference::ZhHant,
             LanguagePreference::Ja,
             LanguagePreference::Ko,
+            LanguagePreference::De,
         ] {
             let tag = serde_json::to_string(&preference).unwrap();
             let back: LanguagePreference = serde_json::from_str(&tag).unwrap();

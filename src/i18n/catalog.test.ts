@@ -2,13 +2,14 @@ import { expect, it } from 'vitest'
 import issues from '../issue-messages.json'
 import baseline from './coverage-baseline.json'
 import { messages as en, notes } from './en'
+import { messages as de } from './de'
 import { messages as ko } from './ko'
 import { languageNames } from './index'
 import { messages as ja } from './ja'
 import { messages as zhHans } from './zh-Hans'
 import { messages as zhHant } from './zh-Hant'
 
-const catalogs = { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko } as const
+const catalogs = { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, de } as const
 
 /** The `{name}` placeholders a message declares, independent of their order. */
 function placeholders(value: string): string[] {

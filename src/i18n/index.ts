@@ -1,6 +1,7 @@
 import type { Language } from '../api'
 import issues from '../issue-messages.json'
 import { messages as en, type MessageKey } from './en'
+import { messages as de } from './de'
 import { messages as ko } from './ko'
 import { messages as ja } from './ja'
 import { messages as zhHans } from './zh-Hans'
@@ -10,6 +11,7 @@ import { languageProfiles } from './languages'
 /** One catalog per language. English is the source, so the other languages are partial. */
 const catalogs: Record<Language, Partial<Record<MessageKey, string>>> = {
   en,
+  de: de,
   ko: ko,
   ja,
   'zh-Hans': zhHans,
