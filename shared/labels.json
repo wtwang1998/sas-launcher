@@ -1,10 +1,22 @@
 {
-  "config.defaultBaseLabel": ["默认配置", "Default configuration", "預設組態"],
-  "config.derivedName": [
-    "用户配置（衍生自 {base}）#{index}",
-    "User configuration (derived from {base}) #{index}",
-    "使用者組態（衍生自 {base}）#{index}"
-  ],
-  "tray.showWindow": ["显示窗口", "Show window", "顯示視窗"],
-  "tray.quit": ["退出", "Quit", "結束"]
+  "config.defaultBaseLabel": {
+    "zh-Hans": "默认配置",
+    "en": "Default configuration",
+    "zh-Hant": "預設組態"
+  },
+  "config.derivedName": {
+    "zh-Hans": "用户配置（衍生自 {base}）#{index}",
+    "en": "User configuration (derived from {base}) #{index}",
+    "zh-Hant": "使用者組態（衍生自 {base}）#{index}"
+  },
+  "tray.showWindow": {
+    "zh-Hans": "显示窗口",
+    "en": "Show window",
+    "zh-Hant": "顯示視窗"
+  },
+  "tray.quit": {
+    "zh-Hans": "退出",
+    "en": "Quit",
+    "zh-Hant": "結束"
+  }
 }

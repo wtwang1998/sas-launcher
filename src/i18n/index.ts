@@ -24,9 +24,6 @@ export const languageNames = Object.fromEntries(
   Object.entries(languageProfiles).map(([language, profile]) => [language, profile.endonym]),
 ) as Record<Language, string>
 
-/** The index of a language inside a `[zh-Hans, en, zh-Hant]` catalog entry. */
-const issueIndex: Record<Language, number> = { 'zh-Hans': 0, en: 1, 'zh-Hant': 2 }
-
 /** English is the source: an untranslated key reads in English, never blank. */
 function text(language: Language, key: MessageKey): string {
   return catalogs[language][key] ?? en[key]
@@ -90,7 +87,7 @@ export function pluralKey(language: Language, base: PluralBase, count: number): 
 }
 
 export function issueText(language: Language, error: unknown) {
-  const catalog = issues as unknown as Record<string, [string, string, string?]>
+  const catalog = issues as unknown as Record<string, Partial<Record<Language, string>>>
   const known =
     error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
       ? catalog[error.code]
@@ -105,7 +102,7 @@ export function issueText(language: Language, error: unknown) {
           : ''
   // A code that has no entry for this language yet reads in English, never blank.
   const entry = known ?? catalog.unexpected
-  const title = entry[issueIndex[language]] ?? entry[1]
+  const title = entry[language] ?? entry.en ?? ''
   return detail ? `${title} (${detail})` : title
 }
 

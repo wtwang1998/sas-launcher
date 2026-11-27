@@ -1,323 +1,347 @@
 {
-  "autostartWrite": [
-    "无法更新开机自启动设置。",
-    "Could not update the start-at-login setting.",
-    "無法更新開機自動啟動設定。"
-  ],
-  "autostartPath": [
-    "无法解析程序自身的路径，开机自启动暂不可用。",
-    "Could not resolve the launcher's own path, so start-at-login is unavailable.",
-    "無法解析程式自身路徑，開機自動啟動暫不可用。"
-  ],
-  "configurationWrite": [
-    "无法保存启动配置文件。",
-    "Could not save the launch configuration file.",
-    "無法儲存啟動組態檔。"
-  ],
-  "rootConfigRead": [
-    "无法读取 SAS 根目录的 sasv9.cfg。",
-    "Could not read sasv9.cfg in the SAS root folder.",
-    "無法讀取 SAS 根目錄的 sasv9.cfg。"
-  ],
-  "defaultConfigPointerMissing": [
-    "SAS 根配置没有指向有效的默认 NLS 配置。",
-    "The SAS root configuration does not point to a valid default NLS configuration.",
-    "SAS 根組態沒有指向有效的預設 NLS 組態。"
-  ],
-  "defaultConfigUnavailable": [
-    "SAS 默认配置指向的文件不可用。",
-    "The file referenced by the SAS default configuration is unavailable.",
-    "SAS 預設組態指向的檔案不可用。"
-  ],
-  "invalidLocaleEncoding": [
-    "区域或编码格式无效，请使用如 zh_CN、EUC-CN 的写法。",
-    "The locale or encoding format is invalid. Use forms such as zh_CN and EUC-CN.",
-    "地區或編碼格式無效，請使用如 zh_CN、EUC-CN 的寫法。"
-  ],
-  "invalidProjectNote": [
-    "备注最多 2000 个字符，且不能包含控制字符。",
-    "Use up to 2,000 characters and omit control characters in the notes.",
-    "備註最多 2000 個字元，且不能包含控制字元。"
-  ],
-  "configurationFileMissing": [
-    "启动配置文件不可用，请编辑或重新创建此配置。",
-    "The configuration file is unavailable. Edit or recreate this configuration.",
-    "啟動組態檔不可用，請編輯或重新建立此組態。"
-  ],
-  "configurationBaseMissing": [
-    "原厂基础配置不可用，请重新选择。",
-    "The factory base configuration is unavailable. Choose another one.",
-    "原廠基礎組態不可用，請重新選擇。"
-  ],
-  "managedConfigurationMissing": [
-    "用户配置不存在。",
-    "The user configuration does not exist.",
-    "使用者組態不存在。"
-  ],
-  "startupFileMissing": [
-    "项目的启动代码文件不存在，请重新选择文件后再启动。",
-    "The project's startup code file is missing. Choose a file again before launching.",
-    "專案的啟動程式碼檔案不存在，請重新選擇檔案後再啟動。"
-  ],
-  "startupFileNotAbsolute": [
-    "启动代码文件需要一个绝对路径。",
-    "The startup code file needs an absolute path.",
-    "啟動程式碼檔案需要絕對路徑。"
-  ],
-  "startupNeedsPath": [
-    "该启动脚本读取 SASLAUNCHER_STARTUP_FILE，请勾选「向会话提供启动文件路径」，或改成写死路径。",
-    "The startup script reads SASLAUNCHER_STARTUP_FILE. Turn on \"tell the session where the startup file is\", or hard-code the path instead.",
-    "該啟動指令碼讀取 SASLAUNCHER_STARTUP_FILE，請勾選「向工作階段提供啟動檔案路徑」，或改成寫死路徑。"
-  ],
-  "startupNeedsMacro": [
-    "自动执行时读不到 SAS_EXECFILEPATH（SAS 在窗口启动阶段会重置它）。请让脚本优先读 SASLAUNCHER_STARTUP_FILE，或写死路径。",
-    "SAS_EXECFILEPATH is empty when the script runs as an autoexec file, because SAS resets it during a windowed start. Make the script read SASLAUNCHER_STARTUP_FILE first, or hard-code the path.",
-    "自動執行時讀不到 SAS_EXECFILEPATH（SAS 在視窗啟動階段會重設它）。請讓指令碼優先讀取 SASLAUNCHER_STARTUP_FILE，或寫死路徑。"
-  ],
-  "startupAlreadyMigrated": [
-    "这个启动文件已经改好了，不需要再次迁移。",
-    "This startup script is already migrated.",
-    "這個啟動檔案已經改好了，不需要再次移轉。"
-  ],
-  "startupMigrateUnsupported": [
-    "这个启动文件在迁移能改的位置之外还引用了 SAS_EXECFILEPATH，未做任何改动。迁移只认「%let 赋值里右侧就是 %sysget(SAS_EXECFILEPATH)」这一种写法；用 &_SASPROGRAMFILE、%sysfunc(getoption(sysin)) 或别的来源定位自己的脚本，也要手工改成读 SASLAUNCHER_STARTUP_FILE。",
-    "This startup script reads SAS_EXECFILEPATH somewhere the migration does not rewrite, so nothing was changed. It recognises one idiom only: a %let assignment whose right side is exactly %sysget(SAS_EXECFILEPATH). A script that locates itself through &_SASPROGRAMFILE, %sysfunc(getoption(sysin)) or another source needs the same hand edit: read SASLAUNCHER_STARTUP_FILE instead.",
-    "這個啟動檔案在移轉能改的位置之外還引用了 SAS_EXECFILEPATH，未做任何變更。移轉只認「%let 賦值裡右側就是 %sysget(SAS_EXECFILEPATH)」這一種寫法；用 &_SASPROGRAMFILE、%sysfunc(getoption(sysin)) 或其他來源定位自己的指令碼，也要手動改成讀取 SASLAUNCHER_STARTUP_FILE。"
-  ],
-  "startupWrite": [
-    "无法写入启动文件，未做任何改动。请检查该文件是否只读或被占用。",
-    "Could not write the startup script, so nothing was changed. Check whether the file is read-only or open elsewhere.",
-    "無法寫入啟動檔案，未做任何變更。請檢查該檔案是否唯讀或被占用。"
-  ],
-  "configurationSetupActive": [
-    "请先关闭 SAS 设置会话并保存或丢弃本次设置。",
-    "Close the SAS settings session and save or discard its changes first.",
-    "請先關閉 SAS 設定工作階段並儲存或捨棄本次設定。"
-  ],
-  "configurationInUse": [
-    "请先为引用此配置的项目改选启动配置。",
-    "Choose a different launch configuration for the projects using this configuration first.",
-    "請先為引用此組態的專案改選啟動組態。"
-  ],
-  "invalidConfigurationName": [
-    "配置名称最多 100 字，且不能包含控制字符。",
-    "Use up to 100 characters and omit control characters for the configuration name.",
-    "組態名稱最多 100 個字元，且不能包含控制字元。"
-  ],
-  "profileNotFile": [
-    "SAS 设置项不是普通文件。",
-    "The SAS settings entry is not a regular file.",
-    "SAS 設定項不是一般檔案。"
-  ],
-  "profileRead": [
-    "无法读取 SAS 设置文件。",
-    "Could not read a SAS settings file.",
-    "無法讀取 SAS 設定檔。"
-  ],
-  "profileLocked": [
-    "无法打开 SAS 设置文件。请关闭正在使用该目录的 SAS 后重试。",
-    "Could not open a SAS settings file. Close SAS sessions using that folder, then try again.",
-    "無法開啟 SAS 設定檔。請關閉正在使用該資料夾的 SAS 後重試。"
-  ],
-  "profileEmpty": [
-    "这个目录里没有可保存的 SAS 个人设置。请先打开 SAS 调整设置。",
-    "This folder contains no SAS personal settings. Adjust settings in SAS first.",
-    "這個資料夾裡沒有可儲存的 SAS 個人設定。請先開啟 SAS 調整設定。"
-  ],
-  "profileSourceEmpty": [
-    "这个文件夹里没有 SAS 设置文件。换一个文件夹，或选择「不使用已有偏好」。",
-    "This folder holds no SAS settings files. Pick another folder, or start without preferences.",
-    "這個資料夾裡沒有 SAS 設定檔。換一個資料夾，或選擇「不使用既有偏好」。"
-  ],
-  "profileSnapshotEmpty": [
-    "这个配置还没有保存过设置。先在配置管理里打开 SAS 调整设置并保存一次。",
-    "This configuration has no saved settings yet. Open SAS to adjust settings from the configurations page and save once.",
-    "這個組態還沒有儲存過設定。先在組態管理裡開啟 SAS 調整設定並儲存一次。"
-  ],
-  "profileInterfaceMissing": [
-    "这个文件夹里没有 SAS 的界面设置文件（窗口布局、功能键、菜单）。换一个文件夹。",
-    "This folder holds no SAS interface settings (window layout, function keys, menus). Pick another folder.",
-    "這個資料夾裡沒有 SAS 的介面設定檔（視窗配置、功能鍵、功能表）。換一個資料夾。"
-  ],
-  "profileEnvironmentMissing": [
-    "你勾选了「环境」，但这个文件夹里没有对应的设置文件。取消勾选「环境」，或换一个文件夹。",
-    "You ticked Environment, but this folder holds no matching settings file. Clear that tick or pick another folder.",
-    "你勾選了「環境」，但這個資料夾裡沒有對應的設定檔。取消勾選「環境」，或換一個資料夾。"
-  ],
-  "profileTemplatesMissing": [
-    "你勾选了「ODS 模板与样式」，但这个文件夹里没有对应的文件。取消勾选，或换一个文件夹。",
-    "You ticked ODS templates and styles, but this folder holds no matching file. Clear that tick or pick another folder.",
-    "你勾選了「ODS 範本與樣式」，但這個資料夾裡沒有對應的檔案。取消勾選，或換一個資料夾。"
-  ],
-  "profileCreate": [
-    "无法创建 SAS 设置文件。",
-    "Could not create the SAS settings file.",
-    "無法建立 SAS 設定檔。"
-  ],
-  "profileCopy": [
-    "无法复制 SAS 设置文件。",
-    "Could not copy the SAS settings file.",
-    "無法複製 SAS 設定檔。"
-  ],
-  "profileNotWritable": [
-    "SAS 用户目录不可写。",
-    "The SAS user folder is not writable.",
-    "SAS 使用者資料夾不可寫入。"
-  ],
-  "sasMissing": [
-    "未找到 SAS 9.4。请选择已安装的 sas.exe。",
-    "SAS 9.4 was not found. Select the installed sas.exe.",
-    "未找到 SAS 9.4。請選擇已安裝的 sas.exe。"
-  ],
-  "configUnavailable": [
-    "找不到所选的 SAS 启动配置，请刷新后重新选择。",
-    "The selected SAS configuration is unavailable. Refresh and choose a configuration.",
-    "找不到所選的 SAS 啟動組態，請重新整理後重新選擇。"
-  ],
-  "invalidName": [
-    "请输入 1 到 100 个字符的项目名称。",
-    "Enter a project name of 1–100 characters.",
-    "請輸入 1 到 100 個字元的專案名稱。"
-  ],
-  "projectMissing": [
-    "这个项目已经不存在。",
-    "This project no longer exists.",
-    "這個專案已經不存在。"
-  ],
-  "dataPath": [
-    "无法定位应用数据目录。",
-    "Could not find the application data folder.",
-    "無法定位應用程式資料夾。"
-  ],
-  "pathUnavailable": ["路径不可用。", "The path is unavailable.", "路徑不可用。"],
-  "invalidExe": [
-    "请选择已安装的 SAS 9.4 程序 sas.exe。",
-    "Select the installed SAS 9.4 executable, sas.exe.",
-    "請選擇已安裝的 SAS 9.4 程式 sas.exe。"
-  ],
-  "exeAccess": [
-    "无法访问 SAS 程序。",
-    "Could not access the SAS executable.",
-    "無法存取 SAS 程式。"
-  ],
-  "configDirectory": [
-    "无法读取启动配置目录。",
-    "Could not read the SAS configuration folder.",
-    "無法讀取啟動組態資料夾。"
-  ],
-  "configEntry": [
-    "无法读取启动配置。",
-    "Could not read an entry in the SAS configuration folder.",
-    "無法讀取啟動組態。"
-  ],
-  "noConfigs": [
-    "此目录中未找到 sasv9.cfg 配置。",
-    "No sasv9.cfg configurations were found in this folder.",
-    "此資料夾中未找到 sasv9.cfg 組態。"
-  ],
-  "configRead": [
-    "无法读取配置文件。",
-    "Could not read the SAS configuration file.",
-    "無法讀取組態檔。"
-  ],
-  "encodingUnknown": [
-    "配置未声明可识别的 ENCODING。",
-    "The configuration does not declare a recognized ENCODING.",
-    "組態未宣告可辨識的 ENCODING。"
-  ],
-  "utf16Incomplete": [
-    "配置文件的 UTF-16 内容不完整。",
-    "The configuration file contains incomplete UTF-16.",
-    "組態檔的 UTF-16 內容不完整。"
-  ],
-  "configDecode": [
-    "无法读取配置文件编码。",
-    "Could not decode the SAS configuration file.",
-    "無法讀取組態檔編碼。"
-  ],
-  "configTooLarge": ["配置文件过大。", "The configuration file is too large.", "組態檔過大。"],
-  "spawnFailed": ["无法启动 SAS。", "Could not start SAS.", "無法啟動 SAS。"],
-  "sessionDirectory": [
-    "会话目录不可用。",
-    "The session folder is unavailable.",
-    "工作階段資料夾不可用。"
-  ],
-  "sessionCreate": [
-    "无法创建独立会话。",
-    "Could not create an isolated session.",
-    "無法建立獨立工作階段。"
-  ],
-  "sessionProfileCreate": [
-    "无法创建 SAS 用户目录。",
-    "Could not create the SAS user folder.",
-    "無法建立 SAS 使用者資料夾。"
-  ],
-  "sessionRecord": [
-    "无法记录独立会话。",
-    "Could not save the session record.",
-    "無法記錄獨立工作階段。"
-  ],
-  "sasExit": ["SAS 异常退出。", "SAS exited with an error.", "SAS 異常結束。"],
-  "setupMissing": [
-    "没有找到这次设置会话。",
-    "This settings session was not found.",
-    "沒有找到這次設定工作階段。"
-  ],
-  "setupRunning": [
-    "请先关闭设置 SAS 的窗口。",
-    "Close the SAS settings window before continuing.",
-    "請先關閉設定 SAS 的視窗。"
-  ],
-  "setupFailed": [
-    "SAS 异常退出。请丢弃这次设置并重新打开 SAS。",
-    "SAS exited with an error. Discard these settings and reopen SAS.",
-    "SAS 異常結束。請捨棄這次設定並重新開啟 SAS。"
-  ],
-  "setupDirectory": [
-    "设置会话目录不可用。",
-    "The settings session folder is unavailable.",
-    "設定工作階段資料夾不可用。"
-  ],
-  "dataCreate": [
-    "无法创建应用数据目录。",
-    "Could not create the application data folder.",
-    "無法建立應用程式資料夾。"
-  ],
-  "dataReparse": [
-    "应用数据目录不能是重解析点。",
-    "The application data folder cannot be a reparse point.",
-    "應用程式資料夾不能是重解析點。"
-  ],
-  "settingsRead": [
-    "无法读取保存的项目与配置。",
-    "Could not read saved projects and configurations.",
-    "無法讀取儲存的專案與組態。"
-  ],
-  "settingsWrite": [
-    "无法保存应用设置。",
-    "Could not save application settings.",
-    "無法儲存應用程式設定。"
-  ],
-  "batchRunning": ["项目已在运行。", "The project is already running.", "專案已在執行。"],
-  "projectRunning": [
-    "该项目的 SAS 会话仍在运行，请先关闭它再重新启动。",
-    "This project's SAS session is still running. Close it before launching again.",
-    "該專案的 SAS 工作階段仍在執行，請先關閉它再重新啟動。"
-  ],
-  "openLinkFailed": [
-    "无法在浏览器中打开链接。",
-    "Could not open the link in your browser.",
-    "無法在瀏覽器中開啟連結。"
-  ],
-  "releaseTagInvalid": [
-    "版本标签无效，无法打开发布页。",
-    "The release tag is invalid, so the release page cannot be opened.",
-    "版本標籤無效，無法開啟發行頁面。"
-  ],
-  "internal": [
-    "启动器内部出错，请重试。",
-    "The launcher hit an internal error. Try again.",
-    "啟動器內部發生錯誤，請重試。"
-  ],
-  "unexpected": ["操作未完成。", "The operation could not be completed.", "操作未完成。"]
+  "autostartWrite": {
+    "zh-Hans": "无法更新开机自启动设置。",
+    "en": "Could not update the start-at-login setting.",
+    "zh-Hant": "無法更新開機自動啟動設定。"
+  },
+  "autostartPath": {
+    "zh-Hans": "无法解析程序自身的路径，开机自启动暂不可用。",
+    "en": "Could not resolve the launcher's own path, so start-at-login is unavailable.",
+    "zh-Hant": "無法解析程式自身路徑，開機自動啟動暫不可用。"
+  },
+  "configurationWrite": {
+    "zh-Hans": "无法保存启动配置文件。",
+    "en": "Could not save the launch configuration file.",
+    "zh-Hant": "無法儲存啟動組態檔。"
+  },
+  "rootConfigRead": {
+    "zh-Hans": "无法读取 SAS 根目录的 sasv9.cfg。",
+    "en": "Could not read sasv9.cfg in the SAS root folder.",
+    "zh-Hant": "無法讀取 SAS 根目錄的 sasv9.cfg。"
+  },
+  "defaultConfigPointerMissing": {
+    "zh-Hans": "SAS 根配置没有指向有效的默认 NLS 配置。",
+    "en": "The SAS root configuration does not point to a valid default NLS configuration.",
+    "zh-Hant": "SAS 根組態沒有指向有效的預設 NLS 組態。"
+  },
+  "defaultConfigUnavailable": {
+    "zh-Hans": "SAS 默认配置指向的文件不可用。",
+    "en": "The file referenced by the SAS default configuration is unavailable.",
+    "zh-Hant": "SAS 預設組態指向的檔案不可用。"
+  },
+  "invalidLocaleEncoding": {
+    "zh-Hans": "区域或编码格式无效，请使用如 zh_CN、EUC-CN 的写法。",
+    "en": "The locale or encoding format is invalid. Use forms such as zh_CN and EUC-CN.",
+    "zh-Hant": "地區或編碼格式無效，請使用如 zh_CN、EUC-CN 的寫法。"
+  },
+  "invalidProjectNote": {
+    "zh-Hans": "备注最多 2000 个字符，且不能包含控制字符。",
+    "en": "Use up to 2,000 characters and omit control characters in the notes.",
+    "zh-Hant": "備註最多 2000 個字元，且不能包含控制字元。"
+  },
+  "configurationFileMissing": {
+    "zh-Hans": "启动配置文件不可用，请编辑或重新创建此配置。",
+    "en": "The configuration file is unavailable. Edit or recreate this configuration.",
+    "zh-Hant": "啟動組態檔不可用，請編輯或重新建立此組態。"
+  },
+  "configurationBaseMissing": {
+    "zh-Hans": "原厂基础配置不可用，请重新选择。",
+    "en": "The factory base configuration is unavailable. Choose another one.",
+    "zh-Hant": "原廠基礎組態不可用，請重新選擇。"
+  },
+  "managedConfigurationMissing": {
+    "zh-Hans": "用户配置不存在。",
+    "en": "The user configuration does not exist.",
+    "zh-Hant": "使用者組態不存在。"
+  },
+  "startupFileMissing": {
+    "zh-Hans": "项目的启动代码文件不存在，请重新选择文件后再启动。",
+    "en": "The project's startup code file is missing. Choose a file again before launching.",
+    "zh-Hant": "專案的啟動程式碼檔案不存在，請重新選擇檔案後再啟動。"
+  },
+  "startupFileNotAbsolute": {
+    "zh-Hans": "启动代码文件需要一个绝对路径。",
+    "en": "The startup code file needs an absolute path.",
+    "zh-Hant": "啟動程式碼檔案需要絕對路徑。"
+  },
+  "startupNeedsPath": {
+    "zh-Hans": "该启动脚本读取 SASLAUNCHER_STARTUP_FILE，请勾选「向会话提供启动文件路径」，或改成写死路径。",
+    "en": "The startup script reads SASLAUNCHER_STARTUP_FILE. Turn on \"tell the session where the startup file is\", or hard-code the path instead.",
+    "zh-Hant": "該啟動指令碼讀取 SASLAUNCHER_STARTUP_FILE，請勾選「向工作階段提供啟動檔案路徑」，或改成寫死路徑。"
+  },
+  "startupNeedsMacro": {
+    "zh-Hans": "自动执行时读不到 SAS_EXECFILEPATH（SAS 在窗口启动阶段会重置它）。请让脚本优先读 SASLAUNCHER_STARTUP_FILE，或写死路径。",
+    "en": "SAS_EXECFILEPATH is empty when the script runs as an autoexec file, because SAS resets it during a windowed start. Make the script read SASLAUNCHER_STARTUP_FILE first, or hard-code the path.",
+    "zh-Hant": "自動執行時讀不到 SAS_EXECFILEPATH（SAS 在視窗啟動階段會重設它）。請讓指令碼優先讀取 SASLAUNCHER_STARTUP_FILE，或寫死路徑。"
+  },
+  "startupAlreadyMigrated": {
+    "zh-Hans": "这个启动文件已经改好了，不需要再次迁移。",
+    "en": "This startup script is already migrated.",
+    "zh-Hant": "這個啟動檔案已經改好了，不需要再次移轉。"
+  },
+  "startupMigrateUnsupported": {
+    "zh-Hans": "这个启动文件在迁移能改的位置之外还引用了 SAS_EXECFILEPATH，未做任何改动。迁移只认「%let 赋值里右侧就是 %sysget(SAS_EXECFILEPATH)」这一种写法；用 &_SASPROGRAMFILE、%sysfunc(getoption(sysin)) 或别的来源定位自己的脚本，也要手工改成读 SASLAUNCHER_STARTUP_FILE。",
+    "en": "This startup script reads SAS_EXECFILEPATH somewhere the migration does not rewrite, so nothing was changed. It recognises one idiom only: a %let assignment whose right side is exactly %sysget(SAS_EXECFILEPATH). A script that locates itself through &_SASPROGRAMFILE, %sysfunc(getoption(sysin)) or another source needs the same hand edit: read SASLAUNCHER_STARTUP_FILE instead.",
+    "zh-Hant": "這個啟動檔案在移轉能改的位置之外還引用了 SAS_EXECFILEPATH，未做任何變更。移轉只認「%let 賦值裡右側就是 %sysget(SAS_EXECFILEPATH)」這一種寫法；用 &_SASPROGRAMFILE、%sysfunc(getoption(sysin)) 或其他來源定位自己的指令碼，也要手動改成讀取 SASLAUNCHER_STARTUP_FILE。"
+  },
+  "startupWrite": {
+    "zh-Hans": "无法写入启动文件，未做任何改动。请检查该文件是否只读或被占用。",
+    "en": "Could not write the startup script, so nothing was changed. Check whether the file is read-only or open elsewhere.",
+    "zh-Hant": "無法寫入啟動檔案，未做任何變更。請檢查該檔案是否唯讀或被占用。"
+  },
+  "configurationSetupActive": {
+    "zh-Hans": "请先关闭 SAS 设置会话并保存或丢弃本次设置。",
+    "en": "Close the SAS settings session and save or discard its changes first.",
+    "zh-Hant": "請先關閉 SAS 設定工作階段並儲存或捨棄本次設定。"
+  },
+  "configurationInUse": {
+    "zh-Hans": "请先为引用此配置的项目改选启动配置。",
+    "en": "Choose a different launch configuration for the projects using this configuration first.",
+    "zh-Hant": "請先為引用此組態的專案改選啟動組態。"
+  },
+  "invalidConfigurationName": {
+    "zh-Hans": "配置名称最多 100 字，且不能包含控制字符。",
+    "en": "Use up to 100 characters and omit control characters for the configuration name.",
+    "zh-Hant": "組態名稱最多 100 個字元，且不能包含控制字元。"
+  },
+  "profileNotFile": {
+    "zh-Hans": "SAS 设置项不是普通文件。",
+    "en": "The SAS settings entry is not a regular file.",
+    "zh-Hant": "SAS 設定項不是一般檔案。"
+  },
+  "profileRead": {
+    "zh-Hans": "无法读取 SAS 设置文件。",
+    "en": "Could not read a SAS settings file.",
+    "zh-Hant": "無法讀取 SAS 設定檔。"
+  },
+  "profileLocked": {
+    "zh-Hans": "无法打开 SAS 设置文件。请关闭正在使用该目录的 SAS 后重试。",
+    "en": "Could not open a SAS settings file. Close SAS sessions using that folder, then try again.",
+    "zh-Hant": "無法開啟 SAS 設定檔。請關閉正在使用該資料夾的 SAS 後重試。"
+  },
+  "profileEmpty": {
+    "zh-Hans": "这个目录里没有可保存的 SAS 个人设置。请先打开 SAS 调整设置。",
+    "en": "This folder contains no SAS personal settings. Adjust settings in SAS first.",
+    "zh-Hant": "這個資料夾裡沒有可儲存的 SAS 個人設定。請先開啟 SAS 調整設定。"
+  },
+  "profileSourceEmpty": {
+    "zh-Hans": "这个文件夹里没有 SAS 设置文件。换一个文件夹，或选择「不使用已有偏好」。",
+    "en": "This folder holds no SAS settings files. Pick another folder, or start without preferences.",
+    "zh-Hant": "這個資料夾裡沒有 SAS 設定檔。換一個資料夾，或選擇「不使用既有偏好」。"
+  },
+  "profileSnapshotEmpty": {
+    "zh-Hans": "这个配置还没有保存过设置。先在配置管理里打开 SAS 调整设置并保存一次。",
+    "en": "This configuration has no saved settings yet. Open SAS to adjust settings from the configurations page and save once.",
+    "zh-Hant": "這個組態還沒有儲存過設定。先在組態管理裡開啟 SAS 調整設定並儲存一次。"
+  },
+  "profileInterfaceMissing": {
+    "zh-Hans": "这个文件夹里没有 SAS 的界面设置文件（窗口布局、功能键、菜单）。换一个文件夹。",
+    "en": "This folder holds no SAS interface settings (window layout, function keys, menus). Pick another folder.",
+    "zh-Hant": "這個資料夾裡沒有 SAS 的介面設定檔（視窗配置、功能鍵、功能表）。換一個資料夾。"
+  },
+  "profileEnvironmentMissing": {
+    "zh-Hans": "你勾选了「环境」，但这个文件夹里没有对应的设置文件。取消勾选「环境」，或换一个文件夹。",
+    "en": "You ticked Environment, but this folder holds no matching settings file. Clear that tick or pick another folder.",
+    "zh-Hant": "你勾選了「環境」，但這個資料夾裡沒有對應的設定檔。取消勾選「環境」，或換一個資料夾。"
+  },
+  "profileTemplatesMissing": {
+    "zh-Hans": "你勾选了「ODS 模板与样式」，但这个文件夹里没有对应的文件。取消勾选，或换一个文件夹。",
+    "en": "You ticked ODS templates and styles, but this folder holds no matching file. Clear that tick or pick another folder.",
+    "zh-Hant": "你勾選了「ODS 範本與樣式」，但這個資料夾裡沒有對應的檔案。取消勾選，或換一個資料夾。"
+  },
+  "profileCreate": {
+    "zh-Hans": "无法创建 SAS 设置文件。",
+    "en": "Could not create the SAS settings file.",
+    "zh-Hant": "無法建立 SAS 設定檔。"
+  },
+  "profileCopy": {
+    "zh-Hans": "无法复制 SAS 设置文件。",
+    "en": "Could not copy the SAS settings file.",
+    "zh-Hant": "無法複製 SAS 設定檔。"
+  },
+  "profileNotWritable": {
+    "zh-Hans": "SAS 用户目录不可写。",
+    "en": "The SAS user folder is not writable.",
+    "zh-Hant": "SAS 使用者資料夾不可寫入。"
+  },
+  "sasMissing": {
+    "zh-Hans": "未找到 SAS 9.4。请选择已安装的 sas.exe。",
+    "en": "SAS 9.4 was not found. Select the installed sas.exe.",
+    "zh-Hant": "未找到 SAS 9.4。請選擇已安裝的 sas.exe。"
+  },
+  "configUnavailable": {
+    "zh-Hans": "找不到所选的 SAS 启动配置，请刷新后重新选择。",
+    "en": "The selected SAS configuration is unavailable. Refresh and choose a configuration.",
+    "zh-Hant": "找不到所選的 SAS 啟動組態，請重新整理後重新選擇。"
+  },
+  "invalidName": {
+    "zh-Hans": "请输入 1 到 100 个字符的项目名称。",
+    "en": "Enter a project name of 1–100 characters.",
+    "zh-Hant": "請輸入 1 到 100 個字元的專案名稱。"
+  },
+  "projectMissing": {
+    "zh-Hans": "这个项目已经不存在。",
+    "en": "This project no longer exists.",
+    "zh-Hant": "這個專案已經不存在。"
+  },
+  "dataPath": {
+    "zh-Hans": "无法定位应用数据目录。",
+    "en": "Could not find the application data folder.",
+    "zh-Hant": "無法定位應用程式資料夾。"
+  },
+  "pathUnavailable": {
+    "zh-Hans": "路径不可用。",
+    "en": "The path is unavailable.",
+    "zh-Hant": "路徑不可用。"
+  },
+  "invalidExe": {
+    "zh-Hans": "请选择已安装的 SAS 9.4 程序 sas.exe。",
+    "en": "Select the installed SAS 9.4 executable, sas.exe.",
+    "zh-Hant": "請選擇已安裝的 SAS 9.4 程式 sas.exe。"
+  },
+  "exeAccess": {
+    "zh-Hans": "无法访问 SAS 程序。",
+    "en": "Could not access the SAS executable.",
+    "zh-Hant": "無法存取 SAS 程式。"
+  },
+  "configDirectory": {
+    "zh-Hans": "无法读取启动配置目录。",
+    "en": "Could not read the SAS configuration folder.",
+    "zh-Hant": "無法讀取啟動組態資料夾。"
+  },
+  "configEntry": {
+    "zh-Hans": "无法读取启动配置。",
+    "en": "Could not read an entry in the SAS configuration folder.",
+    "zh-Hant": "無法讀取啟動組態。"
+  },
+  "noConfigs": {
+    "zh-Hans": "此目录中未找到 sasv9.cfg 配置。",
+    "en": "No sasv9.cfg configurations were found in this folder.",
+    "zh-Hant": "此資料夾中未找到 sasv9.cfg 組態。"
+  },
+  "configRead": {
+    "zh-Hans": "无法读取配置文件。",
+    "en": "Could not read the SAS configuration file.",
+    "zh-Hant": "無法讀取組態檔。"
+  },
+  "encodingUnknown": {
+    "zh-Hans": "配置未声明可识别的 ENCODING。",
+    "en": "The configuration does not declare a recognized ENCODING.",
+    "zh-Hant": "組態未宣告可辨識的 ENCODING。"
+  },
+  "utf16Incomplete": {
+    "zh-Hans": "配置文件的 UTF-16 内容不完整。",
+    "en": "The configuration file contains incomplete UTF-16.",
+    "zh-Hant": "組態檔的 UTF-16 內容不完整。"
+  },
+  "configDecode": {
+    "zh-Hans": "无法读取配置文件编码。",
+    "en": "Could not decode the SAS configuration file.",
+    "zh-Hant": "無法讀取組態檔編碼。"
+  },
+  "configTooLarge": {
+    "zh-Hans": "配置文件过大。",
+    "en": "The configuration file is too large.",
+    "zh-Hant": "組態檔過大。"
+  },
+  "spawnFailed": {
+    "zh-Hans": "无法启动 SAS。",
+    "en": "Could not start SAS.",
+    "zh-Hant": "無法啟動 SAS。"
+  },
+  "sessionDirectory": {
+    "zh-Hans": "会话目录不可用。",
+    "en": "The session folder is unavailable.",
+    "zh-Hant": "工作階段資料夾不可用。"
+  },
+  "sessionCreate": {
+    "zh-Hans": "无法创建独立会话。",
+    "en": "Could not create an isolated session.",
+    "zh-Hant": "無法建立獨立工作階段。"
+  },
+  "sessionProfileCreate": {
+    "zh-Hans": "无法创建 SAS 用户目录。",
+    "en": "Could not create the SAS user folder.",
+    "zh-Hant": "無法建立 SAS 使用者資料夾。"
+  },
+  "sessionRecord": {
+    "zh-Hans": "无法记录独立会话。",
+    "en": "Could not save the session record.",
+    "zh-Hant": "無法記錄獨立工作階段。"
+  },
+  "sasExit": {
+    "zh-Hans": "SAS 异常退出。",
+    "en": "SAS exited with an error.",
+    "zh-Hant": "SAS 異常結束。"
+  },
+  "setupMissing": {
+    "zh-Hans": "没有找到这次设置会话。",
+    "en": "This settings session was not found.",
+    "zh-Hant": "沒有找到這次設定工作階段。"
+  },
+  "setupRunning": {
+    "zh-Hans": "请先关闭设置 SAS 的窗口。",
+    "en": "Close the SAS settings window before continuing.",
+    "zh-Hant": "請先關閉設定 SAS 的視窗。"
+  },
+  "setupFailed": {
+    "zh-Hans": "SAS 异常退出。请丢弃这次设置并重新打开 SAS。",
+    "en": "SAS exited with an error. Discard these settings and reopen SAS.",
+    "zh-Hant": "SAS 異常結束。請捨棄這次設定並重新開啟 SAS。"
+  },
+  "setupDirectory": {
+    "zh-Hans": "设置会话目录不可用。",
+    "en": "The settings session folder is unavailable.",
+    "zh-Hant": "設定工作階段資料夾不可用。"
+  },
+  "dataCreate": {
+    "zh-Hans": "无法创建应用数据目录。",
+    "en": "Could not create the application data folder.",
+    "zh-Hant": "無法建立應用程式資料夾。"
+  },
+  "dataReparse": {
+    "zh-Hans": "应用数据目录不能是重解析点。",
+    "en": "The application data folder cannot be a reparse point.",
+    "zh-Hant": "應用程式資料夾不能是重解析點。"
+  },
+  "settingsRead": {
+    "zh-Hans": "无法读取保存的项目与配置。",
+    "en": "Could not read saved projects and configurations.",
+    "zh-Hant": "無法讀取儲存的專案與組態。"
+  },
+  "settingsWrite": {
+    "zh-Hans": "无法保存应用设置。",
+    "en": "Could not save application settings.",
+    "zh-Hant": "無法儲存應用程式設定。"
+  },
+  "batchRunning": {
+    "zh-Hans": "项目已在运行。",
+    "en": "The project is already running.",
+    "zh-Hant": "專案已在執行。"
+  },
+  "projectRunning": {
+    "zh-Hans": "该项目的 SAS 会话仍在运行，请先关闭它再重新启动。",
+    "en": "This project's SAS session is still running. Close it before launching again.",
+    "zh-Hant": "該專案的 SAS 工作階段仍在執行，請先關閉它再重新啟動。"
+  },
+  "openLinkFailed": {
+    "zh-Hans": "无法在浏览器中打开链接。",
+    "en": "Could not open the link in your browser.",
+    "zh-Hant": "無法在瀏覽器中開啟連結。"
+  },
+  "releaseTagInvalid": {
+    "zh-Hans": "版本标签无效，无法打开发布页。",
+    "en": "The release tag is invalid, so the release page cannot be opened.",
+    "zh-Hant": "版本標籤無效，無法開啟發行頁面。"
+  },
+  "internal": {
+    "zh-Hans": "启动器内部出错，请重试。",
+    "en": "The launcher hit an internal error. Try again.",
+    "zh-Hant": "啟動器內部發生錯誤，請重試。"
+  },
+  "unexpected": {
+    "zh-Hans": "操作未完成。",
+    "en": "The operation could not be completed.",
+    "zh-Hant": "操作未完成。"
+  }
 }

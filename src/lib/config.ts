@@ -83,10 +83,9 @@ export function sortConfigs(configs: Config[], language: Language): Config[] {
 }
 
 /** One template for a generated configuration name, shared with the Rust side. */
-const derivedNameTemplates: Record<Language, string> = {
-  'zh-Hans': sharedLabels['config.derivedName'][0],
-  en: sharedLabels['config.derivedName'][1],
-  'zh-Hant': sharedLabels['config.derivedName'][2],
+function derivedNameTemplate(language: Language): string {
+  const entry = sharedLabels['config.derivedName']
+  return entry[language] ?? entry.en
 }
 
 function renderDerivedName(template: string, baseLabel: string, index: number): string {
@@ -104,12 +103,12 @@ export function defaultConfigName(
   language: Language = 'zh-Hans',
 ): string {
   const taken = new Set(existingNames)
-  const templates = Object.values(derivedNameTemplates)
+  const templates = Object.values(sharedLabels['config.derivedName'])
   let index = 1
   while (templates.some((template) => taken.has(renderDerivedName(template, baseLabel, index)))) {
     index += 1
   }
-  return renderDerivedName(derivedNameTemplates[language], baseLabel, index)
+  return renderDerivedName(derivedNameTemplate(language), baseLabel, index)
 }
 
 export type OptionCheck = { status: PresetStatus; warning: MessageKey | null }

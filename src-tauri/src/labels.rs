@@ -6,23 +6,15 @@ use std::{collections::HashMap, sync::OnceLock};
 
 const RAW: &str = include_str!("../../shared/labels.json");
 
-/// Column order matches the frontend catalogs.
+/// The languages the catalogue is written in; every key must have all of them.
 pub const LANGUAGES: [&str; 3] = ["zh-Hans", "en", "zh-Hant"];
 
 #[derive(Deserialize)]
-struct Catalog(HashMap<String, [String; 3]>);
+struct Catalog(HashMap<String, HashMap<String, String>>);
 
 fn catalog() -> &'static Catalog {
     static CATALOG: OnceLock<Catalog> = OnceLock::new();
     CATALOG.get_or_init(|| serde_json::from_str(RAW).expect("shared/labels.json is valid"))
-}
-
-fn column(language: &str) -> usize {
-    match language {
-        "zh-Hans" => 0,
-        "zh-Hant" => 2,
-        _ => 1,
-    }
 }
 
 /// A backend label. An unknown key renders as the key itself, so a missing entry is
@@ -31,7 +23,8 @@ pub fn text(language: &str, key: &str) -> String {
     catalog()
         .0
         .get(key)
-        .map(|entry| entry[column(language)].clone())
+        .and_then(|entry| entry.get(language).or_else(|| entry.get("en")))
+        .cloned()
         .unwrap_or_else(|| key.to_owned())
 }
 
@@ -48,12 +41,20 @@ mod tests {
     use std::path::Path;
 
     #[test]
-    fn every_label_has_three_non_empty_columns() {
+    fn every_label_is_written_in_every_language() {
         for (key, entry) in &catalog().0 {
-            for (position, column) in entry.iter().enumerate() {
-                assert!(!column.trim().is_empty(), "{key} column {position}");
+            for language in LANGUAGES {
+                let value = entry
+                    .get(language)
+                    .unwrap_or_else(|| panic!("{key} has no {language}"));
+                assert!(!value.trim().is_empty(), "{key} in {language}");
             }
         }
+    }
+
+    #[test]
+    fn a_language_without_a_translation_reads_in_english() {
+        assert_eq!(text("th", "tray.quit"), text("en", "tray.quit"));
     }
 
     #[test]

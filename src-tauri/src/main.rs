@@ -2381,21 +2381,20 @@ mod tests {
             "issue codes emitted by Rust but missing from src/issue-messages.json: {missing:?}"
         );
 
-        // Every entry carries all three languages, so no interface falls back silently.
+        // Every entry carries every interface language, so no interface falls back silently.
         for (code, entry) in messages {
-            let columns = entry
-                .as_array()
-                .unwrap_or_else(|| panic!("{code} is not an array of translations"));
-            assert_eq!(
-                columns.len(),
-                3,
-                "{code} should hold zh-Hans, en and zh-Hant"
-            );
-            for column in columns {
-                let text = column
-                    .as_str()
-                    .unwrap_or_else(|| panic!("{code} holds a non-string translation"));
-                assert!(!text.trim().is_empty(), "{code} has an empty translation");
+            let entry = entry
+                .as_object()
+                .unwrap_or_else(|| panic!("{code} is not an object of translations"));
+            for language in crate::labels::LANGUAGES {
+                let text = entry
+                    .get(language)
+                    .and_then(|value| value.as_str())
+                    .unwrap_or_else(|| panic!("{code} has no {language}"));
+                assert!(
+                    !text.trim().is_empty(),
+                    "{code} has an empty {language} translation"
+                );
             }
         }
         // The other direction: copy for a code no module mentions is dead weight that the

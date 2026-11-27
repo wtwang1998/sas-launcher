@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest'
+import issues from '../issue-messages.json'
 import baseline from './coverage-baseline.json'
 import { messages as en, notes } from './en'
 import { languageNames } from './index'
@@ -88,5 +89,16 @@ it('names_each_interface_language_in_its_own_words', () => {
   for (const [language, name] of Object.entries(languageNames)) {
     const own = new Intl.DisplayNames([language], { type: 'language' }).of(language)
     expect(name, `${language} should read the way CLDR names it in itself`).toBe(own)
+  }
+})
+
+it('writes every issue code in every interface language', () => {
+  for (const [code, entry] of Object.entries(issues)) {
+    for (const language of ['zh-Hans', 'zh-Hant', 'en'] as const) {
+      expect(
+        (entry as Partial<Record<string, string>>)[language],
+        `${code} in ${language}`,
+      ).toBeTruthy()
+    }
   }
 })
